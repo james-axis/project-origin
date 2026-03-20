@@ -5,21 +5,23 @@ import { Form } from "@/components/base/form/form";
 import { Input } from "@/components/base/input/input";
 import { RatingStars } from "@/components/foundations/rating-stars";
 
-// Axis X symbol logo — orange rounded square with white X (matches brand guidelines)
+// Axis X symbol logo â orange rounded square with white X (matches brand guidelines)
 const AxisLogoSymbol = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
-        <rect width="80" height="80" rx="18" fill="#D34108" />
-        <path
-            d="M19 19L40 40L19 61M61 19L40 40L61 61"
-            stroke="white"
-            strokeWidth="9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+    <svg className={className} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
+        <defs>
+            <linearGradient id="axis-icon-lg" x1="16" y1="31.9" x2="16" y2="-0.1" gradientTransform="translate(0 31.9) scale(1 -1)" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="#fff"/>
+                <stop offset="1" stopColor="#0a0d12"/>
+            </linearGradient>
+        </defs>
+        <path fill="#ff4405" d="M0,12.8C0,8.32,0,6.08.87,4.37c.77-1.51,1.99-2.73,3.5-3.5C6.08,0,8.32,0,12.8,0h6.4C23.68,0,25.92,0,27.63.87c1.51.77,2.73,1.99,3.5,3.5.87,1.71.87,3.95.87,8.43v6.4c0,4.48,0,6.72-.87,8.43-.77,1.51-1.99,2.73-3.5,3.5-1.71.87-3.95.87-8.43.87h-6.4c-4.48,0-6.72,0-8.43-.87-1.51-.77-2.73-1.99-3.5-3.5C0,25.92,0,23.68,0,19.2v-6.4Z"/>
+        <path fill="url(#axis-icon-lg)" fillOpacity=".2" d="M0,12.8C0,8.32,0,6.08.87,4.37c.77-1.51,1.99-2.73,3.5-3.5C6.08,0,8.32,0,12.8,0h6.4C23.68,0,25.92,0,27.63.87c1.51.77,2.73,1.99,3.5,3.5.87,1.71.87,3.95.87,8.43v6.4c0,4.48,0,6.72-.87,8.43-.77,1.51-1.99,2.73-3.5,3.5-1.71.87-3.95.87-8.43.87h-6.4c-4.48,0-6.72,0-8.43-.87-1.51-.77-2.73-1.99-3.5-3.5C0,25.92,0,23.68,0,19.2v-6.4Z"/>
+        <path fill="#fff" d="M13.43,15.89l-9.43,10.27h4.86L28,5.35h-4.99l-7.08,7.63-7.08-7.63h-4.86l9.43,10.54Z"/>
+        <path fill="#fff" d="M23.01,26.16h4.99l-9.16-9.85c-1.44,2.37-.88,4.23-.42,4.86l4.58,4.99Z"/>
     </svg>
 );
 
-// Axis wordmark — for use alongside the symbol on desktop
+// Axis wordmark â for use alongside the symbol on desktop
 const AxisWordmark = ({ className }: { className?: string }) => (
     <div className={`flex items-center gap-3 ${className ?? ""}`}>
         <AxisLogoSymbol className="size-10" />
@@ -35,7 +37,7 @@ const AxisWordmark = ({ className }: { className?: string }) => (
 export const Login = () => {
     return (
         <section className="grid min-h-screen grid-cols-1 bg-primary lg:grid-cols-[640px_1fr]">
-            {/* ── Left panel — form ── */}
+            {/* ââ Left panel â form ââ */}
             <div className="flex w-full flex-col bg-primary lg:max-w-(--breakpoint-sm)">
                 <div className="flex flex-1 justify-center px-4 py-12 md:items-center md:px-8 md:py-32">
                     <div className="flex w-full flex-col gap-8 sm:max-w-90">
@@ -83,7 +85,7 @@ export const Login = () => {
                                     type="password"
                                     name="password"
                                     size="md"
-                                    placeholder="••••••••"
+                                    placeholder="â¢â¢â¢â¢â¢â¢â¢â¢"
                                 />
                             </div>
 
@@ -111,11 +113,11 @@ export const Login = () => {
                 </div>
 
                 <footer className="hidden p-8 pt-11 lg:block">
-                    <p className="text-sm text-tertiary">© Axis Technology 2025</p>
+                    <p className="text-sm text-tertiary">Â© Axis Technology 2025</p>
                 </footer>
             </div>
 
-            {/* ── Right panel — brand ── */}
+            {/* ââ Right panel â brand ââ */}
             <div className="relative hidden w-full gap-20 overflow-hidden bg-tertiary pt-24 pr-16 pl-20 lg:flex lg:flex-col">
                 <figure className="flex max-w-3xl flex-col gap-6">
                     <blockquote>
@@ -128,7 +130,7 @@ export const Login = () => {
                     </blockquote>
                     <figcaption className="flex items-start gap-3">
                         <div className="flex-1">
-                            <p className="text-lg font-semibold text-primary">— Rebel Thomas</p>
+                            <p className="text-lg font-semibold text-primary">â Rebel Thomas</p>
                             <cite className="text-md font-medium text-tertiary not-italic">
                                 Senior Financial Adviser, SLS
                             </cite>
