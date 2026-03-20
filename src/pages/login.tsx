@@ -5,7 +5,7 @@ import { Form } from "@/components/base/form/form";
 import { Input } from "@/components/base/input/input";
 import { RatingStars } from "@/components/foundations/rating-stars";
 
-// Axis X symbol logo Ã¢ÂÂ orange rounded square with white X (matches brand guidelines)
+// Axis X symbol logo — official icon from brand guidelines
 const AxisLogoSymbol = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
         <defs>
@@ -21,7 +21,7 @@ const AxisLogoSymbol = ({ className }: { className?: string }) => (
     </svg>
 );
 
-// Axis wordmark ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ for use alongside the symbol on desktop
+// Axis wordmark — for use alongside the symbol on desktop
 const AxisWordmark = ({ className }: { className?: string }) => (
     <div className={`flex items-center gap-4 ${className ?? ""}`}>
         <AxisLogoSymbol className="size-10" />
@@ -37,7 +37,7 @@ const AxisWordmark = ({ className }: { className?: string }) => (
 export const Login = () => {
     return (
         <section className="grid min-h-screen grid-cols-1 bg-primary lg:grid-cols-[640px_1fr]">
-            {/* ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Left panel ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ form ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ */}
+            {/* ── Left panel — form ── */}
             <div className="flex w-full flex-col bg-primary lg:max-w-(--breakpoint-sm)">
                 <div className="flex flex-1 justify-center px-4 py-12 md:items-center md:px-8 md:py-32">
                     <div className="flex w-full flex-col gap-8 sm:max-w-90">
@@ -105,11 +105,11 @@ export const Login = () => {
                 </div>
 
                 <footer className="hidden p-8 pt-11 lg:block">
-                    <p className="text-sm text-tertiary">ÃÂÃÂÃÂÃÂ© Axis Technology 2025</p>
+                    <p className="text-sm text-tertiary">© Axis Technology 2025</p>
                 </footer>
             </div>
 
-            {/* ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Right panel ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ brand ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ */}
+            {/* ── Right panel — brand ── */}
             <div className="relative hidden w-full gap-20 overflow-hidden bg-tertiary pt-24 pr-16 pl-20 lg:flex lg:flex-col">
                 <figure className="flex max-w-3xl flex-col gap-6">
                     <blockquote>
