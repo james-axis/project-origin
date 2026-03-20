@@ -5,14 +5,31 @@ import { Form } from "@/components/base/form/form";
 import { Input } from "@/components/base/input/input";
 import { RatingStars } from "@/components/foundations/rating-stars";
 
-// Axis wordmark SVG — matches brand guidelines (Core Orange #D34108)
-const AxisLogo = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 120 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
-        <path d="M0 32L11 2h5.5l11 30H22l-2.4-6H8.4L6 32H0zm9.8-11h8.4L14 9.5 9.8 21z" fill="#D34108" />
-        <path d="M30 32L39.5 17 30.5 2h7l5.8 10.2L49.5 2h7L47.5 17 57 32h-7.4L44 21.5 38.5 32H30z" fill="#D34108" />
-        <path d="M60 2h6.5v30H60V2z" fill="#D34108" />
-        <path d="M70 24.5l4.8-3.8c1.4 2.6 3.5 4 6.2 4 2.5 0 3.8-1.1 3.8-2.8 0-1.8-1.4-2.8-5.2-3.9C75 16.7 72 14.5 72 10c0-4.2 3.4-7 8.5-7 4 0 7 1.8 8.8 5l-4.5 3.4c-1.2-2-2.7-3.1-4.5-3.1-2 0-3.1 1-3.1 2.5 0 1.6 1.2 2.5 5 3.7 4.8 1.5 8.2 3.8 8.2 8.5 0 4.5-3.7 7.7-9.5 7.7-4.4 0-8.2-2-10.9-5.2z" fill="#D34108" />
+// Axis X symbol logo — orange rounded square with white X (matches brand guidelines)
+const AxisLogoSymbol = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
+        <rect width="80" height="80" rx="18" fill="#D34108" />
+        <path
+            d="M19 19L40 40L19 61M61 19L40 40L61 61"
+            stroke="white"
+            strokeWidth="9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
     </svg>
+);
+
+// Axis wordmark — for use alongside the symbol on desktop
+const AxisWordmark = ({ className }: { className?: string }) => (
+    <div className={`flex items-center gap-3 ${className ?? ""}`}>
+        <AxisLogoSymbol className="size-10" />
+        <span
+            className="text-2xl font-normal tracking-tight text-primary"
+            style={{ fontFamily: "'Metrophobic', sans-serif" }}
+        >
+            AXIS
+        </span>
+    </div>
 );
 
 export const Login = () => {
@@ -22,12 +39,17 @@ export const Login = () => {
             <div className="flex w-full flex-col bg-primary lg:max-w-(--breakpoint-sm)">
                 <div className="flex flex-1 justify-center px-4 py-12 md:items-center md:px-8 md:py-32">
                     <div className="flex w-full flex-col gap-8 sm:max-w-90">
-                        <div className="flex flex-col gap-6 md:gap-20">
-                            <AxisLogo className="h-8 w-auto max-md:hidden" />
-                            <AxisLogo className="size-10 md:hidden" />
+                        <div className="flex flex-col gap-6 md:gap-16">
+                            {/* Desktop: symbol + wordmark */}
+                            <AxisWordmark className="max-md:hidden" />
+                            {/* Mobile: symbol only */}
+                            <AxisLogoSymbol className="size-12 md:hidden" />
 
                             <div className="flex flex-col gap-2 md:gap-3">
-                                <h1 className="text-display-xs font-semibold text-primary md:text-display-md">
+                                <h1
+                                    className="text-display-xs font-normal text-primary md:text-display-md"
+                                    style={{ fontFamily: "'Metrophobic', sans-serif" }}
+                                >
                                     Log in
                                 </h1>
                                 <p className="text-md text-tertiary">
@@ -73,7 +95,11 @@ export const Login = () => {
                             </div>
 
                             <div className="flex flex-col gap-4">
-                                <Button type="submit" size="lg" className="bg-[#D34108] hover:bg-[#B83507]">
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]"
+                                >
                                     Sign in
                                 </Button>
                                 <SocialButton social="google" theme="color">
@@ -93,7 +119,10 @@ export const Login = () => {
             <div className="relative hidden w-full gap-20 overflow-hidden bg-tertiary pt-24 pr-16 pl-20 lg:flex lg:flex-col">
                 <figure className="flex max-w-3xl flex-col gap-6">
                     <blockquote>
-                        <p className="text-display-sm font-medium text-primary">
+                        <p
+                            className="text-display-sm font-normal text-primary"
+                            style={{ fontFamily: "'Metrophobic', sans-serif" }}
+                        >
                             Less admin. More impact. Axis brought our compliance time from hours down to minutes without cutting corners.
                         </p>
                     </blockquote>
@@ -104,7 +133,7 @@ export const Login = () => {
                                 Senior Financial Adviser, SLS
                             </cite>
                         </div>
-                        <RatingStars className="hidden gap-0.5 md:flex" starClassName="text-fg-primary" />
+                        <RatingStars className="hidden gap-0.5 md:flex" starClassName="text-[#D34108]" />
                     </figcaption>
                 </figure>
 
