@@ -1,23 +1,87 @@
-import type { FC, ReactNode } from "react";
+import {
+    BarChartSquare02,
+    CheckDone01,
+    CurrencyDollar,
+    FileCheck02,
+    HomeLine,
+    Settings01,
+    Users01,
+    FileSearch02,
+    AlertTriangle,
+    Announcement01,
+    ShieldTick,
+    MessageChatCircle,
+} from "@untitledui/icons";
+import type { NavItemDividerType, NavItemType } from "./config";
 
-export type NavItemType = {
-    /** Label text for the nav item. */
-    label: string;
-    /** URL to navigate to when the nav item is clicked. */
-    href?: string;
-    /** Icon component to display. */
-    icon?: FC<{ className?: string }>;
-    /** Badge to display. */
-    badge?: ReactNode;
-    /** List of sub-items to display. */
-    items?: { label: string; href: string; icon?: FC<{ className?: string }>; badge?: ReactNode }[];
-    /** Whether this nav item is a divider. */
-    divider?: boolean;
-};
+export type { NavItemType, NavItemDividerType };
 
-export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider"> & {
-    /** Label text for the divider. */
-    label?: string;
-    /** Whether this nav item is a divider. */
-    divider: true;
-};
+export const navItems: (NavItemType | NavItemDividerType)[] = [
+    {
+        label: "Workbench",
+        href: "/",
+        icon: HomeLine,
+    },
+    { divider: true },
+    {
+        label: "Clients",
+        href: "/clients",
+        icon: Users01,
+    },
+    {
+        label: "Tasks",
+        href: "/tasks",
+        icon: CheckDone01,
+    },
+    {
+        label: "Applications",
+        href: "/applications",
+        icon: FileCheck02,
+    },
+    {
+        label: "Compliance",
+        href: "/compliance",
+        icon: ShieldTick,
+    },
+    {
+        label: "Claims",
+        href: "/claims",
+        icon: FileSearch02,
+    },
+    {
+        label: "Payments",
+        href: "/payments",
+        icon: CurrencyDollar,
+    },
+    {
+        label: "Dishonours",
+        href: "/dishonours",
+        icon: AlertTriangle,
+    },
+    {
+        label: "Commissions",
+        href: "/commissions",
+        icon: BarChartSquare02,
+    },
+    {
+        label: "Complaints",
+        href: "/complaints",
+        icon: Announcement01,
+    },
+    { divider: true },
+    {
+        label: "Reports",
+        href: "/reports",
+        icon: BarChartSquare02,
+    },
+    {
+        label: "Settings",
+        href: "/settings",
+        icon: Settings01,
+    },
+    {
+        label: "Support",
+        href: "/support",
+        icon: MessageChatCircle,
+    },
+];
