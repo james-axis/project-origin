@@ -12,9 +12,24 @@ import {
     ShieldTick,
     MessageChatCircle,
 } from "@untitledui/icons";
-import type { NavItemDividerType, NavItemType } from "./config";
+import type { ComponentType } from "react";
 
-export type { NavItemType, NavItemDividerType };
+export type NavItemType = {
+    label: string;
+    href: string;
+    icon?: ComponentType<{ className?: string }>;
+    badge?: number | React.ReactNode;
+    items?: { label: string; badge?: number; href: string }[];
+    divider?: never;
+};
+
+export type NavItemDividerType = {
+    divider: true;
+    label?: never;
+    href?: never;
+    icon?: never;
+    items?: never;
+};
 
 export const navItems: (NavItemType | NavItemDividerType)[] = [
     {
