@@ -5,7 +5,7 @@ import { Form } from "@/components/base/form/form";
 import { Input } from "@/components/base/input/input";
 import { RatingStars } from "@/components/foundations/rating-stars";
 
-// Axis X symbol logo — orange rounded square with white X (matches brand guidelines)
+// Axis X symbol logo â orange rounded square with white X (matches brand guidelines)
 const AxisLogoSymbol = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
         <defs>
@@ -21,23 +21,23 @@ const AxisLogoSymbol = ({ className }: { className?: string }) => (
     </svg>
 );
 
-// Axis wordmark Ã¢ÂÂ for use alongside the symbol on desktop
+// Axis wordmark ÃÂ¢ÃÂÃÂ for use alongside the symbol on desktop
 const AxisWordmark = ({ className }: { className?: string }) => (
-    <div className={`flex items-center gap-3 ${className ?? ""}`}>
+    <div className={`flex items-center gap-4 ${className ?? ""}`}>
         <AxisLogoSymbol className="size-10" />
-        <span
-            className="text-2xl font-normal tracking-tight text-primary"
+        <h1
+            className="text-display-xs font-normal text-primary md:text-display-md"
             style={{ fontFamily: "'Metrophobic', sans-serif" }}
         >
-            AXIS
-        </span>
+            Log in
+        </h1>
     </div>
 );
 
 export const Login = () => {
     return (
         <section className="grid min-h-screen grid-cols-1 bg-primary lg:grid-cols-[640px_1fr]">
-            {/* Ã¢ÂÂÃ¢ÂÂ Left panel Ã¢ÂÂ form Ã¢ÂÂÃ¢ÂÂ */}
+            {/* ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ Left panel ÃÂ¢ÃÂÃÂ form ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ */}
             <div className="flex w-full flex-col bg-primary lg:max-w-(--breakpoint-sm)">
                 <div className="flex flex-1 justify-center px-4 py-12 md:items-center md:px-8 md:py-32">
                     <div className="flex w-full flex-col gap-8 sm:max-w-90">
@@ -47,17 +47,9 @@ export const Login = () => {
                             {/* Mobile: symbol only */}
                             <AxisLogoSymbol className="size-12 md:hidden" />
 
-                            <div className="flex flex-col gap-2 md:gap-3">
-                                <h1
-                                    className="text-display-xs font-normal text-primary md:text-display-md"
-                                    style={{ fontFamily: "'Metrophobic', sans-serif" }}
-                                >
-                                    Log in
-                                </h1>
-                                <p className="text-md text-tertiary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+                            <p className="text-md text-tertiary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
                     Welcome back. Please enter your details.
                 </p>
-                            </div>
                         </div>
 
                         <Form
@@ -85,7 +77,7 @@ export const Login = () => {
                                     type="password"
                                     name="password"
                                     size="md"
-                                    placeholder="Ã¢ÂÂ¢Ã¢ÂÂ¢Ã¢ÂÂ¢Ã¢ÂÂ¢Ã¢ÂÂ¢Ã¢ÂÂ¢Ã¢ÂÂ¢Ã¢ÂÂ¢"
+                                    placeholder="Enter your password"
                                 />
                             </div>
 
@@ -113,11 +105,11 @@ export const Login = () => {
                 </div>
 
                 <footer className="hidden p-8 pt-11 lg:block">
-                    <p className="text-sm text-tertiary">ÃÂ© Axis Technology 2025</p>
+                    <p className="text-sm text-tertiary">ÃÂÃÂ© Axis Technology 2025</p>
                 </footer>
             </div>
 
-            {/* Ã¢ÂÂÃ¢ÂÂ Right panel Ã¢ÂÂ brand Ã¢ÂÂÃ¢ÂÂ */}
+            {/* ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ Right panel ÃÂ¢ÃÂÃÂ brand ÃÂ¢ÃÂÃÂÃÂ¢ÃÂÃÂ */}
             <div className="relative hidden w-full gap-20 overflow-hidden bg-tertiary pt-24 pr-16 pl-20 lg:flex lg:flex-col">
                 <figure className="flex max-w-3xl flex-col gap-6">
                     <blockquote>
@@ -130,9 +122,9 @@ export const Login = () => {
                     </blockquote>
                     <figcaption className="flex items-start gap-3">
                         <div className="flex-1">
-                            <p className="text-lg font-semibold text-primary">— Rebel Thomas</p>
+                            <p className="text-lg font-semibold text-primary">â Jon Doe</p>
                             <cite className="text-md font-medium text-tertiary not-italic">
-                                Senior Financial Adviser, SLS
+                                Senior Financial Adviser
                             </cite>
                         </div>
                         <RatingStars className="hidden gap-0.5 md:flex" starClassName="text-[#D34108]" />
