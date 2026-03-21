@@ -60,7 +60,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
 
                 <ul className="mt-4 flex flex-col gap-0.5 px-3">
                     {items.map((item) => (
-                        <li key={item.label}>
+                        <li key={item.label} onPointerEnter={() => setCurrentItem(item)}>
                             <NavItemButton
                                 size="md"
                                 current={currentItem.href === item.href}
