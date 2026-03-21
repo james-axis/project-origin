@@ -8,16 +8,16 @@ import {
   Link01,
   ChevronRight,
   Plus,
-  GripVertical,
+  DotsGrid,
   Trash01,
   Edit01,
   Lock01,
   Zap,
-  ToggleRight,
+  Toggle01Right,
   X,
   Check,
   ChevronDown,
-  Info,
+  InfoCircle,
 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 
@@ -39,7 +39,6 @@ interface DomainConfig {
   id: Domain;
   label: string;
   description: string;
-  color: "brand" | "success" | "warning" | "error";
   tasks: TaskItem[];
 }
 
@@ -48,7 +47,6 @@ const initialDomains: DomainConfig[] = [
     id: "lead",
     label: "Lead",
     description: "Pre-sale client journey from new lead to application",
-    color: "brand",
     tasks: [
       { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
       { id: 207, name: "Initial Life Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
@@ -62,7 +60,6 @@ const initialDomains: DomainConfig[] = [
     id: "application",
     label: "Application",
     description: "Application submission through to inforce or cancellation",
-    color: "success",
     tasks: [
       { id: 134, name: "Add Policy / Application Number", triggerType: "object_created", assigneeRole: "Admin", enabled: true },
       { id: 117, name: "Send application submitted email to client", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
@@ -78,7 +75,6 @@ const initialDomains: DomainConfig[] = [
     id: "dishonour",
     label: "Dishonour",
     description: "Missed payment recovery flow",
-    color: "warning",
     tasks: [
       { id: 36, name: "Initial follow up", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
       { id: 183, name: "Check if policy is paid up to date", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
@@ -91,7 +87,6 @@ const initialDomains: DomainConfig[] = [
     id: "claim",
     label: "Claim",
     description: "End-to-end claim lodgement and assessment",
-    color: "error",
     tasks: [
       { id: 47, name: "Initial claims form", triggerType: "object_created", assigneeRole: "Services", enabled: true },
       { id: 64, name: "Certified ID", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
@@ -203,10 +198,17 @@ function EditModal({ task, onSave, onClose }: EditModalProps) {
           </div>
         </div>
         <div className="flex justify-end gap-2 border-t border-secondary px-6 py-4">
-          <Button color="secondary" size="sm" onPress={onClose}>Cancel</Button>
-          <Button color="primary" size="sm" iconLeading={Check} onPress={() => onSave(form)} isDisabled={!form.name.trim()}>
+          <button onClick={onClose} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-1.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={() => form.name.trim() && onSave(form)}
+            disabled={!form.name.trim()}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Check className="size-3.5" aria-hidden />
             Save task
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -239,7 +241,7 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
         (!task.enabled ? " opacity-50" : "")}
     >
       <div className={"cursor-grab text-fg-quaternary transition-opacity " + (task.locked ? "opacity-0 pointer-events-none" : "opacity-0 group-hover:opacity-100")}>
-        <GripVertical className="size-4" aria-hidden />
+        <DotsGrid className="size-4" aria-hidden />
       </div>
       <div className="flex flex-col items-center gap-0.5 w-7 shrink-0">
         {isFirst ? (
@@ -282,14 +284,26 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
         </span>
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button onClick={() => onToggle(task.id)} className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")} title={task.enabled ? "Disable" : "Enable"}>
-          <ToggleRight className="size-4" aria-hidden />
+        <button
+          onClick={() => onToggle(task.id)}
+          className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")}
+          title={task.enabled ? "Disable" : "Enable"}
+        >
+          <Toggle01Right className="size-4" aria-hidden />
         </button>
-        <button onClick={() => onEdit(task)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary hover:text-fg-secondary transition-colors" title="Edit">
+        <button
+          onClick={() => onEdit(task)}
+          className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary hover:text-fg-secondary transition-colors"
+          title="Edit"
+        >
           <Edit01 className="size-4" aria-hidden />
         </button>
         {!task.locked && (
-          <button onClick={() => onDelete(task.id)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors" title="Remove">
+          <button
+            onClick={() => onDelete(task.id)}
+            className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"
+            title="Remove"
+          >
             <Trash01 className="size-4" aria-hidden />
           </button>
         )}
@@ -343,9 +357,12 @@ function TaskBuilder() {
             Define the sequential task chain for each domain. Drag to reorder — each task fires when the previous one is marked complete.
           </p>
         </div>
-        <Button color={saved ? "secondary" : "primary"} size="sm" iconLeading={saved ? Check : undefined} onPress={handlePublish}>
-          {saved ? "Published" : "Publish changes"}
-        </Button>
+        <button
+          onClick={handlePublish}
+          className={"inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors " + (saved ? "bg-secondary border border-secondary text-secondary" : "bg-brand-solid text-white hover:bg-brand-solid_hover")}
+        >
+          {saved ? <><Check className="size-3.5" aria-hidden /> Published</> : "Publish changes"}
+        </button>
       </div>
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <div className="w-52 shrink-0 border-r border-secondary bg-secondary_alt overflow-y-auto">
@@ -379,11 +396,17 @@ function TaskBuilder() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-tertiary">{domain.tasks.length} tasks</span>
-              <Button color="secondary" size="sm" iconLeading={Plus} onPress={() => setEditingTask("new")}>Add task</Button>
+              <button
+                onClick={() => setEditingTask("new")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-1.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors"
+              >
+                <Plus className="size-3.5" aria-hidden />
+                Add task
+              </button>
             </div>
           </div>
           <div className="mx-6 mt-4 flex items-start gap-2.5 rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
-            <Info className="size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
+            <InfoCircle className="size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
             <p className="text-xs text-tertiary leading-relaxed">
               The <strong className="text-secondary font-medium">first task</strong> fires automatically when the object is created.
               Every subsequent task fires when the one above it is marked complete. Drag rows to reorder.
@@ -447,7 +470,7 @@ export function Settings() {
   const [activeSection, setActiveSection] = useState("task-builder");
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-h-screen">
       <aside className="w-52 shrink-0 border-r border-secondary">
         <div className="px-4 py-6">
           <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-quaternary">Settings</p>
