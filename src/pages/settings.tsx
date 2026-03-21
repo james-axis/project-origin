@@ -226,7 +226,7 @@ function TaskBuilder() {
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* Task Builder header row — domain dropdown + publish button */}
+      {/* Task Builder header row â domain dropdown + publish button */}
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-secondary">
         {/* Domain dropdown */}
         <div className="relative">
@@ -307,7 +307,7 @@ function TaskBuilder() {
   );
 }
 
-function PlaceholderSection({ title, description }: { title: string; description: string }) {
+function PlaceholderSection({ title }: { title: string; description?: string }) {
   return (
     <div className="flex flex-1 items-center justify-center p-8 sm:p-12">
       <div className="text-center max-w-sm">
@@ -326,10 +326,10 @@ export function Settings() {
 
   return (
     <div className="flex flex-col h-full min-h-screen">
-      {/* Settings header + horizontal tab bar — Untitled UI style */}
+      {/* Settings header + horizontal tab bar â Untitled UI style */}
       <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
         <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
-        {/* Horizontal tab nav — scrollable on mobile */}
+        {/* Horizontal tab nav â scrollable on mobile */}
         <div className="flex overflow-x-auto gap-0 -mb-px">
           {settingsTabs.map((tab) => {
             const Icon = tab.icon;
