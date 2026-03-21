@@ -53,25 +53,27 @@ const initialDomains: DomainConfig[] = [
     id: "application", label: "Application",
     description: "Full client journey from new lead through to inforce",
     color: "bg-brand-solid",
-    templates: [{
-      id: "app-standard", name: "Standard", status: "published", practices: ["All Practices"],
-      tasks: [
-        { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
-        { id: 207, name: "Initial Life Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-        { id: 147, name: "Life Insurance Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-        { id: 102, name: "Quote Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-        { id: 150, name: "Life Insurance Follow-up", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-        { id: 172, name: "Book Insurance Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-        { id: 134, name: "Add Policy / Application Number", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
-        { id: 117, name: "Send application submitted email to client", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-        { id: 159, name: "Upload face to face documents", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, condition: "meeting_type = face_to_face" },
-        { id: 99, name: "Compliance Audit", triggerType: "task_completed", assigneeRole: "Services", enabled: true, locked: true, completionOptions: ["Pass", "On Hold", "Remediation Required"] },
-        { id: 135, name: "Compliance Billing", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-        { id: 154, name: "Audit Finalisation", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-        { id: 133, name: "Input life insurance amounts & premiums", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
-        { id: 180, name: "Inforce call & email", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-      ],
-    }],
+    templates: [
+      {
+        id: "app-standard", name: "Standard", status: "published", practices: ["All Practices"],
+        tasks: [
+          { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
+          { id: 207, name: "Initial Life Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+          { id: 147, name: "Life Insurance Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+          { id: 102, name: "Quote Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+          { id: 150, name: "Life Insurance Follow-up", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+          { id: 172, name: "Book Insurance Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+          { id: 134, name: "Add Policy / Application Number", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+          { id: 117, name: "Send application submitted email to client", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+          { id: 159, name: "Upload face to face documents", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, condition: "meeting_type = face_to_face" },
+          { id: 99, name: "Compliance Audit", triggerType: "task_completed", assigneeRole: "Services", enabled: true, locked: true, completionOptions: ["Pass", "On Hold", "Remediation Required"] },
+          { id: 135, name: "Compliance Billing", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+          { id: 154, name: "Audit Finalisation", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+          { id: 133, name: "Input life insurance amounts & premiums", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+          { id: 180, name: "Inforce call & email", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+        ],
+      },
+    ],
   },
   {
     id: "dishonour", label: "Dishonour",
@@ -108,6 +110,16 @@ const initialDomains: DomainConfig[] = [
   },
 ];
 
+// Collect every unique task across all domains/templates as a global library
+function buildTaskLibrary(domains: DomainConfig[]): TaskItem[] {
+  const seen = new Set<string>();
+  const lib: TaskItem[] = [];
+  domains.forEach(d => d.templates.forEach(t => t.tasks.forEach(task => {
+    if (!seen.has(task.name)) { seen.add(task.name); lib.push(task); }
+  })));
+  return lib;
+}
+
 // ─── Status badge ─────────────────────────────────────────────────────────────
 const STATUS_STYLES: Record<TemplateStatus, string> = {
   draft: "bg-secondary text-tertiary",
@@ -115,13 +127,13 @@ const STATUS_STYLES: Record<TemplateStatus, string> = {
   archived: "bg-secondary text-disabled",
 };
 function StatusBadge({ status }: { status: TemplateStatus }) {
-  const label = status.charAt(0).toUpperCase() + status.slice(1);
-  return <span className={"inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium " + STATUS_STYLES[status]}>{label}</span>;
+  return <span className={"inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium capitalize " + STATUS_STYLES[status]}>{status}</span>;
 }
 
-// ─── Publish confirm modal ─────────────────────────────────────────────────────
-function PublishConfirmModal({ templateName, practices, onConfirm, onClose }: {
-  templateName: string; practices: string[]; onConfirm: () => void; onClose: () => void;
+// ─── Confirm modals ────────────────────────────────────────────────────────────
+function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, onClose }: {
+  title: string; message: React.ReactNode; confirmLabel: string; confirmClass: string;
+  onConfirm: () => void; onClose: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -131,48 +143,11 @@ function PublishConfirmModal({ templateName, practices, onConfirm, onClose }: {
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-warning-secondary">
             <AlertCircle className="size-5 text-warning-primary" aria-hidden />
           </div>
-          <div>
-            <h3 className="text-base font-semibold text-primary">Publish template?</h3>
-            <p className="mt-1 text-sm text-tertiary">
-              <strong className="font-medium text-secondary">{templateName}</strong> will become active for <strong className="font-medium text-secondary">{practices.join(", ")}</strong>. Tasks will start auto-creating for new objects immediately.
-            </p>
-          </div>
+          <div><h3 className="text-base font-semibold text-primary">{title}</h3><p className="mt-1 text-sm text-tertiary">{message}</p></div>
         </div>
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
           <button onClick={onClose} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
-          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-            Yes, publish
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Unpublish confirm modal ───────────────────────────────────────────────────
-function UnpublishConfirmModal({ templateName, onConfirm, onClose }: {
-  templateName: string; onConfirm: () => void; onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
-      <div className="relative z-10 w-full sm:max-w-md rounded-2xl border border-secondary bg-primary shadow-2xl">
-        <div className="flex items-start gap-4 px-5 pt-5 pb-4">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-error-secondary">
-            <AlertCircle className="size-5 text-error-primary" aria-hidden />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-primary">Archive template?</h3>
-            <p className="mt-1 text-sm text-tertiary">
-              <strong className="font-medium text-secondary">{templateName}</strong> will stop creating new tasks immediately. Existing in-progress tasks are not affected.
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2 border-t border-secondary px-5 py-4">
-          <button onClick={onClose} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
-          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 rounded-lg bg-error-primary px-3 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-colors">
-            Yes, archive
-          </button>
+          <button onClick={() => { onConfirm(); onClose(); }} className={"flex-1 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " + confirmClass}>{confirmLabel}</button>
         </div>
       </div>
     </div>
@@ -225,16 +200,40 @@ function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (
 }
 
 // ─── New template modal ────────────────────────────────────────────────────────
-function NewTemplateModal({ domainLabel, onSave, onClose }: { domainLabel: string; onSave: (t: WorkflowTemplate) => void; onClose: () => void }) {
+function NewTemplateModal({ domainLabel, allDomains, onSave, onClose }: {
+  domainLabel: string; allDomains: DomainConfig[];
+  onSave: (t: WorkflowTemplate) => void; onClose: () => void;
+}) {
   const [name, setName] = useState("");
-  const [practices, setPractices] = useState<string[]>(["All Practices"]);
+  const [selectedPractices, setSelectedPractices] = useState<string[]>(["All Practices"]);
+  const [practiceDropOpen, setPracticeDropOpen] = useState(false);
+  const [copyFromId, setCopyFromId] = useState("");
+  const practiceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (practiceRef.current && !practiceRef.current.contains(e.target as Node)) setPracticeDropOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
 
   function togglePractice(p: string) {
-    if (p === "All Practices") { setPractices(["All Practices"]); return; }
-    const without = practices.filter(x => x !== "All Practices");
+    if (p === "All Practices") { setSelectedPractices(["All Practices"]); return; }
+    const without = selectedPractices.filter(x => x !== "All Practices");
     const next = without.includes(p) ? without.filter(x => x !== p) : [...without, p];
-    setPractices(next.length === 0 ? ["All Practices"] : next);
+    setSelectedPractices(next.length === 0 ? ["All Practices"] : next);
   }
+
+  // All templates across all domains for "copy from"
+  const allTemplates = allDomains.flatMap(d => d.templates.map(t => ({ id: t.id, label: d.label + " — " + t.name, tasks: t.tasks })));
+
+  function handleCreate() {
+    if (!name.trim()) return;
+    const sourceTasks = copyFromId ? (allTemplates.find(t => t.id === copyFromId)?.tasks ?? []) : [];
+    onSave({ id: Date.now().toString(), name: name.trim(), status: "draft", practices: selectedPractices, tasks: sourceTasks });
+    onClose();
+  }
+
+  const practiceLabel = selectedPractices.includes("All Practices") ? "All Practices" : selectedPractices.join(", ");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -249,24 +248,43 @@ function NewTemplateModal({ domainLabel, onSave, onClose }: { domainLabel: strin
             <label className="block text-sm font-medium text-secondary">Template name</label>
             <input value={name} onChange={e => setName(e.target.value)} autoFocus className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. LIP Pilot, High Value Client" />
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-1.5">
             <label className="block text-sm font-medium text-secondary">Applies to</label>
             <p className="text-xs text-tertiary">Select which practices this template runs for. Pilot a new flow with one practice before rolling out to all.</p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {PRACTICES.map(p => {
-                const active = practices.includes(p);
-                return (
-                  <button key={p} onClick={() => togglePractice(p)} className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors " + (active ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-tertiary hover:bg-secondary_alt")}>
-                    {active && <Check className="size-3" aria-hidden />}{p}
-                  </button>
-                );
-              })}
+            <div className="relative" ref={practiceRef}>
+              <button onClick={() => setPracticeDropOpen(!practiceDropOpen)} className="w-full flex items-center justify-between rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none hover:border-brand transition-colors">
+                <span className={selectedPractices.includes("All Practices") ? "text-tertiary" : ""}>{practiceLabel}</span>
+                <ChevronDown className={"size-4 text-fg-quaternary transition-transform " + (practiceDropOpen ? "rotate-180" : "")} aria-hidden />
+              </button>
+              {practiceDropOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-20 rounded-xl border border-secondary bg-primary shadow-lg py-1 max-h-52 overflow-y-auto">
+                  {PRACTICES.map(p => {
+                    const active = selectedPractices.includes(p);
+                    return (
+                      <button key={p} onClick={() => togglePractice(p)} className={"flex w-full items-center justify-between px-3 py-2.5 text-sm transition-colors " + (active ? "bg-active text-primary font-medium" : "text-secondary hover:bg-secondary_alt")}>
+                        <span>{p}</span>
+                        {active && <Check className="size-3.5 text-brand-secondary shrink-0" aria-hidden />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Copy tasks from <span className="font-normal text-tertiary">(optional)</span></label>
+            <select value={copyFromId} onChange={e => setCopyFromId(e.target.value)} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+              <option value="">Start from scratch</option>
+              {allTemplates.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+            <p className="text-xs text-tertiary">Copy all tasks from an existing template as a starting point</p>
           </div>
         </div>
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
           <button onClick={onClose} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
-          <button onClick={() => { if (name.trim()) { onSave({ id: Date.now().toString(), name: name.trim(), status: "draft", practices, tasks: [] }); onClose(); }}} disabled={!name.trim()} className="flex-1 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover disabled:opacity-50 transition-colors">
+          <button onClick={handleCreate} disabled={!name.trim()} className="flex-1 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover disabled:opacity-50 transition-colors">
             <span className="flex items-center justify-center gap-1.5"><Check className="size-3.5" aria-hidden />Create template</span>
           </button>
         </div>
@@ -296,7 +314,7 @@ function NewDomainModal({ onSave, onClose }: { onSave: (d: DomainConfig) => void
           </div>
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-secondary">Description</label>
-            <input value={desc} onChange={e => setDesc(e.target.value)} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Brief description of this workflow" />
+            <input value={desc} onChange={e => setDesc(e.target.value)} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Brief description" />
           </div>
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-secondary">Colour</label>
@@ -357,38 +375,19 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
   );
 }
 
-// ─── Dropdown ──────────────────────────────────────────────────────────────────
-function Dropdown<T extends { id: string; label: string }>({ value, options, onChange, renderOption, renderSelected }: {
-  value: string; options: T[];
-  onChange: (id: string) => void;
-  renderOption?: (item: T, active: boolean) => React.ReactNode;
-  renderSelected?: (item: T) => React.ReactNode;
+// ─── Generic dropdown ──────────────────────────────────────────────────────────
+function DropdownSelect({ label, selectedLabel, children, open, onToggle }: {
+  label: string; selectedLabel: string; children: React.ReactNode; open: boolean; onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const selected = options.find(o => o.id === value) ?? options[0];
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
   return (
-    <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-primary hover:bg-secondary transition-colors">
-        {renderSelected ? renderSelected(selected) : <span>{selected.label}</span>}
+    <div className="relative">
+      <button onClick={onToggle} className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-primary hover:bg-secondary transition-colors whitespace-nowrap">
+        <span className="text-tertiary">{label}:</span> {selectedLabel}
         <ChevronDown className={"size-4 text-fg-quaternary transition-transform " + (open ? "rotate-180" : "")} aria-hidden />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-secondary bg-primary shadow-lg py-1">
-          {options.map(opt => (
-            <button key={opt.id} onClick={() => { onChange(opt.id); setOpen(false); }}
-              className={"flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors " + (opt.id === value ? "bg-active font-medium text-primary" : "text-secondary hover:bg-secondary_alt")}>
-              {renderOption ? renderOption(opt, opt.id === value) : <span>{opt.label}</span>}
-              {opt.id === value && <Check className="size-3.5 ml-auto text-brand-secondary shrink-0" aria-hidden />}
-            </button>
-          ))}
+        <div className="absolute left-0 top-full mt-1.5 z-20 min-w-[200px] rounded-xl border border-secondary bg-primary shadow-lg py-1">
+          {children}
         </div>
       )}
     </div>
@@ -400,7 +399,7 @@ function TaskBuilder() {
   const [domains, setDomains] = useState<DomainConfig[]>(initialDomains);
   const [activeDomainId, setActiveDomainId] = useState("application");
   const [activeTemplateId, setActiveTemplateId] = useState("app-standard");
-  const [showNewMenu, setShowNewMenu] = useState(false);
+  const [openDrop, setOpenDrop] = useState<"workflow" | "task" | "new" | null>(null);
   const [editingTask, setEditingTask] = useState<TaskItem | null | "new">(null);
   const [showNewTemplate, setShowNewTemplate] = useState(false);
   const [showNewDomain, setShowNewDomain] = useState(false);
@@ -408,21 +407,29 @@ function TaskBuilder() {
   const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const newMenuRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setShowNewMenu(false); };
+    const h = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpenDrop(null);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
   const domain = domains.find(d => d.id === activeDomainId)!;
   const template = domain.templates.find(t => t.id === activeTemplateId) ?? domain.templates[0];
+  const taskLibrary = buildTaskLibrary(domains);
 
-  function setActiveDomain(id: string) {
+  function toggleDrop(name: "workflow" | "task" | "new") {
+    setOpenDrop(prev => prev === name ? null : name);
+  }
+
+  function selectDomain(id: string) {
     setActiveDomainId(id);
     const d = domains.find(x => x.id === id)!;
     setActiveTemplateId(d.templates[0]?.id ?? "");
+    setOpenDrop(null);
   }
 
   function updateTemplate(tasks: TaskItem[]) {
@@ -455,6 +462,12 @@ function TaskBuilder() {
     setActiveTemplateId(d.templates[0]?.id ?? "");
   }
 
+  function addTaskFromLibrary(task: TaskItem) {
+    const newTask = { ...task, id: Date.now(), triggerType: "task_completed" as TriggerType };
+    updateTemplate([...template.tasks, newTask]);
+    setOpenDrop(null);
+  }
+
   function handleDragStart(_: React.DragEvent<HTMLDivElement>, i: number) { setDragIndex(i); }
   function handleDragOver(e: React.DragEvent<HTMLDivElement>, i: number) { e.preventDefault(); setDragOverIndex(i); }
   function handleDrop(_: React.DragEvent<HTMLDivElement>, dropIdx: number) {
@@ -466,114 +479,91 @@ function TaskBuilder() {
     setDragOverIndex(null); setDragIndex(null);
   }
 
-  // Domain options for dropdown
-  const domainOptions = domains.map(d => ({ id: d.id, label: d.label, color: d.color, templateCount: d.templates.filter(t => t.status === "published").length }));
-  // Template options for dropdown
-  const templateOptions = domain.templates.map(t => ({ id: t.id, label: t.name, status: t.status, practices: t.practices }));
-  // Task options for dropdown (just the tasks in current template as reference, but "new" opens modal)
-  const taskCount = template.tasks.filter(t => t.enabled).length;
+  // Template sub-selector items within the workflow dropdown
+  const workflowDropLabel = domain.label;
+  const taskDropLabel = "Task library (" + taskLibrary.length + ")";
 
   return (
-    <div className="flex flex-col min-h-0">
-      {/* Single toolbar row */}
+    <div className="flex flex-col min-h-0" ref={containerRef}>
+
+      {/* Single toolbar */}
       <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 border-b border-secondary">
 
-        {/* Workflow dropdown */}
-        <Dropdown
-          value={activeDomainId}
-          options={domainOptions}
-          onChange={setActiveDomain}
-          renderSelected={item => (
-            <span className="flex items-center gap-2">
-              <span className={"size-2 rounded-full shrink-0 " + (domains.find(d => d.id === item.id)?.color ?? "")} />
-              <span>Workflow: <span className="text-primary">{item.label}</span></span>
-            </span>
-          )}
-          renderOption={(item, _active) => (
-            <span className="flex items-center gap-2.5 flex-1 min-w-0">
-              <span className={"size-2 rounded-full shrink-0 " + (domains.find(d => d.id === item.id)?.color ?? "")} />
-              <span className="flex-1">{item.label}</span>
-              <span className="text-xs text-quaternary">{item.templateCount} published</span>
-            </span>
-          )}
-        />
+        {/* 1. Workflow dropdown */}
+        <DropdownSelect label="Workflow" selectedLabel={workflowDropLabel} open={openDrop === "workflow"} onToggle={() => toggleDrop("workflow")}>
+          {domains.map(d => (
+            <div key={d.id}>
+              <button onClick={() => selectDomain(d.id)} className={"flex w-full items-center justify-between px-3 py-2.5 text-sm transition-colors " + (d.id === activeDomainId ? "bg-active font-medium text-primary" : "text-secondary hover:bg-secondary_alt")}>
+                <div className="flex items-center gap-2.5">
+                  <span className={"size-2 rounded-full shrink-0 " + d.color} />
+                  {d.label}
+                </div>
+                {d.id === activeDomainId && <Check className="size-3.5 text-brand-secondary shrink-0" aria-hidden />}
+              </button>
+              {/* Template sub-items under active domain */}
+              {d.id === activeDomainId && d.templates.map(t => (
+                <button key={t.id} onClick={() => { setActiveTemplateId(t.id); setOpenDrop(null); }}
+                  className={"flex w-full items-center gap-2 pl-9 pr-3 py-2 text-xs transition-colors " + (t.id === activeTemplateId ? "text-brand-secondary font-medium" : "text-tertiary hover:bg-secondary_alt")}>
+                  <span className="flex-1 text-left">{t.name}</span>
+                  <StatusBadge status={t.status} />
+                  {t.id === activeTemplateId && <Check className="size-3 text-brand-secondary shrink-0" aria-hidden />}
+                </button>
+              ))}
+            </div>
+          ))}
+        </DropdownSelect>
 
-        {/* Template dropdown */}
-        <Dropdown
-          value={activeTemplateId}
-          options={templateOptions}
-          onChange={setActiveTemplateId}
-          renderSelected={item => (
-            <span className="flex items-center gap-2">
-              <span>Template: <span className="text-primary">{item.label}</span></span>
-              <StatusBadge status={(templateOptions.find(t => t.id === item.id)?.status) ?? "draft"} />
-            </span>
-          )}
-          renderOption={(item, _active) => (
-            <span className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="flex-1">{item.label}</span>
-              <StatusBadge status={item.status} />
-            </span>
-          )}
-        />
+        {/* 2. Task library dropdown */}
+        <DropdownSelect label="Task" selectedLabel={taskDropLabel} open={openDrop === "task"} onToggle={() => toggleDrop("task")}>
+          <div className="px-3 py-2 border-b border-secondary">
+            <p className="text-xs text-tertiary">Click any task to add it to the current template</p>
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            {taskLibrary.map(task => {
+              const alreadyInTemplate = template.tasks.some(t => t.name === task.name);
+              return (
+                <button key={task.id} onClick={() => !alreadyInTemplate && addTaskFromLibrary(task)}
+                  className={"flex w-full items-center justify-between px-3 py-2.5 text-sm transition-colors " + (alreadyInTemplate ? "opacity-40 cursor-default" : "text-secondary hover:bg-secondary_alt")}>
+                  <span className="flex-1 text-left">{task.name}</span>
+                  <span className="text-xs text-quaternary ml-2 shrink-0">{task.assigneeRole}</span>
+                  {alreadyInTemplate && <span className="text-xs text-quaternary ml-2 shrink-0">Added</span>}
+                </button>
+              );
+            })}
+          </div>
+        </DropdownSelect>
 
-        {/* Task dropdown — selects a task to edit */}
-        {template.tasks.length > 0 && (
-          <Dropdown
-            value=""
-            options={[{ id: "", label: "Select task..." }, ...template.tasks.map(t => ({ id: String(t.id), label: t.name }))]}
-            onChange={id => { if (!id) return; const t = template.tasks.find(x => String(x.id) === id); if (t) setEditingTask(t); }}
-            renderSelected={_item => <span className="text-tertiary">Task ({taskCount})</span>}
-            renderOption={(item, _active) => <span className={item.id === "" ? "text-tertiary" : ""}>{item.label}</span>}
-          />
-        )}
-
-        {/* Spacer */}
         <div className="flex-1" />
 
         {/* Status label */}
         <StatusBadge status={template.status} />
 
         {/* New button */}
-        <div className="relative" ref={newMenuRef}>
-          <button onClick={() => setShowNewMenu(!showNewMenu)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-            <Plus className="size-3.5" aria-hidden />New
-            <ChevronDown className={"size-3.5 text-fg-quaternary " + (showNewMenu ? "rotate-180" : "")} aria-hidden />
+        <DropdownSelect label="" selectedLabel="New" open={openDrop === "new"} onToggle={() => toggleDrop("new")}>
+          <button onClick={() => { setEditingTask("new"); setOpenDrop(null); }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-secondary hover:bg-secondary_alt transition-colors">
+            <Plus className="size-4 text-fg-quaternary" aria-hidden />Task
           </button>
-          {showNewMenu && (
-            <div className="absolute right-0 top-full mt-1.5 z-20 w-44 rounded-xl border border-secondary bg-primary shadow-lg py-1">
-              <button onClick={() => { setEditingTask("new"); setShowNewMenu(false); }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-secondary hover:bg-secondary_alt transition-colors">
-                <Plus className="size-4 text-fg-quaternary" aria-hidden />Task
-              </button>
-              <button onClick={() => { setShowNewTemplate(true); setShowNewMenu(false); }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-secondary hover:bg-secondary_alt transition-colors">
-                <List className="size-4 text-fg-quaternary" aria-hidden />Template
-              </button>
-              <button onClick={() => { setShowNewDomain(true); setShowNewMenu(false); }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-secondary hover:bg-secondary_alt transition-colors">
-                <Settings01 className="size-4 text-fg-quaternary" aria-hidden />Workflow
-              </button>
-            </div>
-          )}
-        </div>
+          <button onClick={() => { setShowNewTemplate(true); setOpenDrop(null); }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-secondary hover:bg-secondary_alt transition-colors">
+            <List className="size-4 text-fg-quaternary" aria-hidden />Template
+          </button>
+          <button onClick={() => { setShowNewDomain(true); setOpenDrop(null); }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-secondary hover:bg-secondary_alt transition-colors">
+            <Settings01 className="size-4 text-fg-quaternary" aria-hidden />Workflow
+          </button>
+        </DropdownSelect>
 
-        {/* Publish / Archive button */}
-        {template.status !== "published" && (
-          <button onClick={() => setShowPublishConfirm(true)} className="rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-            Publish
-          </button>
-        )}
-        {template.status === "published" && (
-          <button onClick={() => setShowUnpublishConfirm(true)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-            Unpublish
-          </button>
-        )}
+        {/* Publish / Unpublish */}
+        {template.status !== "published"
+          ? <button onClick={() => setShowPublishConfirm(true)} className="rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">Publish</button>
+          : <button onClick={() => setShowUnpublishConfirm(true)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Unpublish</button>
+        }
       </div>
 
       {/* Info callout */}
       <div className="mx-4 sm:mx-6 mt-4 flex items-start gap-2 rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
         <InfoCircle className="size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
         <p className="text-xs text-tertiary leading-relaxed">
-          <strong className="font-medium text-secondary">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete.
-          {" "}Applies to: <strong className="font-medium text-secondary">{template.practices.join(", ")}</strong>.
+          <strong className="font-medium text-secondary">{template.name}</strong> template · {domain.label} workflow · Applies to: <strong className="font-medium text-secondary">{template.practices.join(", ")}</strong>.
+          {" "}<strong className="font-medium text-secondary">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete.
         </p>
       </div>
 
@@ -582,7 +572,7 @@ function TaskBuilder() {
         {template.tasks.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-secondary py-12 text-center">
             <p className="text-sm font-medium text-secondary">No tasks yet</p>
-            <p className="text-xs text-tertiary mt-1">Click New → Task to add the first task in this chain</p>
+            <p className="text-xs text-tertiary mt-1">Use New → Task or pick from the Task library above</p>
           </div>
         )}
         {template.tasks.map((task, index) => (
@@ -602,15 +592,32 @@ function TaskBuilder() {
       </div>
 
       {editingTask !== null && <EditModal task={editingTask === "new" ? null : editingTask} onSave={handleSaveTask} onClose={() => setEditingTask(null)} />}
-      {showNewTemplate && <NewTemplateModal domainLabel={domain.label} onSave={handleAddTemplate} onClose={() => setShowNewTemplate(false)} />}
+      {showNewTemplate && <NewTemplateModal domainLabel={domain.label} allDomains={domains} onSave={handleAddTemplate} onClose={() => setShowNewTemplate(false)} />}
       {showNewDomain && <NewDomainModal onSave={handleAddDomain} onClose={() => setShowNewDomain(false)} />}
-      {showPublishConfirm && <PublishConfirmModal templateName={template.name} practices={template.practices} onConfirm={() => setTemplateStatus("published")} onClose={() => setShowPublishConfirm(false)} />}
-      {showUnpublishConfirm && <UnpublishConfirmModal templateName={template.name} onConfirm={() => setTemplateStatus("archived")} onClose={() => setShowUnpublishConfirm(false)} />}
+      {showPublishConfirm && (
+        <ConfirmModal
+          title="Publish template?"
+          message={<>Template <strong>{template.name}</strong> will become active for <strong>{template.practices.join(", ")}</strong>. Tasks will start auto-creating for new objects immediately.</>}
+          confirmLabel="Yes, publish"
+          confirmClass="bg-brand-solid text-white hover:bg-brand-solid_hover"
+          onConfirm={() => setTemplateStatus("published")}
+          onClose={() => setShowPublishConfirm(false)}
+        />
+      )}
+      {showUnpublishConfirm && (
+        <ConfirmModal
+          title="Archive template?"
+          message={<>Template <strong>{template.name}</strong> will stop creating new tasks immediately. Existing in-progress tasks are not affected.</>}
+          confirmLabel="Yes, archive"
+          confirmClass="bg-error-primary text-white hover:opacity-90"
+          onConfirm={() => setTemplateStatus("archived")}
+          onClose={() => setShowUnpublishConfirm(false)}
+        />
+      )}
     </div>
   );
 }
 
-// ─── Placeholder sections ──────────────────────────────────────────────────────
 function PlaceholderSection({ title }: { title: string; description?: string }) {
   return (
     <div className="flex flex-1 items-center justify-center p-12">
@@ -623,7 +630,6 @@ function PlaceholderSection({ title }: { title: string; description?: string }) 
   );
 }
 
-// ─── Settings page ─────────────────────────────────────────────────────────────
 export function Settings() {
   const [activeTab, setActiveTab] = useState("task-builder");
   return (
