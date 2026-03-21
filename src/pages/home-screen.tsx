@@ -89,7 +89,7 @@ export const HomeScreen = () => {
 
             {/* Main content — takes full height, sidebar spacer handles left offset */}
             <div className="flex h-screen flex-col overflow-hidden bg-primary">
-                <header className="relative z-10 flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
+                <header className="relative z-[51] flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
                     <div>
                         <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                         <p className="text-xs text-tertiary">Your personalised CRM dashboard</p>
