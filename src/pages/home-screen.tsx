@@ -103,7 +103,7 @@ export const HomeScreen = () => {
                 </div>
 
                 {/* Widget area */}
-                <div className="p-8 pt-4">
+                <div className="p-4 pt-4 lg:p-8 lg:pt-4">
                     {widgets.length === 0 ? (
                         <div className="flex min-h-[70vh] flex-col items-center justify-center gap-5 text-center">
                             <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-secondary">
