@@ -46,7 +46,7 @@ const AddWidgetModal = ({ open, onClose, onAdd, existingWidgets }: { open: boole
     const available = AVAILABLE_WIDGETS.filter(w => !existingWidgets.includes(w.id));
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-overlay" onClick={onClose} />
+            <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
             <div className="relative z-10 w-full max-w-md rounded-2xl border border-secondary bg-primary shadow-2xl">
                 <div className="flex items-center justify-between border-b border-secondary px-6 py-4">
                     <h2 className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Add widget</h2>
@@ -86,14 +86,17 @@ export function HomeScreen() {
         <div className="lg:flex min-h-screen bg-primary">
             <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
             <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
-            <header className="flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
-                <div className="flex items-center gap-2">
-                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                        <path d="M4 16L16 4L28 16L16 28L4 16Z" fill="#D34108" />
-                    </svg>
-                    <span className="text-sm font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>AXIS</span>
-                </div>
-            </header>
+            {/* Mobile header — only show on non-settings pages */}
+            {!isSettings && (
+                <header className="flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
+                    <div className="flex items-center gap-2">
+                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                            <path d="M4 16L16 4L28 16L16 28L4 16Z" fill="#D34108" />
+                        </svg>
+                        <span className="text-sm font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>AXIS</span>
+                    </div>
+                </header>
+            )}
             <main className="min-h-screen bg-primary overflow-x-hidden lg:flex-1">
                 {isSettings ? (
                     <Settings />
