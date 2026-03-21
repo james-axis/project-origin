@@ -1,11 +1,17 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01,
   ChevronDown, Plus, DotsGrid, Trash01, Edit01, Lock01,
-  Zap, Toggle01Right, X, Check, InfoCircle,
+  Zap, Toggle01Right, X, Check, InfoCircle, ChevronRight,
 } from "@untitledui/icons";
 
 type TriggerType = "object_created" | "task_completed";
+
+interface SubTask {
+  id: number;
+  name: string;
+  assigneeRole: string;
+}
 
 interface TaskItem {
   id: number;
@@ -16,6 +22,7 @@ interface TaskItem {
   locked?: boolean;
   condition?: string;
   completionOptions?: string[];
+  subTasks?: SubTask[];
 }
 
 interface DomainConfig {
@@ -33,7 +40,7 @@ const initialDomains: DomainConfig[] = [
     description: "Full client journey from new lead through to inforce or cancellation",
     color: "bg-brand-solid",
     tasks: [
-      { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
+      { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true, subTasks: [{ id: 1001, name: "Send SMS follow-up", assigneeRole: "Consultant" }, { id: 1002, name: "Call again", assigneeRole: "Consultant" }, { id: 1003, name: "Send email", assigneeRole: "Consultant" }] },
       { id: 207, name: "Initial Life Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
       { id: 147, name: "Life Insurance Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
       { id: 102, name: "Quote Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
@@ -93,8 +100,23 @@ const settingsTabs = [
 
 function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (t: TaskItem) => void; onClose: () => void }) {
   const [form, setForm] = useState<TaskItem>(
-    task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true }
+    task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, subTasks: [] }
   );
+  const [subTasksOpen, setSubTasksOpen] = useState(!!(task?.subTasks && task.subTasks.length > 0));
+  const [newSubTaskName, setNewSubTaskName] = useState("");
+  const [newSubTaskRole, setNewSubTaskRole] = useState("Consultant");
+
+  const addSubTask = () => {
+    if (!newSubTaskName.trim()) return;
+    setForm(prev => ({ ...prev, subTasks: [...(prev.subTasks ?? []), { id: Date.now(), name: newSubTaskName.trim(), assigneeRole: newSubTaskRole }] }));
+    setNewSubTaskName("");
+    setNewSubTaskRole("Consultant");
+  };
+
+  const removeSubTask = (id: number) => {
+    setForm(prev => ({ ...prev, subTasks: (prev.subTasks ?? []).filter(s => s.id !== id) }));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
@@ -108,6 +130,7 @@ function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (
             <X className="size-4" aria-hidden />
           </button>
         </div>
+
         <div className="space-y-4 px-5 py-4">
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-secondary">Task name</label>
@@ -142,7 +165,61 @@ function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (
               <span className={"inline-block size-3.5 rounded-full bg-white shadow-sm transition-transform " + (form.locked ? "translate-x-4" : "translate-x-0.5")} />
             </button>
           </div>
+
+          {/* Sub-tasks accordion */}
+          <div className="rounded-xl border border-secondary overflow-hidden">
+            <button onClick={() => setSubTasksOpen(!subTasksOpen)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left bg-secondary_alt hover:bg-secondary transition-colors">
+              <div className="flex items-center gap-2.5">
+                <ChevronRight className={"size-4 text-fg-quaternary transition-transform " + (subTasksOpen ? "rotate-90" : "")} aria-hidden />
+                <div>
+                  <p className="text-sm font-medium text-primary">Sub-tasks <span className="ml-1.5 text-xs font-normal text-quaternary">{form.subTasks?.length ? form.subTasks.length + " configured" : "optional"}</span></p>
+                </div>
+              </div>
+            </button>
+
+            {subTasksOpen && (
+              <div className="px-4 py-4 space-y-3 border-t border-secondary">
+                <p className="text-xs text-tertiary leading-relaxed">
+                  These sub-tasks are created when this task is marked as <strong className="text-secondary font-medium">Attempted</strong> rather than completed. All sub-tasks must be completed before the next task in the chain is created.
+                </p>
+
+                {(form.subTasks ?? []).length > 0 && (
+                  <div className="space-y-2">
+                    {(form.subTasks ?? []).map(st => (
+                      <div key={st.id} className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-primary truncate">{st.name}</p>
+                          <p className="text-xs text-tertiary">{st.assigneeRole}</p>
+                        </div>
+                        <button onClick={() => removeSubTask(st.id)}
+                          className="flex size-7 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors shrink-0">
+                          <Trash01 className="size-3.5" aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input value={newSubTaskName} onChange={e => setNewSubTaskName(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && addSubTask()}
+                    className="flex-1 min-w-0 rounded-lg border border-primary bg-primary px-3 py-2 text-sm text-primary placeholder:text-placeholder outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-colors"
+                    placeholder="Sub-task name" />
+                  <select value={newSubTaskRole} onChange={e => setNewSubTaskRole(e.target.value)}
+                    className="w-28 shrink-0 rounded-lg border border-primary bg-primary px-2 py-2 text-xs text-primary outline-none focus:border-brand transition-colors">
+                    {ASSIGNEE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <button onClick={addSubTask}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-solid text-white hover:bg-brand-solid_hover transition-colors">
+                    <Plus className="size-4" aria-hidden />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
           <button onClick={onClose} className="flex-1 inline-flex items-center justify-center rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
           <button onClick={() => form.name.trim() && onSave(form)} disabled={!form.name.trim()}
@@ -211,11 +288,16 @@ function NewWorkflowModal({ onSave, onClose }: { onSave: (d: DomainConfig) => vo
 function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
   task: TaskItem; index: number; isFirst: boolean; domainColor: string;
   onToggle: (id: number) => void; onEdit: (t: TaskItem) => void; onDelete: (id: number) => void;
-  onDragStart: (e: React.DragEvent<HTMLDivElement>, i: number) => void; onDragOver: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
-  onDrop: (e: React.DragEvent<HTMLDivElement>, i: number) => void; isDragOver: boolean;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
+  isDragOver: boolean;
 }) {
   return (
-    <div draggable={!task.locked} onDragStart={(e) => onDragStart(e, index)} onDragOver={(e) => onDragOver(e, index)} onDrop={(e) => onDrop(e, index)}
+    <div draggable={!task.locked}
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={(e) => onDrop(e, index)}
       className={"group relative flex items-start sm:items-center gap-3 rounded-xl border px-3 sm:px-4 py-3 transition-all duration-100 " +
         (isDragOver ? "border-brand bg-brand-primary_alt shadow-md" : "border-secondary bg-primary hover:border-primary hover:shadow-sm") +
         (!task.enabled ? " opacity-50" : "")}>
@@ -234,6 +316,11 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
           <div className="flex items-center gap-2">
             <span className={"text-sm font-medium " + (task.enabled ? "text-primary" : "text-disabled")}>{task.name}</span>
             {task.locked && <Lock01 className="size-3 text-fg-quaternary shrink-0" aria-hidden />}
+            {task.subTasks && task.subTasks.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary">
+                {task.subTasks.length} sub-task{task.subTasks.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-tertiary">{isFirst ? "Fires on object created" : "Fires when previous is completed"}</span>
@@ -275,10 +362,12 @@ function TaskBuilder() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) setAddMenuOpen(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -298,6 +387,12 @@ function TaskBuilder() {
     setDomains(prev => [...prev, d]);
     setActiveDomainId(d.id);
   };
+  const handleDeleteWorkflow = (id: string) => {
+    if (domains.length <= 1) return;
+    const remaining = domains.filter(d => d.id !== id);
+    setDomains(remaining);
+    if (activeDomainId === id) setActiveDomainId(remaining[0].id);
+  };
   const handleDragStart = (_: React.DragEvent<HTMLDivElement>, i: number) => setDragIndex(i);
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, i: number) => { e.preventDefault(); setDragOverIndex(i); };
   const handleDrop = (_: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
@@ -315,7 +410,7 @@ function TaskBuilder() {
       {/* Header row */}
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-secondary">
         {/* Domain dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button onClick={() => setDropdownOpen(!dropdownOpen)}
             className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-primary hover:bg-secondary transition-colors">
             <span className={"size-2 rounded-full shrink-0 " + domain.color} />
@@ -324,17 +419,23 @@ function TaskBuilder() {
             <ChevronDown className={"size-4 text-fg-quaternary transition-transform " + (dropdownOpen ? "rotate-180" : "")} aria-hidden />
           </button>
           {dropdownOpen && (
-            <div className="absolute left-0 top-full mt-1.5 z-20 w-52 rounded-xl border border-secondary bg-primary shadow-lg py-1">
+            <div className="absolute left-0 top-full mt-1.5 z-20 w-60 rounded-xl border border-secondary bg-primary shadow-lg py-1">
               {domains.map((d) => (
-                <button key={d.id} onClick={() => { setActiveDomainId(d.id); setDropdownOpen(false); }}
-                  className={"flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors " +
-                    (activeDomainId === d.id ? "bg-active font-medium text-primary" : "text-secondary hover:bg-secondary_alt")}>
-                  <div className="flex items-center gap-2.5">
+                <div key={d.id} className={"flex w-full items-center transition-colors " + (activeDomainId === d.id ? "bg-active" : "hover:bg-secondary_alt")}>
+                  <button onClick={() => { setActiveDomainId(d.id); setDropdownOpen(false); }}
+                    className="flex flex-1 items-center gap-2.5 px-3 py-2.5 text-left text-sm min-w-0">
                     <span className={"size-2 rounded-full shrink-0 " + d.color} />
-                    <span>{d.label}</span>
-                  </div>
-                  <span className="text-xs text-quaternary">{d.tasks.filter(t => t.enabled).length}</span>
-                </button>
+                    <span className={"truncate " + (activeDomainId === d.id ? "font-medium text-primary" : "text-secondary")}>{d.label}</span>
+                    <span className="ml-auto text-xs text-quaternary shrink-0">{d.tasks.filter(t => t.enabled).length}</span>
+                  </button>
+                  {domains.length > 1 && (
+                    <button onClick={(e) => { e.stopPropagation(); if (confirm("Delete the \"" + d.label + "\" workflow? This cannot be undone.")) { handleDeleteWorkflow(d.id); setDropdownOpen(false); }}}
+                      className="flex size-8 shrink-0 items-center justify-center mr-1 rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"
+                      title="Delete workflow">
+                      <Trash01 className="size-3.5" aria-hidden />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -343,7 +444,7 @@ function TaskBuilder() {
         <div className="flex items-center gap-2">
           <p className="text-xs text-tertiary hidden sm:block">{domain.description}</p>
 
-          {/* + Add action button with dropdown */}
+          {/* + Add action button */}
           <div className="relative" ref={addMenuRef}>
             <button onClick={() => setAddMenuOpen(!addMenuOpen)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
@@ -379,7 +480,7 @@ function TaskBuilder() {
       <div className="mx-4 sm:mx-6 mt-4 flex items-start gap-2 rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
         <InfoCircle className="size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
         <p className="text-xs text-tertiary leading-relaxed">
-          <strong className="text-secondary font-medium">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete. Drag rows to reorder. Lock tasks to protect from reordering.
+          <strong className="text-secondary font-medium">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete. Tasks marked as <strong className="text-secondary font-medium">Attempted</strong> will trigger their configured sub-tasks instead. Drag rows to reorder.
         </p>
       </div>
 
