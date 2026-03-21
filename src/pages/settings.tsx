@@ -49,7 +49,7 @@ interface DomainConfig {
   templates: WorkflowTemplate[];
 }
 
-// âââ Initial data âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Initial data Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 const initialDomains: DomainConfig[] = [
   {
     id: "application", label: "Application",
@@ -110,7 +110,7 @@ const initialDomains: DomainConfig[] = [
   },
 ];
 
-// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Helpers Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 const STATUS_STYLES: Record<TemplateStatus, string> = {
   draft: "bg-secondary text-tertiary",
   published: "bg-success-secondary text-success-primary",
@@ -130,7 +130,7 @@ function buildTaskLibrary(domains: DomainConfig[]): TaskItem[] {
   return lib;
 }
 
-// âââ Confirm modal ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Confirm modal Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, onClose }: {
   title: string; message: React.ReactNode; confirmLabel: string; confirmClass: string;
   onConfirm: () => void; onClose: () => void;
@@ -154,24 +154,24 @@ function ConfirmModal({ title, message, confirmLabel, confirmClass, onConfirm, o
   );
 }
 
-// âââ 4-Step Creation Wizard âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ 4-Step Creation Wizard Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 interface WizardState {
   step: WizardStep;
-  // Step 1 â workflow
+  // Step 1 Ã¢ÂÂ workflow
   workflowMode: "existing" | "new";
   selectedDomainId: string;
   newWorkflowName: string;
   newWorkflowDesc: string;
   newWorkflowColor: string;
-  // Step 2 â template
+  // Step 2 Ã¢ÂÂ template
   templateMode: "existing" | "new";
   selectedTemplateId: string;
   newTemplateName: string;
   newTemplatePractices: string[];
   copyFromTemplateId: string;
-  // Step 3 â tasks (edit the task list)
+  // Step 3 Ã¢ÂÂ tasks (edit the task list)
   tasks: TaskItem[];
-  // Step 4 â review (status)
+  // Step 4 Ã¢ÂÂ review (status)
   publishNow: boolean;
 }
 
@@ -235,7 +235,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
       const srcTasks = domains.flatMap(d => d.templates).find(t => t.id === s.copyFromTemplateId)?.tasks ?? [];
       setS(prev => ({ ...prev, tasks: [...srcTasks], step: 3 }));
     } else {
-      setS(prev => ({ ...prev, tasks: [], step: (prev.step + 1) as WizardStep }));
+      setS(prev => ({ ...prev, tasks: prev.step === 2 ? [] : prev.tasks, step: (prev.step + 1) as WizardStep }));
     }
   }
 
@@ -290,7 +290,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
         <div className="flex items-center justify-between border-b border-secondary px-6 py-4 flex-shrink-0">
           <div>
             <h2 className="text-base font-semibold text-primary">Task chain builder</h2>
-            <p className="text-sm text-tertiary mt-0.5">Step {s.step} of 4 â {STEP_LABELS[s.step - 1]}</p>
+            <p className="text-sm text-tertiary mt-0.5">Step {s.step} of 4 Ã¢ÂÂ {STEP_LABELS[s.step - 1]}</p>
           </div>
           <button onClick={onClose} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary transition-colors"><X className="size-4" aria-hidden /></button>
         </div>
@@ -318,7 +318,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-5">
 
-          {/* ââ Step 1: Workflow ââ */}
+          {/* Ã¢ÂÂÃ¢ÂÂ Step 1: Workflow Ã¢ÂÂÃ¢ÂÂ */}
           {s.step === 1 && (
             <div className="space-y-5">
               <p className="text-sm text-tertiary">Select an existing workflow or create a new one.</p>
@@ -369,7 +369,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
             </div>
           )}
 
-          {/* ââ Step 2: Template ââ */}
+          {/* Ã¢ÂÂÃ¢ÂÂ Step 2: Template Ã¢ÂÂÃ¢ÂÂ */}
           {s.step === 2 && (
             <div className="space-y-5">
               <p className="text-sm text-tertiary">
@@ -398,7 +398,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
                           <p className="text-sm font-medium text-primary">{t.name}</p>
                           <StatusBadge status={t.status} />
                         </div>
-                        <p className="text-xs text-tertiary mt-0.5">Applies to: {t.practices.join(", ")} Â· {t.tasks.length} tasks</p>
+                        <p className="text-xs text-tertiary mt-0.5">Applies to: {t.practices.join(", ")} ÃÂ· {t.tasks.length} tasks</p>
                       </div>
                       {s.selectedTemplateId === t.id && <Check className="size-4 text-brand-secondary shrink-0" aria-hidden />}
                     </button>
@@ -439,7 +439,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
                     <label className="block text-sm font-medium text-secondary">Copy tasks from <span className="font-normal text-tertiary">(optional)</span></label>
                     <select value={s.copyFromTemplateId} onChange={e => setS(prev => ({ ...prev, copyFromTemplateId: e.target.value }))} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand">
                       <option value="">Start from scratch</option>
-                      {domains.flatMap(d => d.templates.map(t => ({ id: t.id, label: d.label + " â " + t.name }))).map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                      {domains.flatMap(d => d.templates.map(t => ({ id: t.id, label: d.label + " Ã¢ÂÂ " + t.name }))).map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -447,7 +447,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
             </div>
           )}
 
-          {/* ââ Step 3: Tasks ââ */}
+          {/* Ã¢ÂÂÃ¢ÂÂ Step 3: Tasks Ã¢ÂÂÃ¢ÂÂ */}
           {s.step === 3 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -477,7 +477,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-primary truncate">{task.name}</p>
-                      <p className="text-xs text-tertiary">{idx === 0 ? "Fires on object created" : "Fires when previous is completed"}{task.condition ? " Â· if " + task.condition : ""}</p>
+                      <p className="text-xs text-tertiary">{idx === 0 ? "Fires on object created" : "Fires when previous is completed"}{task.condition ? " ÃÂ· if " + task.condition : ""}</p>
                     </div>
                     <span className="text-xs text-quaternary shrink-0">{task.assigneeRole}</span>
                     <button onClick={() => removeTask(task.id)} className="flex size-7 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"><X className="size-3.5" aria-hidden /></button>
@@ -490,7 +490,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
             </div>
           )}
 
-          {/* ââ Step 4: Review & Publish ââ */}
+          {/* Ã¢ÂÂÃ¢ÂÂ Step 4: Review & Publish Ã¢ÂÂÃ¢ÂÂ */}
           {s.step === 4 && (
             <div className="space-y-5">
               <p className="text-sm text-tertiary">Review your configuration before saving.</p>
@@ -578,7 +578,7 @@ function NewTaskInline({ onAdd }: { onAdd: (task: Partial<TaskItem>) => void }) 
   );
 }
 
-// âââ Task row (for task chain view) ââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Task row (for task chain view) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
   task: TaskItem; index: number; isFirst: boolean; domainColor: string;
   onToggle: (id: number) => void; onEdit: (t: TaskItem) => void; onDelete: (id: number) => void;
@@ -619,7 +619,7 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
   );
 }
 
-// âââ Edit task modal âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Edit task modal Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (t: TaskItem) => void; onClose: () => void }) {
   const [form, setForm] = useState<TaskItem>(task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true });
   return (
@@ -645,7 +645,7 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
   );
 }
 
-// âââ Task Builder ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Task Builder Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function TaskBuilder() {
   const [domains, setDomains] = useState<DomainConfig[]>(initialDomains);
   const [view, setView] = useState<TaskBuilderView>("workflows");
@@ -703,7 +703,7 @@ function TaskBuilder() {
     setDragOverIndex(null); setDragIndex(null);
   }
 
-  // ââ View: Workflows table ââ
+  // Ã¢ÂÂÃ¢ÂÂ View: Workflows table Ã¢ÂÂÃ¢ÂÂ
   if (view === "workflows") {
     return (
       <div className="p-4 sm:p-6">
@@ -750,7 +750,7 @@ function TaskBuilder() {
     );
   }
 
-  // ââ View: Templates table ââ
+  // Ã¢ÂÂÃ¢ÂÂ View: Templates table Ã¢ÂÂÃ¢ÂÂ
   if (view === "templates" && activeDomain) {
     return (
       <div className="p-4 sm:p-6">
@@ -799,7 +799,7 @@ function TaskBuilder() {
     );
   }
 
-  // ââ View: Tasks (drag-drop chain) ââ
+  // Ã¢ÂÂÃ¢ÂÂ View: Tasks (drag-drop chain) Ã¢ÂÂÃ¢ÂÂ
   if (view === "tasks" && activeDomain && activeTemplate) {
     return (
       <div className="flex flex-col min-h-0">
@@ -868,7 +868,7 @@ function TaskBuilder() {
   return null;
 }
 
-// âââ Placeholder âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Placeholder Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function PlaceholderSection({ title }: { title: string; description?: string }) {
   return (
     <div className="flex flex-1 items-center justify-center p-12">
@@ -881,7 +881,7 @@ function PlaceholderSection({ title }: { title: string; description?: string }) 
   );
 }
 
-// âââ Settings page âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Settings page Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 export function Settings() {
   const [activeTab, setActiveTab] = useState("task-builder");
   return (
