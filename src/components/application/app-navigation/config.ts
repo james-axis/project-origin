@@ -1,6 +1,5 @@
 import type { FC, ReactNode } from "react";
 import {
-    AlertTriangle,
     Announcement01,
     BarChartSquare02,
     CheckDone01,
