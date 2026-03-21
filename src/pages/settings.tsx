@@ -80,9 +80,9 @@ function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (
     task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true }
   );
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-overlay" onClick={onClose} />
-      <div className="relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border border-secondary bg-primary shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-secondary bg-primary shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-secondary px-5 py-4">
           <div>
             <h3 className="text-base font-medium text-primary">{task ? "Edit task" : "New task"}</h3>
@@ -234,7 +234,6 @@ function TaskBuilder() {
         </button>
       </div>
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col sm:flex-row">
-        {/* Mobile: horizontal pill tabs */}
         <div className="flex sm:hidden gap-2 overflow-x-auto px-4 py-3 border-b border-secondary">
           {domains.map((d) => (
             <button key={d.id} onClick={() => setActiveDomain(d.id)}
@@ -246,7 +245,6 @@ function TaskBuilder() {
             </button>
           ))}
         </div>
-        {/* Desktop: vertical sidebar */}
         <div className="hidden sm:block w-52 shrink-0 border-r border-secondary bg-secondary_alt overflow-y-auto">
           <div className="p-3 space-y-0.5">
             {domains.map((d) => (
@@ -265,7 +263,6 @@ function TaskBuilder() {
             ))}
           </div>
         </div>
-        {/* Task chain */}
         <div className="flex flex-1 flex-col min-w-0 overflow-y-auto">
           <div className="flex items-center justify-between border-b border-secondary px-4 sm:px-6 py-3 sm:py-4 gap-3">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -339,7 +336,6 @@ export function Settings() {
 
   return (
     <div className="flex flex-col sm:flex-row h-full min-h-screen">
-      {/* Mobile top bar */}
       <div className="flex sm:hidden items-center justify-between border-b border-secondary px-4 py-3 bg-primary">
         <div className="flex items-center gap-2">
           {activeNav && <activeNav.icon className="size-4 text-fg-secondary" aria-hidden />}
@@ -350,7 +346,6 @@ export function Settings() {
           <Menu01 className="size-3.5" aria-hidden />Menu
         </button>
       </div>
-      {/* Mobile nav dropdown */}
       {navOpen && (
         <div className="sm:hidden border-b border-secondary bg-secondary_alt px-4 py-2">
           {settingsNav.map((item) => {
@@ -367,7 +362,6 @@ export function Settings() {
           })}
         </div>
       )}
-      {/* Desktop sidebar */}
       <aside className="hidden sm:block w-52 shrink-0 border-r border-secondary">
         <div className="px-4 py-6">
           <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-quaternary">Settings</p>
@@ -387,7 +381,6 @@ export function Settings() {
           </nav>
         </div>
       </aside>
-      {/* Content */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {activeSection === "task-builder" && <TaskBuilder />}
         {activeSection === "general" && <PlaceholderSection title="General" description="Organisation name, timezone, and platform preferences" />}
