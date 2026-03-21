@@ -1,7 +1,7 @@
 import { Plus } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
-import { SidebarNavigationSectionDividers } from "@/components/application/app-navigation/sidebar-navigation/sidebar-section-dividers";
-import { navItems } from "@/components/application/app-navigation/config";
+import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
+import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import { useState } from "react";
 
 const AVAILABLE_WIDGETS = [
@@ -64,7 +64,7 @@ const AddWidgetModal = ({ open, onClose, onAdd, active }: { open: boolean; onClo
                     })}
                 </div>
                 <div className="mt-5 flex justify-end">
-                    <Button color="secondary" size="sm" onClick={() => onClose()}>Cancel</Button>
+                    <Button color="secondary" size="sm" onPress={onClose}>Cancel</Button>
                 </div>
             </div>
         </div>
@@ -80,14 +80,18 @@ export const HomeScreen = () => {
 
     return (
         <div className="flex h-screen bg-primary overflow-hidden">
-            <SidebarNavigationSectionDividers activeUrl="/" items={navItems} />
+            <SidebarNavigationSlim
+                activeUrl="/"
+                items={navItems}
+                footerItems={footerNavItems}
+            />
             <div className="flex flex-1 flex-col overflow-hidden">
                 <header className="flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
                     <div>
                         <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                         <p className="text-xs text-tertiary">Your personalised CRM dashboard</p>
                     </div>
-                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                    <Button color="primary" size="sm" onPress={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
                         <Plus className="size-4 mr-1.5" /> Add widget
                     </Button>
                 </header>
@@ -101,7 +105,7 @@ export const HomeScreen = () => {
                                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
                                 <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
                             </div>
-                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                            <Button color="primary" size="md" onPress={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
                                 <Plus className="size-4 mr-1.5" /> Add your first widget
                             </Button>
                         </div>
