@@ -79,7 +79,7 @@ export const HomeScreen = () => {
     const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id)!;
 
     return (
-        <div className="flex min-h-screen bg-primary">
+        <div className="lg:flex min-h-screen bg-primary">
             {/* Slim sidebar — fixed, self-positions, renders own spacer div to push content */}
             <SidebarNavigationSlim
                 activeUrl="/"
@@ -88,7 +88,7 @@ export const HomeScreen = () => {
             />
 
             {/* Page content */}
-            <main className="flex-1 min-h-screen bg-primary overflow-x-hidden">
+            <main className="min-h-screen bg-primary overflow-x-hidden lg:flex-1">
                 {/* Page header */}
                 <div className="border-b border-secondary px-8 pt-8 pb-6">
                     <div className="flex items-start justify-between pt-16 lg:pt-0">
