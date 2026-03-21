@@ -80,9 +80,9 @@ function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (
     task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true }
   );
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-secondary bg-primary shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
+      <div className="relative z-10 w-full sm:max-w-lg rounded-2xl border border-secondary bg-primary shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-secondary px-5 py-4">
           <div>
             <h3 className="text-base font-medium text-primary">{task ? "Edit task" : "New task"}</h3>
@@ -336,16 +336,15 @@ export function Settings() {
 
   return (
     <div className="flex flex-col sm:flex-row h-full min-h-screen">
+      {/* Mobile top bar — no logo, just section name + menu toggle */}
       <div className="flex sm:hidden items-center justify-between border-b border-secondary px-4 py-3 bg-primary">
-        <div className="flex items-center gap-2">
-          {activeNav && <activeNav.icon className="size-4 text-fg-secondary" aria-hidden />}
-          <span className="text-sm font-medium text-primary">{activeNav?.label}</span>
-        </div>
+        <span className="text-sm font-medium text-primary">{activeNav?.label}</span>
         <button onClick={() => setNavOpen(!navOpen)}
           className="flex items-center gap-1 rounded-lg border border-secondary px-2.5 py-1.5 text-xs text-secondary hover:bg-secondary transition-colors">
           <Menu01 className="size-3.5" aria-hidden />Menu
         </button>
       </div>
+      {/* Mobile nav dropdown */}
       {navOpen && (
         <div className="sm:hidden border-b border-secondary bg-secondary_alt px-4 py-2">
           {settingsNav.map((item) => {
@@ -362,6 +361,7 @@ export function Settings() {
           })}
         </div>
       )}
+      {/* Desktop sidebar */}
       <aside className="hidden sm:block w-52 shrink-0 border-r border-secondary">
         <div className="px-4 py-6">
           <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-quaternary">Settings</p>
@@ -381,6 +381,7 @@ export function Settings() {
           </nav>
         </div>
       </aside>
+      {/* Content */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {activeSection === "task-builder" && <TaskBuilder />}
         {activeSection === "general" && <PlaceholderSection title="General" description="Organisation name, timezone, and platform preferences" />}
