@@ -5,7 +5,6 @@ import {
   Zap, Toggle01Right, X, Check, InfoCircle,
 } from "@untitledui/icons";
 
-type Domain = "application" | "dishonour" | "claim";
 type TriggerType = "object_created" | "task_completed";
 
 interface TaskItem {
@@ -212,8 +211,8 @@ function NewWorkflowModal({ onSave, onClose }: { onSave: (d: DomainConfig) => vo
 function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
   task: TaskItem; index: number; isFirst: boolean; domainColor: string;
   onToggle: (id: number) => void; onEdit: (t: TaskItem) => void; onDelete: (id: number) => void;
-  onDragStart: (e: DragEvent, i: number) => void; onDragOver: (e: DragEvent, i: number) => void;
-  onDrop: (e: DragEvent, i: number) => void; isDragOver: boolean;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>, i: number) => void; onDragOver: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>, i: number) => void; isDragOver: boolean;
 }) {
   return (
     <div draggable={!task.locked} onDragStart={(e) => onDragStart(e, index)} onDragOver={(e) => onDragOver(e, index)} onDrop={(e) => onDrop(e, index)}
@@ -299,9 +298,9 @@ function TaskBuilder() {
     setDomains(prev => [...prev, d]);
     setActiveDomainId(d.id);
   };
-  const handleDragStart = (_: DragEvent, i: number) => setDragIndex(i);
-  const handleDragOver = (e: DragEvent, i: number) => { e.preventDefault(); setDragOverIndex(i); };
-  const handleDrop = (_: DragEvent, dropIndex: number) => {
+  const handleDragStart = (_: React.DragEvent<HTMLDivElement>, i: number) => setDragIndex(i);
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, i: number) => { e.preventDefault(); setDragOverIndex(i); };
+  const handleDrop = (_: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
     if (dragIndex === null || dragIndex === dropIndex) { setDragOverIndex(null); setDragIndex(null); return; }
     const tasks = [...domain.tasks];
     const [moved] = tasks.splice(dragIndex, 1);
