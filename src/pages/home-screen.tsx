@@ -3,6 +3,8 @@ import { Button } from "@/components/base/buttons/button";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import { useState } from "react";
+import { useLocation } from "react-router";
+import { Settings } from "@/pages/settings";
 
 const AVAILABLE_WIDGETS = [
     { id: "tasks",        label: "Tasks",        description: "Overdue and due today" },
@@ -39,94 +41,110 @@ const WidgetCard = ({ label, description, onRemove }: { label: string; descripti
     </div>
 );
 
-const AddWidgetModal = ({ open, onClose, onAdd, active }: { open: boolean; onClose: () => void; onAdd: (id: string) => void; active: string[] }) => {
+const AddWidgetModal = ({ open, onClose, onAdd, existingWidgets }: { open: boolean; onClose: () => void; onAdd: (id: string) => void; existingWidgets: string[] }) => {
     if (!open) return null;
+    const available = AVAILABLE_WIDGETS.filter(w => !existingWidgets.includes(w.id));
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-secondary bg-primary shadow-xl p-6">
-                <div className="mb-5">
-                    <h2 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Add a widget</h2>
-                    <p className="text-sm text-tertiary mt-1">Select a module to add to your Workbench.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-overlay" onClick={onClose} />
+            <div className="relative z-10 w-full max-w-md rounded-2xl border border-secondary bg-primary shadow-2xl">
+                <div className="flex items-center justify-between border-b border-secondary px-6 py-4">
+                    <h2 className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Add widget</h2>
+                    <button onClick={onClose} className="text-sm text-quaternary hover:text-secondary transition">Close</button>
                 </div>
-                <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
-                    {AVAILABLE_WIDGETS.map(w => {
-                        const isActive = active.includes(w.id);
-                        return (
-                            <button key={w.id} disabled={isActive} onClick={() => { onAdd(w.id); onClose(); }}
-                                className={`flex items-center justify-between rounded-lg px-4 py-3 border transition text-left ${isActive ? "border-secondary bg-secondary_alt opacity-50 cursor-not-allowed" : "border-secondary bg-primary hover:border-[#D34108] hover:bg-[#FFF4F1] cursor-pointer"}`}>
-                                <div>
-                                    <p className="text-sm font-semibold text-primary">{w.label}</p>
-                                    <p className="text-xs text-tertiary mt-0.5">{w.description}</p>
-                                </div>
-                                {isActive && <span className="text-xs text-quaternary ml-4 shrink-0">Added</span>}
-                            </button>
-                        );
-                    })}
-                </div>
-                <div className="mt-5 flex justify-end">
-                    <Button color="secondary" size="sm" onClick={() => onClose()}>Cancel</Button>
+                <div className="p-4 grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                    {available.length === 0 ? (
+                        <p className="col-span-2 text-center text-sm text-quaternary py-8">All widgets added</p>
+                    ) : available.map(w => (
+                        <button
+                            key={w.id}
+                            onClick={() => { onAdd(w.id); onClose(); }}
+                            className="flex flex-col gap-1 rounded-xl border border-secondary bg-primary p-4 text-left hover:border-[#D34108] hover:bg-[#FFF4F1] transition"
+                        >
+                            <p className="text-sm font-semibold text-primary">{w.label}</p>
+                            <p className="text-xs text-quaternary">{w.description}</p>
+                        </button>
+                    ))}
                 </div>
             </div>
         </div>
     );
 };
 
-export const HomeScreen = () => {
+export function HomeScreen() {
+    const location = useLocation();
+    const isSettings = location.pathname === "/settings" || location.pathname.startsWith("/settings/");
+
     const [widgets, setWidgets] = useState<string[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
-    const addWidget = (id: string) => setWidgets(p => [...p, id]);
-    const removeWidget = (id: string) => setWidgets(p => p.filter(w => w !== id));
-    const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id)!;
+
+    const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id) ?? { label: id, description: "" };
+    const addWidget = (id: string) => setWidgets(prev => [...prev, id]);
+    const removeWidget = (id: string) => setWidgets(prev => prev.filter(w => w !== id));
+    const slots = [...widgets, ...Array(Math.max(0, 3 - widgets.length)).fill(null)];
 
     return (
         <div className="lg:flex min-h-screen bg-primary">
-            {/* Slim sidebar — fixed, self-positions, renders own spacer div to push content */}
-            <SidebarNavigationSlim
-                activeUrl="/"
-                items={navItems}
-                footerItems={footerNavItems}
-            />
-
-            {/* Page content */}
-            <main className="min-h-screen bg-primary overflow-x-hidden lg:flex-1">
-                {/* Page header */}
-                <div className="border-b border-secondary px-8 pt-8 pb-6">
-                    <div className="flex items-start justify-between pt-16 lg:pt-0">
-                        <div>
-                            <h1 className="text-2xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
-                            <p className="text-sm text-tertiary mt-1">Your personalised CRM dashboard</p>
-                        </div>
-                        <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
-                            <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
-                        </Button>
-                    </div>
+            <SidebarNavigationSlim navItems={navItems} footerNavItems={footerNavItems} />
+            <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
+            <header className="flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
+                <div className="flex items-center gap-2">
+                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                        <path d="M4 16L16 4L28 16L16 28L4 16Z" fill="#D34108" />
+                    </svg>
+                    <span className="text-sm font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>AXIS</span>
                 </div>
-
-                {/* Widget area */}
-                <div className="p-4 pt-4 lg:p-8 lg:pt-4">
-                    {widgets.length === 0 ? (
-                        <div className="flex min-h-[70vh] flex-col items-center justify-center gap-5 text-center">
-                            <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-secondary">
-                                <Plus className="size-7 text-fg-quaternary" />
-                            </div>
+            </header>
+            <main className="min-h-screen bg-primary overflow-x-hidden lg:flex-1">
+                {isSettings ? (
+                    <Settings />
+                ) : (
+                    <div className="flex flex-col h-full">
+                        <div className="flex items-center justify-between border-b border-secondary px-6 py-4 lg:px-8">
                             <div>
-                                <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
-                                <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
+                                <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
+                                <p className="text-sm text-tertiary">Your personalised CRM dashboard</p>
                             </div>
-                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108] mt-2">
-                                <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add your first widget</span>
+                            <Button
+                                color="primary"
+                                size="md"
+                                iconLeading={Plus}
+                                onPress={() => setModalOpen(true)}
+                                className="!bg-[#D34108] hover:!bg-[#B83507]"
+                            >
+                                Add widget
                             </Button>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            {widgets.map(id => <WidgetCard key={id} label={getWidget(id).label} description={getWidget(id).description} onRemove={() => removeWidget(id)} />)}
-                            <EmptySlot onAdd={() => setModalOpen(true)} />
+                        <div className="p-4 pt-4 lg:p-8 lg:pt-6">
+                            {widgets.length === 0 ? (
+                                <div className="flex min-h-[70vh] flex-col items-center justify-center gap-5 text-center">
+                                    <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-secondary bg-primary shadow-xs">
+                                        <Plus className="size-7 text-fg-quaternary" />
+                                    </div>
+                                    <div>
+                                        <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
+                                        <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
+                                    </div>
+                                    <Button
+                                        color="primary"
+                                        size="md"
+                                        onPress={() => setModalOpen(true)}
+                                        className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]"
+                                    >
+                                        <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add your first widget</span>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {widgets.map(id => <WidgetCard key={id} label={getWidget(id).label} description={getWidget(id).description} onRemove={() => removeWidget(id)} />)}
+                                    <EmptySlot onAdd={() => setModalOpen(true)} />
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </main>
-
-            <AddWidgetModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addWidget} active={widgets} />
+            <AddWidgetModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addWidget} existingWidgets={widgets} />
         </div>
     );
-};
+}
