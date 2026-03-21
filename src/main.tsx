@@ -14,9 +14,8 @@ createRoot(document.getElementById("root")!).render(
             <BrowserRouter>
                 <RouteProvider>
                     <Routes>
-                        <Route path="/" element={<Login />} />
+                        <Route path="/" element={<HomeScreen />} />
                         <Route path="/login" element={<Login />} />
-                        <Route path="/home" element={<HomeScreen />} />
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </RouteProvider>
