@@ -8,7 +8,7 @@ import {
     FileCheck02,
     FileSearch02,
     HomeLine,
-    MessageChatCircle,
+    LifeBuoy01,
     Settings01,
     ShieldTick,
     Users01,
@@ -36,9 +36,8 @@ export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider">
     divider: true;
 };
 
-export const navItems: (NavItemType | NavItemDividerType)[] = [
+export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
     { label: "Workbench", href: "/", icon: HomeLine },
-    { divider: true },
     { label: "Clients", href: "/clients", icon: Users01 },
     { label: "Tasks", href: "/tasks", icon: CheckDone01 },
     { label: "Applications", href: "/applications", icon: FileCheck02 },
@@ -48,8 +47,10 @@ export const navItems: (NavItemType | NavItemDividerType)[] = [
     { label: "Dishonours", href: "/dishonours", icon: AlertTriangle },
     { label: "Commissions", href: "/commissions", icon: BarChartSquare02 },
     { label: "Complaints", href: "/complaints", icon: Announcement01 },
-    { divider: true },
     { label: "Reports", href: "/reports", icon: BarChartSquare02 },
+];
+
+export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
+    { label: "Support", href: "/support", icon: LifeBuoy01 },
     { label: "Settings", href: "/settings", icon: Settings01 },
-    { label: "Support", href: "/support", icon: MessageChatCircle },
 ];
