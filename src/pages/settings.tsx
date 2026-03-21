@@ -1,58 +1,84 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01,
-  ChevronRight, ChevronDown, Plus, DotsGrid, Trash01,
-  Edit01, Lock01, Zap, Toggle01Right, X, Check, InfoCircle,
+  ChevronDown, Plus, DotsGrid, Trash01, Edit01, Lock01,
+  Zap, Toggle01Right, X, Check, InfoCircle,
 } from "@untitledui/icons";
 
-type Domain = "lead" | "application" | "dishonour" | "claim";
+type Domain = "application" | "dishonour" | "claim";
 type TriggerType = "object_created" | "task_completed";
 
 interface TaskItem {
-  id: number; name: string; triggerType: TriggerType;
-  assigneeRole: string; enabled: boolean;
-  locked?: boolean; condition?: string; completionOptions?: string[];
+  id: number;
+  name: string;
+  triggerType: TriggerType;
+  assigneeRole: string;
+  enabled: boolean;
+  locked?: boolean;
+  condition?: string;
+  completionOptions?: string[];
 }
+
 interface DomainConfig {
-  id: Domain; label: string; description: string; tasks: TaskItem[];
+  id: string;
+  label: string;
+  description: string;
+  tasks: TaskItem[];
+  color: string;
 }
 
 const initialDomains: DomainConfig[] = [
-  { id: "lead", label: "Lead", description: "Pre-sale client journey from new lead to application", tasks: [
-    { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
-    { id: 207, name: "Initial Life Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 147, name: "Life Insurance Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 102, name: "Quote Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 150, name: "Life Insurance Follow-up", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 172, name: "Book Insurance Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-  ]},
-  { id: "application", label: "Application", description: "Application submission through to inforce or cancellation", tasks: [
-    { id: 134, name: "Add Policy / Application Number", triggerType: "object_created", assigneeRole: "Admin", enabled: true },
-    { id: 117, name: "Send application submitted email to client", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 159, name: "Upload face to face documents", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, condition: "meeting_type = face_to_face" },
-    { id: 99, name: "Compliance Audit", triggerType: "task_completed", assigneeRole: "Services", enabled: true, locked: true, completionOptions: ["Pass", "On Hold", "Remediation Required"] },
-    { id: 135, name: "Compliance Billing", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-    { id: 154, name: "Audit Finalisation", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-    { id: 133, name: "Input life insurance amounts & premiums", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
-    { id: 180, name: "Inforce call & email", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-  ]},
-  { id: "dishonour", label: "Dishonour", description: "Missed payment recovery flow", tasks: [
-    { id: 36, name: "Initial follow up", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
-    { id: 183, name: "Check if policy is paid up to date", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
-    { id: 230, name: "Support action - call / email", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 59, name: "Re-attempt follow up", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
-    { id: 44, name: "Re-instatement form", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
-  ]},
-  { id: "claim", label: "Claim", description: "End-to-end claim lodgement and assessment", tasks: [
-    { id: 47, name: "Initial claims form", triggerType: "object_created", assigneeRole: "Services", enabled: true },
-    { id: 64, name: "Certified ID", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
-    { id: 48, name: "Medicare release form", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-    { id: 53, name: "Initial doctors form", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-    { id: 49, name: "Financials", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-    { id: 52, name: "TFN declaration", triggerType: "task_completed", assigneeRole: "Services", enabled: true, condition: "claim_type = income_protection" },
-    { id: 51, name: "Payment forms", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-    { id: 50, name: "Follow-up assessment", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
-  ]},
+  {
+    id: "application",
+    label: "Application",
+    description: "Full client journey from new lead through to inforce or cancellation",
+    color: "bg-brand-solid",
+    tasks: [
+      { id: 166, name: "Introduction Call", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
+      { id: 207, name: "Initial Life Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 147, name: "Life Insurance Discussion", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 102, name: "Quote Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 150, name: "Life Insurance Follow-up", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 172, name: "Book Insurance Review", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 134, name: "Add Policy / Application Number", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+      { id: 117, name: "Send application submitted email to client", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 159, name: "Upload face to face documents", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, condition: "meeting_type = face_to_face" },
+      { id: 99, name: "Compliance Audit", triggerType: "task_completed", assigneeRole: "Services", enabled: true, locked: true, completionOptions: ["Pass", "On Hold", "Remediation Required"] },
+      { id: 135, name: "Compliance Billing", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+      { id: 154, name: "Audit Finalisation", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+      { id: 133, name: "Input life insurance amounts & premiums", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+      { id: 180, name: "Inforce call & email", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+    ],
+  },
+  {
+    id: "dishonour",
+    label: "Dishonour",
+    description: "Missed payment recovery flow",
+    color: "bg-warning-solid",
+    tasks: [
+      { id: 36, name: "Initial follow up", triggerType: "object_created", assigneeRole: "Consultant", enabled: true },
+      { id: 183, name: "Check if policy is paid up to date", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+      { id: 230, name: "Support action - call / email", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 59, name: "Re-attempt follow up", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
+      { id: 44, name: "Re-instatement form", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+    ],
+  },
+  {
+    id: "claim",
+    label: "Claim",
+    description: "End-to-end claim lodgement and assessment",
+    color: "bg-error-solid",
+    tasks: [
+      { id: 47, name: "Initial claims form", triggerType: "object_created", assigneeRole: "Services", enabled: true },
+      { id: 64, name: "Certified ID", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
+      { id: 48, name: "Medicare release form", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+      { id: 53, name: "Initial doctors form", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+      { id: 49, name: "Financials", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+      { id: 52, name: "TFN declaration", triggerType: "task_completed", assigneeRole: "Services", enabled: true, condition: "claim_type = income_protection" },
+      { id: 51, name: "Payment forms", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+      { id: 50, name: "Follow-up assessment", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
+    ],
+  },
 ];
 
 const ASSIGNEE_ROLES = ["Consultant", "Admin", "Services", "Compliance", "Manager"];
@@ -65,17 +91,6 @@ const settingsTabs = [
   { id: "notifications", label: "Notifications", icon: Bell01 },
   { id: "integrations", label: "Integrations", icon: Link01 },
 ];
-
-const domainDotMap: Record<Domain, string> = {
-  lead: "bg-brand-solid", application: "bg-success-solid",
-  dishonour: "bg-warning-solid", claim: "bg-error-solid",
-};
-const domainBadgeMap: Record<Domain, string> = {
-  lead: "bg-brand-secondary text-brand-secondary",
-  application: "bg-success-secondary text-success-primary",
-  dishonour: "bg-warning-secondary text-warning-primary",
-  claim: "bg-error-secondary text-error-primary",
-};
 
 function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (t: TaskItem) => void; onClose: () => void }) {
   const [form, setForm] = useState<TaskItem>(
@@ -141,8 +156,61 @@ function EditModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (
   );
 }
 
-function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
-  task: TaskItem; index: number; isFirst: boolean; domain: Domain;
+function NewWorkflowModal({ onSave, onClose }: { onSave: (d: DomainConfig) => void; onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const colors = ["bg-brand-solid", "bg-success-solid", "bg-warning-solid", "bg-error-solid", "bg-purple-500", "bg-blue-500"];
+  const [color, setColor] = useState("bg-brand-solid");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
+      <div className="relative z-10 w-full sm:max-w-md rounded-2xl border border-secondary bg-primary shadow-2xl">
+        <div className="flex items-center justify-between border-b border-secondary px-5 py-4">
+          <div>
+            <h3 className="text-base font-medium text-primary">New workflow</h3>
+            <p className="text-sm text-tertiary">Create a new task chain domain</p>
+          </div>
+          <button onClick={onClose} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary transition-colors">
+            <X className="size-4" aria-hidden />
+          </button>
+        </div>
+        <div className="space-y-4 px-5 py-4">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Workflow name</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary placeholder:text-placeholder outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-colors"
+              placeholder="e.g. Complaints" autoFocus />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Description</label>
+            <input value={desc} onChange={e => setDesc(e.target.value)}
+              className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary placeholder:text-placeholder outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-colors"
+              placeholder="e.g. End-to-end complaints handling" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Colour</label>
+            <div className="flex gap-2">
+              {colors.map(c => (
+                <button key={c} onClick={() => setColor(c)}
+                  className={"size-7 rounded-full " + c + (color === c ? " ring-2 ring-offset-2 ring-brand" : "")} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 border-t border-secondary px-5 py-4">
+          <button onClick={onClose} className="flex-1 inline-flex items-center justify-center rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
+          <button onClick={() => { if (name.trim()) { onSave({ id: name.toLowerCase().replace(/\s+/g, '-'), label: name.trim(), description: desc, color, tasks: [] }); onClose(); }}} disabled={!name.trim()}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors disabled:opacity-50">
+            <Check className="size-3.5" aria-hidden />Create workflow
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
+  task: TaskItem; index: number; isFirst: boolean; domainColor: string;
   onToggle: (id: number) => void; onEdit: (t: TaskItem) => void; onDelete: (id: number) => void;
   onDragStart: (e: React.DragEvent, i: number) => void; onDragOver: (e: React.DragEvent, i: number) => void;
   onDrop: (e: React.DragEvent, i: number) => void; isDragOver: boolean;
@@ -157,7 +225,7 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
       </div>
       <div className="flex flex-col items-center w-6 shrink-0 mt-0.5">
         {isFirst ? (
-          <div className={"flex size-6 items-center justify-center rounded-full " + domainBadgeMap[domain]}><Zap className="size-3" aria-hidden /></div>
+          <div className={"flex size-6 items-center justify-center rounded-full text-white " + domainColor}><Zap className="size-3" aria-hidden /></div>
         ) : (
           <div className="flex size-6 items-center justify-center rounded-full bg-secondary text-xs font-medium text-tertiary">{index + 1}</div>
         )}
@@ -177,7 +245,9 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
         <div className="flex items-center justify-between sm:justify-end gap-2">
           <span className="shrink-0 rounded-md border border-secondary bg-secondary px-2 py-1 text-xs text-secondary">{task.assigneeRole}</span>
           <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            <button onClick={() => onToggle(task.id)} className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")} title={task.enabled ? "Disable" : "Enable"}>
+            <button onClick={() => onToggle(task.id)}
+              className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")}
+              title={task.enabled ? "Disable" : "Enable"}>
               <Toggle01Right className="size-4" aria-hidden />
             </button>
             <button onClick={() => onEdit(task)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary transition-colors" title="Edit">
@@ -197,20 +267,37 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
 
 function TaskBuilder() {
   const [domains, setDomains] = useState<DomainConfig[]>(initialDomains);
-  const [activeDomain, setActiveDomain] = useState<Domain>("lead");
+  const [activeDomainId, setActiveDomainId] = useState<string>("application");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null | "new">(null);
+  const [showNewWorkflow, setShowNewWorkflow] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
 
-  const domain = domains.find((d) => d.id === activeDomain)!;
-  const updateDomain = (tasks: TaskItem[]) => setDomains((prev) => prev.map((d) => d.id === activeDomain ? { ...d, tasks } : d));
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) setAddMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const domain = domains.find((d) => d.id === activeDomainId)!;
+  const updateDomain = (tasks: TaskItem[]) => setDomains((prev) => prev.map((d) => d.id === activeDomainId ? { ...d, tasks } : d));
   const handleToggle = (id: number) => updateDomain(domain.tasks.map((t) => t.id === id ? { ...t, enabled: !t.enabled } : t));
   const handleDelete = (id: number) => updateDomain(domain.tasks.filter((t) => t.id !== id));
   const handleSave = (task: TaskItem) => {
-    editingTask === "new" ? updateDomain([...domain.tasks, { ...task, triggerType: "task_completed" }]) : updateDomain(domain.tasks.map((t) => t.id === task.id ? task : t));
+    editingTask === "new"
+      ? updateDomain([...domain.tasks, { ...task, triggerType: "task_completed" }])
+      : updateDomain(domain.tasks.map((t) => t.id === task.id ? task : t));
     setEditingTask(null);
+  };
+  const handleAddWorkflow = (d: DomainConfig) => {
+    setDomains(prev => [...prev, d]);
+    setActiveDomainId(d.id);
   };
   const handleDragStart = (_: React.DragEvent, i: number) => setDragIndex(i);
   const handleDragOver = (e: React.DragEvent, i: number) => { e.preventDefault(); setDragOverIndex(i); };
@@ -226,15 +313,13 @@ function TaskBuilder() {
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* Task Builder header row â domain dropdown + publish button */}
+      {/* Header row */}
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-secondary">
         {/* Domain dropdown */}
         <div className="relative">
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-primary hover:bg-secondary transition-colors"
-          >
-            <span className={"size-2 rounded-full shrink-0 " + domainDotMap[activeDomain]} />
+          <button onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-primary hover:bg-secondary transition-colors">
+            <span className={"size-2 rounded-full shrink-0 " + domain.color} />
             {domain.label}
             <span className="text-xs text-quaternary ml-1">{domain.tasks.filter(t => t.enabled).length}</span>
             <ChevronDown className={"size-4 text-fg-quaternary transition-transform " + (dropdownOpen ? "rotate-180" : "")} aria-hidden />
@@ -242,17 +327,14 @@ function TaskBuilder() {
           {dropdownOpen && (
             <div className="absolute left-0 top-full mt-1.5 z-20 w-52 rounded-xl border border-secondary bg-primary shadow-lg py-1">
               {domains.map((d) => (
-                <button key={d.id} onClick={() => { setActiveDomain(d.id); setDropdownOpen(false); }}
+                <button key={d.id} onClick={() => { setActiveDomainId(d.id); setDropdownOpen(false); }}
                   className={"flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors " +
-                    (activeDomain === d.id ? "bg-active font-medium text-primary" : "text-secondary hover:bg-secondary_alt")}>
+                    (activeDomainId === d.id ? "bg-active font-medium text-primary" : "text-secondary hover:bg-secondary_alt")}>
                   <div className="flex items-center gap-2.5">
-                    <span className={"size-2 rounded-full shrink-0 " + domainDotMap[d.id]} />
+                    <span className={"size-2 rounded-full shrink-0 " + d.color} />
                     <span>{d.label}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-quaternary">{d.tasks.filter(t => t.enabled).length} tasks</span>
-                    {activeDomain === d.id && <ChevronRight className="size-3 text-fg-quaternary" aria-hidden />}
-                  </div>
+                  <span className="text-xs text-quaternary">{d.tasks.filter(t => t.enabled).length}</span>
                 </button>
               ))}
             </div>
@@ -261,12 +343,31 @@ function TaskBuilder() {
 
         <div className="flex items-center gap-2">
           <p className="text-xs text-tertiary hidden sm:block">{domain.description}</p>
-          <button onClick={() => setEditingTask("new")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-            <Plus className="size-3.5" aria-hidden />
-            <span className="hidden sm:inline">Add task</span>
-            <span className="sm:hidden">Add</span>
-          </button>
+
+          {/* + Add action button with dropdown */}
+          <div className="relative" ref={addMenuRef}>
+            <button onClick={() => setAddMenuOpen(!addMenuOpen)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+              <Plus className="size-3.5" aria-hidden />
+              <span className="hidden sm:inline">Add</span>
+              <ChevronDown className={"size-3.5 text-fg-quaternary transition-transform " + (addMenuOpen ? "rotate-180" : "")} aria-hidden />
+            </button>
+            {addMenuOpen && (
+              <div className="absolute right-0 top-full mt-1.5 z-20 w-44 rounded-xl border border-secondary bg-primary shadow-lg py-1">
+                <button onClick={() => { setEditingTask("new"); setAddMenuOpen(false); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-secondary hover:bg-secondary_alt transition-colors">
+                  <Plus className="size-4 text-fg-quaternary" aria-hidden />
+                  Task
+                </button>
+                <button onClick={() => { setShowNewWorkflow(true); setAddMenuOpen(false); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-secondary hover:bg-secondary_alt transition-colors">
+                  <List className="size-4 text-fg-quaternary" aria-hidden />
+                  Workflow
+                </button>
+              </div>
+            )}
+          </div>
+
           <button onClick={handlePublish}
             className={"inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
               (saved ? "bg-secondary border border-secondary text-secondary" : "bg-brand-solid text-white hover:bg-brand-solid_hover")}>
@@ -288,7 +389,7 @@ function TaskBuilder() {
         {domain.tasks.map((task, index) => (
           <div key={task.id} className="relative">
             {index > 0 && <div className="absolute left-[2.35rem] sm:left-[3.1rem] -top-1 h-2 w-px bg-tertiary opacity-30" />}
-            <TaskRow task={task} index={index} isFirst={index === 0} domain={activeDomain}
+            <TaskRow task={task} index={index} isFirst={index === 0} domainColor={domain.color}
               onToggle={handleToggle} onEdit={setEditingTask} onDelete={handleDelete}
               onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
               isDragOver={dragOverIndex === index} />
@@ -302,6 +403,9 @@ function TaskBuilder() {
 
       {editingTask !== null && (
         <EditModal task={editingTask === "new" ? null : editingTask} onSave={handleSave} onClose={() => setEditingTask(null)} />
+      )}
+      {showNewWorkflow && (
+        <NewWorkflowModal onSave={handleAddWorkflow} onClose={() => setShowNewWorkflow(false)} />
       )}
     </div>
   );
@@ -323,26 +427,18 @@ function PlaceholderSection({ title }: { title: string; description?: string }) 
 
 export function Settings() {
   const [activeTab, setActiveTab] = useState("task-builder");
-
   return (
     <div className="flex flex-col h-full min-h-screen">
-      {/* Settings header + horizontal tab bar â Untitled UI style */}
       <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
         <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
-        {/* Horizontal tab nav â scrollable on mobile */}
         <div className="flex overflow-x-auto gap-0 -mb-px">
           {settingsTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={"flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " +
-                  (isActive
-                    ? "border-brand text-brand-secondary"
-                    : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}
-              >
+                  (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
                 <Icon className={"size-4 " + (isActive ? "text-brand-secondary" : "text-fg-quaternary")} aria-hidden />
                 {tab.label}
               </button>
@@ -350,8 +446,6 @@ export function Settings() {
           })}
         </div>
       </div>
-
-      {/* Content area */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "task-builder" && <TaskBuilder />}
         {activeTab === "general" && <PlaceholderSection title="General" description="Organisation name, timezone, and platform preferences" />}
