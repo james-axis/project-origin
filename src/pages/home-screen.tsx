@@ -79,7 +79,7 @@ export const HomeScreen = () => {
     const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id)!;
 
     return (
-        <div className="flex h-screen bg-primary overflow-hidden">
+        <div className="flex h-screen bg-primary">
             <SidebarNavigationSlim
                 activeUrl="/"
                 items={navItems}
