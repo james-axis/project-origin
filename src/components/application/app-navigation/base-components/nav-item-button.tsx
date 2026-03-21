@@ -33,6 +33,8 @@ interface NavItemButtonProps {
     className?: string;
     /** Placement of the tooltip. */
     tooltipPlacement?: "top" | "right" | "bottom" | "left";
+    /** Whether to show tooltip. Default false. */
+    showTooltip?: boolean;
 }
 
 export const NavItemButton = ({
@@ -43,10 +45,11 @@ export const NavItemButton = ({
     size = "md",
     className,
     tooltipPlacement = "right",
+    showTooltip = false,
     onClick,
 }: NavItemButtonProps) => {
     return (
-        <Tooltip title={label} placement={tooltipPlacement}>
+        <Tooltip title={showTooltip ? label : ""} placement={tooltipPlacement}>
             <Pressable>
                 <a
                     href={href}
