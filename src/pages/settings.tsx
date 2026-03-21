@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01,
   ChevronRight, ChevronDown, Plus, DotsGrid, Trash01,
-  Edit01, Lock01, Zap, Toggle01Right, X, Check, InfoCircle, Menu01,
+  Edit01, Lock01, Zap, Toggle01Right, X, Check, InfoCircle,
 } from "@untitledui/icons";
 
 type Domain = "lead" | "application" | "dishonour" | "claim";
@@ -56,7 +56,8 @@ const initialDomains: DomainConfig[] = [
 ];
 
 const ASSIGNEE_ROLES = ["Consultant", "Admin", "Services", "Compliance", "Manager"];
-const settingsNav = [
+
+const settingsTabs = [
   { id: "task-builder", label: "Task Builder", icon: List },
   { id: "general", label: "General", icon: Settings01 },
   { id: "users", label: "Users & Permissions", icon: Users01 },
@@ -64,6 +65,7 @@ const settingsNav = [
   { id: "notifications", label: "Notifications", icon: Bell01 },
   { id: "integrations", label: "Integrations", icon: Link01 },
 ];
+
 const domainDotMap: Record<Domain, string> = {
   lead: "bg-brand-solid", application: "bg-success-solid",
   dishonour: "bg-warning-solid", claim: "bg-error-solid",
@@ -196,6 +198,7 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
 function TaskBuilder() {
   const [domains, setDomains] = useState<DomainConfig[]>(initialDomains);
   const [activeDomain, setActiveDomain] = useState<Domain>("lead");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null | "new">(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -222,86 +225,81 @@ function TaskBuilder() {
   const handlePublish = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
 
   return (
-    <div className="flex flex-1 flex-col min-h-0">
-      <div className="flex items-start justify-between gap-4 border-b border-secondary px-4 sm:px-8 py-4 sm:py-6">
-        <div className="min-w-0">
-          <h2 className="text-base sm:text-lg font-medium text-primary">Task Builder</h2>
-          <p className="mt-0.5 text-xs sm:text-sm text-tertiary hidden sm:block">Define the sequential task chain for each domain. Drag to reorder — each task fires when the previous one is marked complete.</p>
+    <div className="flex flex-col min-h-0">
+      {/* Task Builder header row — domain dropdown + publish button */}
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-secondary">
+        {/* Domain dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-primary hover:bg-secondary transition-colors"
+          >
+            <span className={"size-2 rounded-full shrink-0 " + domainDotMap[activeDomain]} />
+            {domain.label}
+            <span className="text-xs text-quaternary ml-1">{domain.tasks.filter(t => t.enabled).length}</span>
+            <ChevronDown className={"size-4 text-fg-quaternary transition-transform " + (dropdownOpen ? "rotate-180" : "")} aria-hidden />
+          </button>
+          {dropdownOpen && (
+            <div className="absolute left-0 top-full mt-1.5 z-20 w-52 rounded-xl border border-secondary bg-primary shadow-lg py-1">
+              {domains.map((d) => (
+                <button key={d.id} onClick={() => { setActiveDomain(d.id); setDropdownOpen(false); }}
+                  className={"flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors " +
+                    (activeDomain === d.id ? "bg-active font-medium text-primary" : "text-secondary hover:bg-secondary_alt")}>
+                  <div className="flex items-center gap-2.5">
+                    <span className={"size-2 rounded-full shrink-0 " + domainDotMap[d.id]} />
+                    <span>{d.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-quaternary">{d.tasks.filter(t => t.enabled).length} tasks</span>
+                    {activeDomain === d.id && <ChevronRight className="size-3 text-fg-quaternary" aria-hidden />}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <button onClick={handlePublish}
-          className={"shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors " + (saved ? "bg-secondary border border-secondary text-secondary" : "bg-brand-solid text-white hover:bg-brand-solid_hover")}>
-          {saved ? <><Check className="size-3.5" aria-hidden />Published</> : "Publish"}
+
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-tertiary hidden sm:block">{domain.description}</p>
+          <button onClick={() => setEditingTask("new")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+            <Plus className="size-3.5" aria-hidden />
+            <span className="hidden sm:inline">Add task</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+          <button onClick={handlePublish}
+            className={"inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
+              (saved ? "bg-secondary border border-secondary text-secondary" : "bg-brand-solid text-white hover:bg-brand-solid_hover")}>
+            {saved ? <><Check className="size-3.5" aria-hidden />Published</> : "Publish"}
+          </button>
+        </div>
+      </div>
+
+      {/* Info callout */}
+      <div className="mx-4 sm:mx-6 mt-4 flex items-start gap-2 rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
+        <InfoCircle className="size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
+        <p className="text-xs text-tertiary leading-relaxed">
+          <strong className="text-secondary font-medium">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete. Drag rows to reorder. Lock tasks to protect from reordering.
+        </p>
+      </div>
+
+      {/* Task list */}
+      <div className="flex flex-col gap-2 p-4 sm:p-6">
+        {domain.tasks.map((task, index) => (
+          <div key={task.id} className="relative">
+            {index > 0 && <div className="absolute left-[2.35rem] sm:left-[3.1rem] -top-1 h-2 w-px bg-tertiary opacity-30" />}
+            <TaskRow task={task} index={index} isFirst={index === 0} domain={activeDomain}
+              onToggle={handleToggle} onEdit={setEditingTask} onDelete={handleDelete}
+              onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
+              isDragOver={dragOverIndex === index} />
+          </div>
+        ))}
+        <button onClick={() => setEditingTask("new")}
+          className="mt-1 flex items-center gap-2 rounded-xl border border-dashed border-secondary px-4 py-3 text-sm text-tertiary hover:border-primary hover:text-secondary hover:bg-secondary_alt transition-colors">
+          <Plus className="size-4" aria-hidden />Add task to chain
         </button>
       </div>
-      <div className="flex flex-1 min-h-0 overflow-hidden flex-col sm:flex-row">
-        <div className="flex sm:hidden gap-2 overflow-x-auto px-4 py-3 border-b border-secondary">
-          {domains.map((d) => (
-            <button key={d.id} onClick={() => setActiveDomain(d.id)}
-              className={"shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-                (activeDomain === d.id ? "bg-active text-primary border border-primary" : "border border-secondary text-tertiary")}>
-              <span className={"size-1.5 rounded-full " + domainDotMap[d.id]} />
-              {d.label}
-              <span className="text-quaternary">{d.tasks.filter(t => t.enabled).length}</span>
-            </button>
-          ))}
-        </div>
-        <div className="hidden sm:block w-52 shrink-0 border-r border-secondary bg-secondary_alt overflow-y-auto">
-          <div className="p-3 space-y-0.5">
-            {domains.map((d) => (
-              <button key={d.id} onClick={() => setActiveDomain(d.id)}
-                className={"group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors " +
-                  (activeDomain === d.id ? "bg-active text-primary font-medium" : "text-tertiary hover:bg-primary_hover hover:text-secondary")}>
-                <div className="flex items-center gap-2.5">
-                  <span className={"size-2 rounded-full shrink-0 " + domainDotMap[d.id]} />
-                  <span className="text-sm">{d.label}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-quaternary">{d.tasks.filter((t) => t.enabled).length}</span>
-                  {activeDomain === d.id && <ChevronRight className="size-3 text-fg-quaternary" aria-hidden />}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-1 flex-col min-w-0 overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-secondary px-4 sm:px-6 py-3 sm:py-4 gap-3">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <span className={"rounded-lg px-2 sm:px-2.5 py-1 text-xs font-medium shrink-0 " + domainBadgeMap[activeDomain]}>{domain.label}</span>
-              <p className="text-xs sm:text-sm text-tertiary truncate hidden sm:block">{domain.description}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-tertiary hidden sm:block">{domain.tasks.length} tasks</span>
-              <button onClick={() => setEditingTask("new")}
-                className="inline-flex items-center gap-1 sm:gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-                <Plus className="size-3.5" aria-hidden />
-                <span className="hidden sm:inline">Add task</span>
-                <span className="sm:hidden">Add</span>
-              </button>
-            </div>
-          </div>
-          <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 flex items-start gap-2 rounded-xl border border-secondary bg-secondary_alt px-3 sm:px-4 py-2.5 sm:py-3">
-            <InfoCircle className="size-3.5 sm:size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
-            <p className="text-xs text-tertiary leading-relaxed">
-              <strong className="text-secondary font-medium">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete. Lock tasks to protect from reordering.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 p-3 sm:p-6">
-            {domain.tasks.map((task, index) => (
-              <div key={task.id} className="relative">
-                {index > 0 && <div className="absolute left-[2.35rem] sm:left-[3.1rem] -top-1 h-2 w-px bg-tertiary opacity-30" />}
-                <TaskRow task={task} index={index} isFirst={index === 0} domain={activeDomain}
-                  onToggle={handleToggle} onEdit={setEditingTask} onDelete={handleDelete}
-                  onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
-                  isDragOver={dragOverIndex === index} />
-              </div>
-            ))}
-            <button onClick={() => setEditingTask("new")}
-              className="mt-1 flex items-center gap-2 rounded-xl border border-dashed border-secondary px-4 py-3 text-sm text-tertiary hover:border-primary hover:text-secondary hover:bg-secondary_alt transition-colors">
-              <Plus className="size-4" aria-hidden />Add task to chain
-            </button>
-          </div>
-        </div>
-      </div>
+
       {editingTask !== null && (
         <EditModal task={editingTask === "new" ? null : editingTask} onSave={handleSave} onClose={() => setEditingTask(null)} />
       )}
@@ -311,84 +309,56 @@ function TaskBuilder() {
 
 function PlaceholderSection({ title, description }: { title: string; description: string }) {
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="border-b border-secondary px-4 sm:px-8 py-4 sm:py-6">
-        <h2 className="text-base sm:text-lg font-medium text-primary">{title}</h2>
-        <p className="mt-0.5 text-sm text-tertiary">{description}</p>
-      </div>
-      <div className="flex flex-1 items-center justify-center p-8 sm:p-12">
-        <div className="text-center max-w-sm">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl border border-secondary bg-secondary_alt">
-            <Settings01 className="size-5 text-fg-tertiary" aria-hidden />
-          </div>
-          <p className="text-sm font-medium text-primary">{title}</p>
-          <p className="mt-1 text-sm text-tertiary">This section will be built out in Phase 3.</p>
+    <div className="flex flex-1 items-center justify-center p-8 sm:p-12">
+      <div className="text-center max-w-sm">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl border border-secondary bg-secondary_alt">
+          <Settings01 className="size-5 text-fg-tertiary" aria-hidden />
         </div>
+        <p className="text-sm font-medium text-primary">{title}</p>
+        <p className="mt-1 text-sm text-tertiary">This section will be built out in Phase 3.</p>
       </div>
     </div>
   );
 }
 
 export function Settings() {
-  const [activeSection, setActiveSection] = useState("task-builder");
-  const [navOpen, setNavOpen] = useState(false);
-  const activeNav = settingsNav.find(n => n.id === activeSection);
+  const [activeTab, setActiveTab] = useState("task-builder");
 
   return (
-    <div className="flex flex-col sm:flex-row h-full min-h-screen">
-      {/* Mobile top bar — no logo, just section name + menu toggle */}
-      <div className="flex sm:hidden items-center justify-between border-b border-secondary px-4 py-3 bg-primary">
-        <span className="text-sm font-medium text-primary">{activeNav?.label}</span>
-        <button onClick={() => setNavOpen(!navOpen)}
-          className="flex items-center gap-1 rounded-lg border border-secondary px-2.5 py-1.5 text-xs text-secondary hover:bg-secondary transition-colors">
-          <Menu01 className="size-3.5" aria-hidden />Menu
-        </button>
-      </div>
-      {/* Mobile nav dropdown */}
-      {navOpen && (
-        <div className="sm:hidden border-b border-secondary bg-secondary_alt px-4 py-2">
-          {settingsNav.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeSection === item.id;
+    <div className="flex flex-col h-full min-h-screen">
+      {/* Settings header + horizontal tab bar — Untitled UI style */}
+      <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
+        <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
+        {/* Horizontal tab nav — scrollable on mobile */}
+        <div className="flex overflow-x-auto gap-0 -mb-px">
+          {settingsTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
-              <button key={item.id} onClick={() => { setActiveSection(item.id); setNavOpen(false); }}
-                className={"flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors " +
-                  (isActive ? "bg-active font-medium text-primary" : "text-tertiary hover:bg-primary_hover hover:text-secondary")}>
-                <Icon className={"size-4 " + (isActive ? "text-fg-secondary" : "text-fg-quaternary")} aria-hidden />
-                {item.label}
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={"flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " +
+                  (isActive
+                    ? "border-brand text-brand-secondary"
+                    : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}
+              >
+                <Icon className={"size-4 " + (isActive ? "text-brand-secondary" : "text-fg-quaternary")} aria-hidden />
+                {tab.label}
               </button>
             );
           })}
         </div>
-      )}
-      {/* Desktop sidebar */}
-      <aside className="hidden sm:block w-52 shrink-0 border-r border-secondary">
-        <div className="px-4 py-6">
-          <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-quaternary">Settings</p>
-          <nav className="space-y-0.5">
-            {settingsNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              return (
-                <button key={item.id} onClick={() => setActiveSection(item.id)}
-                  className={"flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors " +
-                    (isActive ? "bg-active font-medium text-primary" : "text-tertiary hover:bg-primary_hover hover:text-secondary")}>
-                  <Icon className={"size-4 " + (isActive ? "text-fg-secondary" : "text-fg-quaternary")} aria-hidden />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
-      {/* Content */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        {activeSection === "task-builder" && <TaskBuilder />}
-        {activeSection === "general" && <PlaceholderSection title="General" description="Organisation name, timezone, and platform preferences" />}
-        {activeSection === "users" && <PlaceholderSection title="Users & Permissions" description="Manage team members, roles, and access levels" />}
-        {activeSection === "security" && <PlaceholderSection title="Security" description="Two-factor authentication, session management, and audit logs" />}
-        {activeSection === "notifications" && <PlaceholderSection title="Notifications" description="Configure email, SMS, and in-app notification preferences" />}
-        {activeSection === "integrations" && <PlaceholderSection title="Integrations" description="Connect DocuSign, phone, SMS, email, and AI copilot" />}
+      </div>
+
+      {/* Content area */}
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === "task-builder" && <TaskBuilder />}
+        {activeTab === "general" && <PlaceholderSection title="General" description="Organisation name, timezone, and platform preferences" />}
+        {activeTab === "users" && <PlaceholderSection title="Users & Permissions" description="Manage team members, roles, and access levels" />}
+        {activeTab === "security" && <PlaceholderSection title="Security" description="Two-factor authentication, session management, and audit logs" />}
+        {activeTab === "notifications" && <PlaceholderSection title="Notifications" description="Configure email, SMS, and in-app notification preferences" />}
+        {activeTab === "integrations" && <PlaceholderSection title="Integrations" description="Connect DocuSign, phone, SMS, email, and AI copilot" />}
       </div>
     </div>
   );
