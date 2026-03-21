@@ -1,4 +1,5 @@
 import { Plus } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import { useState } from "react";
@@ -83,7 +84,7 @@ export function HomeScreen() {
 
     return (
         <div className="lg:flex min-h-screen bg-primary">
-            <SidebarNavigationSlim navItems={navItems} footerNavItems={footerNavItems} />
+            <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
             <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
             <header className="flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
                 <div className="flex items-center gap-2">
@@ -103,13 +104,13 @@ export function HomeScreen() {
                                 <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                                 <p className="text-sm text-tertiary">Your personalised CRM dashboard</p>
                             </div>
-                            <button
+                            <Button
+                                color="primary"
+                                size="md"
                                 onClick={() => setModalOpen(true)}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#D34108] px-4 py-2 text-sm font-medium text-white hover:bg-[#B83507] transition-colors"
                             >
-                                <Plus className="size-4" aria-hidden />
-                                Add widget
-                            </button>
+                                <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
+                            </Button>
                         </div>
                         <div className="p-4 pt-4 lg:p-8 lg:pt-6">
                             {widgets.length === 0 ? (
@@ -125,8 +126,7 @@ export function HomeScreen() {
                                         onClick={() => setModalOpen(true)}
                                         className="inline-flex items-center gap-1.5 rounded-lg bg-[#D34108] px-4 py-2 text-sm font-medium text-white hover:bg-[#B83507] transition-colors"
                                     >
-                                        <Plus className="size-4" aria-hidden />
-                                        Add your first widget
+                                        <Plus className="size-4" /> Add your first widget
                                     </button>
                                 </div>
                             ) : (
