@@ -89,15 +89,17 @@ export const HomeScreen = () => {
 
             {/* Page content */}
             <main className="flex-1 min-h-screen bg-primary overflow-x-hidden">
-                {/* Top action bar */}
-                <div className="flex items-center justify-between px-8 pt-8 pb-2">
-                    <div>
-                        <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
-                        <p className="text-xs text-tertiary mt-0.5">Your personalised CRM dashboard</p>
+                {/* Page header */}
+                <div className="border-b border-secondary px-8 pt-8 pb-6">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
+                            <p className="text-sm text-tertiary mt-1">Your personalised CRM dashboard</p>
+                        </div>
+                        <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                            <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
+                        </Button>
                     </div>
-                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
-                        <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
-                    </Button>
                 </div>
 
                 {/* Widget area */}
