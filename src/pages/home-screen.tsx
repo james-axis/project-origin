@@ -91,7 +91,7 @@ export const HomeScreen = () => {
             <main className="flex-1 min-h-screen bg-primary overflow-x-hidden">
                 {/* Page header */}
                 <div className="border-b border-secondary px-8 pt-8 pb-6">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between pt-16 lg:pt-0">
                         <div>
                             <h1 className="text-2xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                             <p className="text-sm text-tertiary mt-1">Your personalised CRM dashboard</p>
