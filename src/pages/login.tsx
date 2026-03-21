@@ -60,12 +60,6 @@ export const Login = () => {
                             </p>
                         </div>
 
-                        {/* Test credentials hint */}
-                        <div className="rounded-lg border border-[#D34108]/30 bg-[#FFF4F1] px-4 py-3">
-                            <p className="text-xs font-medium text-[#D34108]">Test credentials pre-filled</p>
-                            <p className="text-xs text-[#B83507] mt-0.5">{TEST_EMAIL} / {TEST_PASSWORD}</p>
-                        </div>
-
                         <Form onSubmit={handleSignIn} className="flex flex-col gap-6">
                             <div className="flex flex-col gap-5">
                                 <Input
