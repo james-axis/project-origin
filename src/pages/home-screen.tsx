@@ -64,7 +64,7 @@ const AddWidgetModal = ({ open, onClose, onAdd, active }: { open: boolean; onClo
                     })}
                 </div>
                 <div className="mt-5 flex justify-end">
-                    <Button color="secondary" size="sm" onPress={onClose}>Cancel</Button>
+                    <Button color="secondary" size="sm" onClick={() => onClose()}>Cancel</Button>
                 </div>
             </div>
         </div>
@@ -87,7 +87,7 @@ export const HomeScreen = () => {
                         <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                         <p className="text-xs text-tertiary">Your personalised CRM dashboard</p>
                     </div>
-                    <Button color="primary" size="sm" onPress={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
                         <Plus className="size-4 mr-1.5" /> Add widget
                     </Button>
                 </header>
@@ -101,7 +101,7 @@ export const HomeScreen = () => {
                                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
                                 <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
                             </div>
-                            <Button color="primary" size="md" onPress={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
                                 <Plus className="size-4 mr-1.5" /> Add your first widget
                             </Button>
                         </div>
