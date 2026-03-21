@@ -42,7 +42,7 @@ const WidgetCard = ({ label, description, onRemove }: { label: string; descripti
 const AddWidgetModal = ({ open, onClose, onAdd, active }: { open: boolean; onClose: () => void; onAdd: (id: string) => void; active: string[] }) => {
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-2xl border border-secondary bg-primary shadow-xl p-6">
                 <div className="mb-5">
                     <h2 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Add a widget</h2>
@@ -80,26 +80,30 @@ export const HomeScreen = () => {
 
     return (
         <>
-            {/* Slim sidebar — self-positions as lg:fixed, renders own spacer */}
+            {/* Slim sidebar — fixed, self-positions, renders own spacer div to push content */}
             <SidebarNavigationSlim
                 activeUrl="/"
                 items={navItems}
                 footerItems={footerNavItems}
             />
 
-            {/* Main content — takes full height, sidebar spacer handles left offset */}
-            <div className="flex h-screen flex-col overflow-hidden bg-primary">
-                <header className="relative z-[51] flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
+            {/* Page content — the slim sidebar renders a spacer that pushes this right */}
+            <main className="min-h-screen bg-primary">
+                {/* Top action bar */}
+                <div className="flex items-center justify-between px-8 pt-8 pb-2">
                     <div>
-                        <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
-                        <p className="text-xs text-tertiary">Your personalised CRM dashboard</p>
+                        <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
+                        <p className="text-xs text-tertiary mt-0.5">Your personalised CRM dashboard</p>
                     </div>
-                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]"><span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
+                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                        <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
                     </Button>
-                </header>
-                <main className="flex-1 overflow-y-auto p-6">
+                </div>
+
+                {/* Widget area */}
+                <div className="p-8 pt-4">
                     {widgets.length === 0 ? (
-                        <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
+                        <div className="flex min-h-[70vh] flex-col items-center justify-center gap-5 text-center">
                             <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-secondary">
                                 <Plus className="size-7 text-fg-quaternary" />
                             </div>
@@ -107,7 +111,8 @@ export const HomeScreen = () => {
                                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
                                 <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
                             </div>
-                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108] mt-2"><span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add your first widget</span>
+                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108] mt-2">
+                                <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add your first widget</span>
                             </Button>
                         </div>
                     ) : (
@@ -116,8 +121,8 @@ export const HomeScreen = () => {
                             <EmptySlot onAdd={() => setModalOpen(true)} />
                         </div>
                     )}
-                </main>
-            </div>
+                </div>
+            </main>
 
             <AddWidgetModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addWidget} active={widgets} />
         </>
