@@ -64,7 +64,7 @@ const AddWidgetModal = ({ open, onClose, onAdd, active }: { open: boolean; onClo
                     })}
                 </div>
                 <div className="mt-5 flex justify-end">
-                    <Button color="secondary" size="sm" onClick={onClose}>Cancel</Button>
+                    <Button color="secondary" size="sm" onClick={() => onClose()}>Cancel</Button>
                 </div>
             </div>
         </div>
@@ -79,13 +79,16 @@ export const HomeScreen = () => {
     const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id)!;
 
     return (
-        <div className="flex h-screen bg-primary">
+        <>
+            {/* Slim sidebar — self-positions as lg:fixed, renders own spacer */}
             <SidebarNavigationSlim
                 activeUrl="/"
                 items={navItems}
                 footerItems={footerNavItems}
             />
-            <div className="flex flex-1 flex-col overflow-hidden">
+
+            {/* Main content — takes full height, sidebar spacer handles left offset */}
+            <div className="flex h-screen flex-col overflow-hidden bg-primary">
                 <header className="flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
                     <div>
                         <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
@@ -105,7 +108,7 @@ export const HomeScreen = () => {
                                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
                                 <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
                             </div>
-                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
+                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108] mt-2">
                                 <Plus className="size-4 mr-1.5" /> Add your first widget
                             </Button>
                         </div>
@@ -117,7 +120,8 @@ export const HomeScreen = () => {
                     )}
                 </main>
             </div>
+
             <AddWidgetModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addWidget} active={widgets} />
-        </div>
+        </>
     );
 };
