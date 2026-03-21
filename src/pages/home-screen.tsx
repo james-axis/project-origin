@@ -89,13 +89,12 @@ export const HomeScreen = () => {
 
             {/* Main content — takes full height, sidebar spacer handles left offset */}
             <div className="flex h-screen flex-col overflow-hidden bg-primary">
-                <header className="flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
+                <header className="relative z-10 flex h-16 shrink-0 items-center justify-between border-b border-secondary bg-primary px-6">
                     <div>
                         <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                         <p className="text-xs text-tertiary">Your personalised CRM dashboard</p>
                     </div>
-                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]">
-                        <Plus className="size-4 mr-1.5" /> Add widget
+                    <Button color="primary" size="sm" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]"><span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add widget</span>
                     </Button>
                 </header>
                 <main className="flex-1 overflow-y-auto p-6">
@@ -108,8 +107,7 @@ export const HomeScreen = () => {
                                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
                                 <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
                             </div>
-                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108] mt-2">
-                                <Plus className="size-4 mr-1.5" /> Add your first widget
+                            <Button color="primary" size="md" onClick={() => setModalOpen(true)} className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108] mt-2"><span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add your first widget</span>
                             </Button>
                         </div>
                     ) : (
