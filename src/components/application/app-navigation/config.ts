@@ -37,17 +37,100 @@ export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider">
 };
 
 export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
-    { label: "Workbench", href: "/", icon: HomeLine },
-    { label: "Clients", href: "/clients", icon: Users01 },
-    { label: "Tasks", href: "/tasks", icon: CheckDone01 },
-    { label: "Applications", href: "/applications", icon: FileCheck02 },
-    { label: "Compliance", href: "/compliance", icon: ShieldTick },
-    { label: "Claims", href: "/claims", icon: FileSearch02 },
-    { label: "Payments", href: "/payments", icon: CurrencyDollar },
-    { label: "Dishonours", href: "/dishonours", icon: AlertTriangle },
-    { label: "Commissions", href: "/commissions", icon: BarChartSquare02 },
-    { label: "Complaints", href: "/complaints", icon: Announcement01 },
-    { label: "Reports", href: "/reports", icon: BarChartSquare02 },
+    {
+        label: "Workbench",
+        href: "/",
+        icon: HomeLine,
+        items: [
+            { label: "My Workbench", href: "/" },
+        ],
+    },
+    {
+        label: "Clients",
+        href: "/clients",
+        icon: Users01,
+        items: [
+            { label: "All Clients", href: "/clients" },
+            { label: "Add Client", href: "/clients/new" },
+        ],
+    },
+    {
+        label: "Tasks",
+        href: "/tasks",
+        icon: CheckDone01,
+        items: [
+            { label: "All Tasks", href: "/tasks" },
+            { label: "Overdue", href: "/tasks/overdue" },
+            { label: "Due Today", href: "/tasks/today" },
+        ],
+    },
+    {
+        label: "Applications",
+        href: "/applications",
+        icon: FileCheck02,
+        items: [
+            { label: "All Applications", href: "/applications" },
+            { label: "In Progress", href: "/applications/in-progress" },
+            { label: "Submitted", href: "/applications/submitted" },
+            { label: "Approved", href: "/applications/approved" },
+        ],
+    },
+    {
+        label: "Compliance",
+        href: "/compliance",
+        icon: ShieldTick,
+        items: [
+            { label: "All Items", href: "/compliance" },
+            { label: "Awaiting Review", href: "/compliance/pending" },
+            { label: "Completed", href: "/compliance/completed" },
+        ],
+    },
+    {
+        label: "Claims",
+        href: "/claims",
+        icon: FileSearch02,
+        items: [
+            { label: "All Claims", href: "/claims" },
+            { label: "Open", href: "/claims/open" },
+            { label: "Closed", href: "/claims/closed" },
+        ],
+    },
+    {
+        label: "Payments",
+        href: "/payments",
+        icon: CurrencyDollar,
+        items: [
+            { label: "All Payments", href: "/payments" },
+            { label: "Dishonours", href: "/dishonours" },
+        ],
+    },
+    {
+        label: "Commissions",
+        href: "/commissions",
+        icon: BarChartSquare02,
+        items: [
+            { label: "Overview", href: "/commissions" },
+            { label: "This Month", href: "/commissions/current" },
+        ],
+    },
+    {
+        label: "Complaints",
+        href: "/complaints",
+        icon: Announcement01,
+        items: [
+            { label: "All Complaints", href: "/complaints" },
+            { label: "Open", href: "/complaints/open" },
+        ],
+    },
+    {
+        label: "Reports",
+        href: "/reports",
+        icon: BarChartSquare02,
+        items: [
+            { label: "All Reports", href: "/reports" },
+            { label: "Submissions", href: "/reports/submissions" },
+        ],
+    },
 ];
 
 export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
