@@ -19,7 +19,6 @@ import {
   ChevronDown,
   InfoCircle,
 } from "@untitledui/icons";
-import { Button } from "@/components/base/buttons/button";
 
 type Domain = "lead" | "application" | "dishonour" | "claim";
 type TriggerType = "object_created" | "task_completed";
@@ -135,7 +134,6 @@ function EditModal({ task, onSave, onClose }: EditModalProps) {
   const [form, setForm] = useState<TaskItem>(
     task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true }
   );
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-overlay" onClick={onClose} />
@@ -284,26 +282,14 @@ function TaskRow({ task, index, isFirst, domain, onToggle, onEdit, onDelete, onD
         </span>
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button
-          onClick={() => onToggle(task.id)}
-          className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")}
-          title={task.enabled ? "Disable" : "Enable"}
-        >
+        <button onClick={() => onToggle(task.id)} className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")} title={task.enabled ? "Disable" : "Enable"}>
           <Toggle01Right className="size-4" aria-hidden />
         </button>
-        <button
-          onClick={() => onEdit(task)}
-          className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary hover:text-fg-secondary transition-colors"
-          title="Edit"
-        >
+        <button onClick={() => onEdit(task)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary hover:text-fg-secondary transition-colors" title="Edit">
           <Edit01 className="size-4" aria-hidden />
         </button>
         {!task.locked && (
-          <button
-            onClick={() => onDelete(task.id)}
-            className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"
-            title="Remove"
-          >
+          <button onClick={() => onDelete(task.id)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors" title="Remove">
             <Trash01 className="size-4" aria-hidden />
           </button>
         )}
@@ -321,7 +307,6 @@ function TaskBuilder() {
   const [saved, setSaved] = useState(false);
 
   const domain = domains.find((d) => d.id === activeDomain)!;
-
   const updateDomain = (tasks: TaskItem[]) =>
     setDomains((prev) => prev.map((d) => d.id === activeDomain ? { ...d, tasks } : d));
 
@@ -468,7 +453,6 @@ function PlaceholderSection({ title, description }: { title: string; description
 
 export function Settings() {
   const [activeSection, setActiveSection] = useState("task-builder");
-
   return (
     <div className="flex h-full min-h-screen">
       <aside className="w-52 shrink-0 border-r border-secondary">
