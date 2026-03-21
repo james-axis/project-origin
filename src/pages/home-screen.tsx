@@ -1,5 +1,4 @@
 import { Plus } from "@untitledui/icons";
-import { Button } from "@/components/base/buttons/button";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import { useState } from "react";
@@ -81,7 +80,6 @@ export function HomeScreen() {
     const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id) ?? { label: id, description: "" };
     const addWidget = (id: string) => setWidgets(prev => [...prev, id]);
     const removeWidget = (id: string) => setWidgets(prev => prev.filter(w => w !== id));
-    const slots = [...widgets, ...Array(Math.max(0, 3 - widgets.length)).fill(null)];
 
     return (
         <div className="lg:flex min-h-screen bg-primary">
@@ -105,15 +103,13 @@ export function HomeScreen() {
                                 <h1 className="text-lg font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                                 <p className="text-sm text-tertiary">Your personalised CRM dashboard</p>
                             </div>
-                            <Button
-                                color="primary"
-                                size="md"
-                                iconLeading={Plus}
-                                onPress={() => setModalOpen(true)}
-                                className="!bg-[#D34108] hover:!bg-[#B83507]"
+                            <button
+                                onClick={() => setModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#D34108] px-4 py-2 text-sm font-medium text-white hover:bg-[#B83507] transition-colors"
                             >
+                                <Plus className="size-4" aria-hidden />
                                 Add widget
-                            </Button>
+                            </button>
                         </div>
                         <div className="p-4 pt-4 lg:p-8 lg:pt-6">
                             {widgets.length === 0 ? (
@@ -125,14 +121,13 @@ export function HomeScreen() {
                                         <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Your Workbench is empty</p>
                                         <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most to your day.</p>
                                     </div>
-                                    <Button
-                                        color="primary"
-                                        size="md"
-                                        onPress={() => setModalOpen(true)}
-                                        className="!bg-[#D34108] hover:!bg-[#B83507] !border-[#D34108]"
+                                    <button
+                                        onClick={() => setModalOpen(true)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#D34108] px-4 py-2 text-sm font-medium text-white hover:bg-[#B83507] transition-colors"
                                     >
-                                        <span className="inline-flex items-center gap-1.5"><Plus className="size-4" /> Add your first widget</span>
-                                    </Button>
+                                        <Plus className="size-4" aria-hidden />
+                                        Add your first widget
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
