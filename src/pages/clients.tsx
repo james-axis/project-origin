@@ -213,7 +213,7 @@ export function ClientsPage() {
   function toggleCol(key: string) { updateCols({ ...colState, visible: { ...colState.visible, [key]: !colState.visible[key] } }); }
   function reorderCols(order: string[]) { updateCols({ ...colState, order }); }
 
-  const visibleCols = colState.order.map((k: string) => CLIENT_COLS.find((d: ColDef) => d.key === k)).filter((d): d is ColDef => !!d && colState.visible[d.key]);
+  const visibleCols = colState.order.map((k: string) => CLIENT_COLS.find((d: ColDef): boolean => d.key === k)).filter((d): d is ColDef => !!d && colState.visible[d.key]);
 
   // Tab filtering
   const tabStatuses = TABS.find(t => t.key === activeTab)?.statuses ?? null;
