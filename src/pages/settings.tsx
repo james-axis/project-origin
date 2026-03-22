@@ -580,13 +580,13 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block text-sm font-medium text-secondary">Attempted subtasks <span className="font-normal text-tertiary">(optional)</span></label>
-              {(form.subtasks ?? []).length > 0 && <span className="text-xs text-quaternary">{form.subtasks?.length} item{form.subtasks?.length !== 1 ? "s" : ""}</span>}
+              {(form.subtasks ?? []).length > 0 && <span className="text-xs text-quaternary">{form.subtasks?.length} in chain</span>}
             </div>
-            <div className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2.5">
+            <div className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2.5 space-y-1">
               <p className="text-xs text-tertiary leading-relaxed">
-                When this task is marked <strong className="text-secondary font-medium">Attempted</strong>, these subtasks auto-create and are assigned to the same role.
-                The next task in the chain only fires once this task is marked <strong className="text-secondary font-medium">Complete</strong>.
+                When this task is marked <strong className="text-secondary font-medium">Attempted</strong>, the first subtask auto-creates. Each subtask follows the same flow — <strong className="text-secondary font-medium">Complete</strong> fires the next subtask; <strong className="text-secondary font-medium">Attempted</strong> fires the one after that. The main chain only advances when the current item is Completed.
               </p>
+              <p className="text-xs text-tertiary">Order matters — arrange subtasks in logical follow-up sequence.</p>
             </div>
             {(form.subtasks ?? []).length > 0 && (
               <div className="rounded-xl border border-secondary overflow-hidden">
