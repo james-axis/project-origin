@@ -444,7 +444,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
         {([
           { label: "Overdue", value: overdueTasks.length,                              filterKey: "overdue" as const, beacon: "red"   as BeaconColor, active: "border-[#EF4444] bg-[#FFF5F5]", inactive: "border-secondary bg-secondary_alt hover:border-[#FECACA]" },
           { label: "Near",    value: tasks.filter(t => getTaskPriority(t) === "high").length, filterKey: "amber"   as const, beacon: "amber" as BeaconColor, active: "border-[#F59E0B] bg-[#FFFBEB]", inactive: "border-secondary bg-secondary_alt hover:border-[#FDE68A]"  },
-          { label: "Fresh",   value: freshTasks.length,                                filterKey: "fresh"   as const, beacon: "green" as BeaconColor, active: "border-success-solid bg-success-secondary", inactive: "border-secondary bg-secondary_alt hover:border-success-solid" },
+          { label: "New",     value: freshTasks.length,                                filterKey: "fresh"   as const, beacon: "green" as BeaconColor, active: "border-success-solid bg-success-secondary", inactive: "border-secondary bg-secondary_alt hover:border-success-solid" },
         ]).map(({ label, value, filterKey, beacon, active, inactive }) => {
           const isActive = filter === filterKey;
           return (
@@ -566,6 +566,15 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
 
   const total = APPLICATION_CHAIN.length;
 
+  function isNewLead(lead: SimLead) {
+    return (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
+  }
+  function hasOverdueTasks(leadId: string) {
+    return allTasks.some(t => t.leadId === leadId && t.status === "open" && getTaskPriority(t) === "critical");
+  }
+
+  const attentionLeads = leads.filter(l => isNewLead(l) || hasOverdueTasks(l.id));
+
   if (leads.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
@@ -634,17 +643,62 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
         </button>
       </div>
 
+      {/* ── Attention section ── */}
+      {attentionLeads.length > 0 && (
+        <div className="mb-3 space-y-1.5">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Attention</span>
+            <span className="rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">{attentionLeads.length}</span>
+          </div>
+          {attentionLeads.map(lead => {
+            const lt = allTasks.filter(t => t.leadId === lead.id);
+            const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+            const pct = Math.round((done / total) * 100);
+            const isNew = isNewLead(lead);
+            const overdue = hasOverdueTasks(lead.id);
+            // Beacon border animation via box-shadow on the card
+            const beaconColor = overdue ? "rgb(180,35,24)" : "rgb(18,183,106)";
+            return (
+              <button key={lead.id} onClick={() => onSelectClient(lead.id)}
+                className={"relative flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-left transition-all overflow-hidden " +
+                  (overdue ? "bg-gradient-to-r from-[#FFF5F5] to-[#FFF0F0]" : "bg-gradient-to-r from-[#F0FDF4] to-[#ECFDF5]")}
+                style={{ boxShadow: `0 0 0 1.5px ${beaconColor}` }}>
+                {/* Beacon border pulse — absolutely positioned ring */}
+                <span className={"absolute inset-0 rounded-xl pointer-events-none " + (overdue ? "beacon-red" : "beacon-green")}
+                  style={{ boxShadow: `0 0 0 1.5px ${beaconColor}` }} />
+                <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
+                  (overdue ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
+                  {lead.firstName[0]}{lead.lastName[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
+                    {isNew && !overdue && <span className="shrink-0 rounded-full bg-success-secondary text-success-primary text-[10px] font-semibold px-1.5 py-0.5">New</span>}
+                    {overdue && <span className="shrink-0 rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">Overdue</span>}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden">
+                      <div className={"h-full rounded-full " + (overdue ? "bg-[#EF4444]" : "bg-success-solid")} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[10px] text-quaternary shrink-0">{done}/{total}</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Table ── */}
       <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
-        {/* Header */}
-        <div className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr] bg-secondary_alt border-b border-secondary px-4 py-2.5">
+        {/* Header — no Tasks column */}
+        <div className="grid grid-cols-[2fr_1.5fr_2fr] bg-secondary_alt border-b border-secondary px-4 py-2.5">
           <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Client</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Policy</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Status</span>
           <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Progress</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider text-right">Tasks</span>
         </div>
         {/* Body */}
-        <div className="overflow-y-auto" style={{ maxHeight: 340 }}>
+        <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <Users01 className="size-6 text-fg-quaternary" />
@@ -658,7 +712,7 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
             const isComplete = done === total;
             return (
               <button key={lead.id} onClick={() => onSelectClient(lead.id)}
-                className={"grid grid-cols-[2fr_1.5fr_1.5fr_1fr] items-center px-4 py-3 w-full text-left hover:bg-secondary_alt transition-colors group " +
+                className={"grid grid-cols-[2fr_1.5fr_2fr] items-center px-4 py-3 w-full text-left hover:bg-secondary_alt transition-colors group " +
                   (idx < filtered.length - 1 ? "border-b border-secondary" : "")}>
                 {/* Client */}
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -667,33 +721,25 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
                     {lead.firstName[0]}{lead.lastName[0]}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
-                    <p className="text-xs text-tertiary truncate">{lead.practice}</p>
+                    <p className="text-xs font-medium text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
+                    <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
                   </div>
                 </div>
-                {/* Policy */}
-                <div className="min-w-0 pr-2">
-                  <span className="inline-flex items-center gap-1 rounded-md border border-secondary bg-primary px-2 py-0.5 text-[11px] font-medium text-secondary truncate max-w-full">
-                    {isComplete
-                      ? <span className="size-1.5 rounded-full bg-success-solid shrink-0 inline-block" />
-                      : openCount > 0
-                        ? <span className="size-1.5 rounded-full bg-brand-solid shrink-0 inline-block" />
-                        : <span className="size-1.5 rounded-full bg-tertiary shrink-0 inline-block" />}
-                    {isComplete ? "Complete" : openCount > 0 ? "Active" : "Pending"}
-                  </span>
-                </div>
+                {/* Status */}
+                <span className="inline-flex items-center gap-1 rounded-md border border-secondary bg-primary px-2 py-0.5 text-[11px] font-medium text-secondary self-center">
+                  {isComplete
+                    ? <span className="size-1.5 rounded-full bg-success-solid shrink-0 inline-block" />
+                    : openCount > 0
+                      ? <span className="size-1.5 rounded-full bg-brand-solid shrink-0 inline-block" />
+                      : <span className="size-1.5 rounded-full bg-tertiary shrink-0 inline-block" />}
+                  {isComplete ? "Complete" : openCount > 0 ? "Active" : "Pending"}
+                </span>
                 {/* Progress */}
-                <div className="space-y-1 pr-3">
+                <div className="space-y-1 pl-2">
                   <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                     <div className={"h-full rounded-full transition-all " + (isComplete ? "bg-success-solid" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
                   </div>
                   <p className="text-[10px] text-quaternary">{done}/{total} · {pct}%</p>
-                </div>
-                {/* Tasks badge */}
-                <div className="flex justify-end">
-                  {openCount > 0
-                    ? <span className="rounded-full bg-brand-solid px-2 py-0.5 text-[11px] font-semibold text-white">{openCount}</span>
-                    : <span className="text-xs text-quaternary">—</span>}
                 </div>
               </button>
             );
