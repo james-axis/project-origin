@@ -301,6 +301,83 @@ const AVAILABLE_WIDGETS = [
   { id: "payments",     label: "Payments",     description: "Recent payment activity" },
 ];
 
+// ─── Beacon component ────────────────────────────────────────────────────────
+type BeaconColor = "red" | "amber" | "green" | "blue";
+const BEACON_COLORS: Record<BeaconColor, { dot: string; ring: string }> = {
+  red:   { dot: "bg-[#EF4444]", ring: "bg-[#EF4444]" },
+  amber: { dot: "bg-[#F59E0B]", ring: "bg-[#F59E0B]" },
+  green: { dot: "bg-[#22C55E]", ring: "bg-[#22C55E]" },
+  blue:  { dot: "bg-brand-solid", ring: "bg-brand-solid" },
+};
+function Beacon({ color = "green", size = "sm" }: { color?: BeaconColor; size?: "sm" | "md" }) {
+  const sz = size === "md" ? "size-2.5" : "size-2";
+  const ringSz = size === "md" ? "size-5" : "size-4";
+  const { dot, ring } = BEACON_COLORS[color];
+  return (
+    <span className="relative flex shrink-0 items-center justify-center" style={{ width: size === "md" ? 20 : 16, height: size === "md" ? 20 : 16 }}>
+      <span className={"absolute rounded-full " + ring + " " + ringSz + " beacon-ring opacity-60"} />
+      <span className={"relative rounded-full beacon-pulse " + dot + " " + sz} />
+    </span>
+  );
+}
+
+// ─── Task urgency helpers ─────────────────────────────────────────────────────
+function getTaskAge(task: SimTask): number {
+  return (Date.now() - new Date(task.createdAt).getTime()) / 60000; // minutes
+}
+function getTaskPriority(task: SimTask): "critical" | "high" | "normal" {
+  const age = getTaskAge(task);
+  if (task.status === "attempted" || age > 120) return "critical"; // overdue >2hrs or attempted
+  if (age > 30) return "high";   // been sitting >30 min
+  return "normal";
+}
+function getPriorityBeacon(p: "critical" | "high" | "normal"): BeaconColor {
+  if (p === "critical") return "red";
+  if (p === "high") return "amber";
+  return "green";
+}
+function getPriorityLabel(p: "critical" | "high" | "normal", task: SimTask): string {
+  const age = getTaskAge(task);
+  if (p === "critical" && task.status === "attempted") return "Attempted — awaiting subtask";
+  if (p === "critical") return `Overdue — ${Math.round(age / 60)}h ${Math.round(age % 60)}m`;
+  if (p === "high") return `${Math.round(age)}m elapsed`;
+  return "On target";
+}
+
+// ─── Task row (shared) ────────────────────────────────────────────────────────
+function TaskRow({ task, lead, onSelectTask, compact = false }: {
+  task: SimTask;
+  lead: ReturnType<typeof Array.prototype.find>;
+  onSelectTask: (t: SimTask) => void;
+  compact?: boolean;
+}) {
+  const isSubtask = !!task.parentTaskId;
+  const priority = getTaskPriority(task);
+  const beacon = getPriorityBeacon(priority);
+  const l = lead as SimLead | undefined;
+  return (
+    <button onClick={() => onSelectTask(task)}
+      className={"flex items-center gap-2.5 rounded-xl border px-3 text-left transition-colors group w-full " +
+        (priority === "critical" ? "border-[#FEE2E2] bg-[#FFF5F5] hover:border-[#FECACA]" :
+         priority === "high"     ? "border-[#FEF3C7] bg-[#FFFBEB] hover:border-[#FDE68A]" :
+                                   "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary") +
+        (compact ? " py-2" : " py-3")}>
+      <Beacon color={beacon} size={compact ? "sm" : "sm"} />
+      <div className={"flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
+        {isSubtask ? "↳" : APPLICATION_CHAIN.findIndex(t => t.id === task.templateTaskId) + 1}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={"font-medium truncate " + (compact ? "text-xs" : "text-sm") + (priority === "critical" ? " text-[#B91C1C]" : " text-primary")}>{task.name}</p>
+        <p className="text-[10px] text-tertiary truncate">
+          {l ? `${l.firstName} ${l.lastName}` : "Unknown"} · {task.assigneeRole}
+          {isSubtask && <span className="text-warning-primary"> · subtask</span>}
+        </p>
+      </div>
+      <ChevronRight className={"size-3.5 shrink-0 " + (priority === "critical" ? "text-[#EF4444]" : priority === "high" ? "text-[#F59E0B]" : "text-fg-quaternary group-hover:text-brand-secondary")} />
+    </button>
+  );
+}
+
 // ─── Tasks widget ─────────────────────────────────────────────────────────────
 function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }) {
   const [tasks, setTasks] = useState<SimTask[]>([]);
@@ -329,28 +406,70 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
     );
   }
 
+  // Split into priority (critical/high) and normal
+  const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
+  const normalTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
+
+  // Legend
+  const legend = (
+    <div className="flex items-center gap-3 px-1">
+      {([["green","On target"],["amber","Near target"],["red","Below target"]] as [BeaconColor, string][]).map(([c, label]) => (
+        <div key={c} className="flex items-center gap-1.5">
+          <Beacon color={c} size="sm" />
+          <span className="text-[10px] text-tertiary">{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-2 overflow-y-auto max-h-80">
-      {tasks.map(task => {
-        const lead = getLead(task.leadId);
-        const isSubtask = !!task.parentTaskId;
-        return (
-          <button key={task.id} onClick={() => onSelectTask(task)}
-            className="flex items-center gap-3 rounded-xl border border-secondary bg-primary px-3 py-3 text-left hover:border-brand hover:bg-brand-secondary transition-colors group">
-            <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
-              {isSubtask ? "↳" : APPLICATION_CHAIN.findIndex(t => t.id === task.templateTaskId) + 1}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-primary truncate">{task.name}</p>
-              <p className="text-xs text-tertiary truncate">
-                {lead ? `${lead.firstName} ${lead.lastName}` : "Unknown"} · {task.assigneeRole}
-                {isSubtask && <span className="text-warning-primary"> · subtask</span>}
-              </p>
-            </div>
-            <ChevronRight className="size-4 text-fg-quaternary group-hover:text-brand-secondary shrink-0" />
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-0 overflow-hidden flex-1">
+
+      {/* ── Priority section (~30%) ── */}
+      <div className="shrink-0" style={{ minHeight: priorityTasks.length > 0 ? undefined : "30%" }}>
+        <div className="flex items-center justify-between px-1 mb-1.5">
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Priority</span>
+          {priorityTasks.length > 0 && (
+            <span className={"text-[10px] font-semibold rounded-full px-1.5 py-0.5 " +
+              (priorityTasks.some(t => getTaskPriority(t) === "critical") ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-[#FEF3C7] text-[#92400E]")}>
+              {priorityTasks.length} urgent
+            </span>
+          )}
+        </div>
+
+        {priorityTasks.length === 0 ? (
+          <div className="flex items-center gap-2 rounded-xl border border-secondary bg-secondary_alt px-3 py-2.5">
+            <Beacon color="green" size="sm" />
+            <p className="text-xs text-tertiary">All tasks on target</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {priorityTasks.map(task => (
+              <TaskRow key={task.id} task={task} lead={getLead(task.leadId)} onSelectTask={onSelectTask} compact />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Divider ── */}
+      <div className="flex items-center gap-2 my-3">
+        <div className="flex-1 h-px bg-secondary" />
+        <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">All tasks</span>
+        <div className="flex-1 h-px bg-secondary" />
+      </div>
+
+      {/* ── Legend ── */}
+      {legend}
+
+      {/* ── All tasks (~70%) ── */}
+      <div className="flex flex-col gap-1.5 overflow-y-auto mt-2" style={{ maxHeight: 260 }}>
+        {tasks.map(task => (
+          <TaskRow key={task.id} task={task} lead={getLead(task.leadId)} onSelectTask={onSelectTask} />
+        ))}
+        {normalTasks.length === 0 && priorityTasks.length > 0 && (
+          <p className="text-xs text-tertiary text-center py-2">No other tasks</p>
+        )}
+      </div>
     </div>
   );
 }
