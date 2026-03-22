@@ -38,10 +38,10 @@ export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider">
 export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
     {
         label: "Workbench",
-        href: "/",
+        href: "/workbench",
         icon: HomeLine,
         items: [
-            { label: "My Workbench", href: "/" },
+            { label: "My Workbench", href: "/workbench" },
         ],
     },
     {
