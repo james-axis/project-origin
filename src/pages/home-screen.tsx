@@ -434,7 +434,12 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
     <div className="flex flex-col gap-0 flex-1 min-h-0">
 
       {/* ── Stat tiles — clickable to filter ── */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {/* Total — non-clickable summary tile */}
+        <div className="rounded-xl border border-secondary bg-secondary_alt px-3 py-3">
+          <p className="text-[10px] font-medium text-tertiary mb-1 truncate">Total</p>
+          <p className="text-xl font-semibold text-primary">{tasks.length}</p>
+        </div>
         {([
           { label: "Overdue", value: overdueTasks.length,                              filterKey: "overdue" as const, beacon: "red"   as BeaconColor, active: "border-[#EF4444] bg-[#FFF5F5]", inactive: "border-secondary bg-secondary_alt hover:border-[#FECACA]" },
           { label: "Near",    value: tasks.filter(t => getTaskPriority(t) === "high").length, filterKey: "amber"   as const, beacon: "amber" as BeaconColor, active: "border-[#F59E0B] bg-[#FFFBEB]", inactive: "border-secondary bg-secondary_alt hover:border-[#FDE68A]"  },
@@ -544,12 +549,12 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   );
 }
 
-// ─── Leads (Clients) widget ───────────────────────────────────────────────────
+// ─── Leads (Clients) widget — Untitled UI table style ─────────────────────────
 function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void }) {
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "active" | "complete">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "complete">("all");
 
   useEffect(() => {
     const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
@@ -559,8 +564,6 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
   }, []);
 
   const total = APPLICATION_CHAIN.length;
-  const activeLeads   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open"));
-  const totalOpenTasks = allTasks.filter(t => t.status === "open").length;
 
   if (leads.length === 0) {
     return (
@@ -587,99 +590,114 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     const lt = allTasks.filter(t => t.leadId === l.id);
     const open = lt.filter(t => t.status === "open").length;
     const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-    if (filter === "active"   && open === 0) return false;
-    if (filter === "complete" && done < total) return false;
-    if (search && !`${l.firstName} ${l.lastName}`.toLowerCase().includes(search.toLowerCase()) && !l.policyType.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter === "active"   && open === 0) return false;
+    if (statusFilter === "complete" && done < total) return false;
+    if (search && !`${l.firstName} ${l.lastName}`.toLowerCase().includes(search.toLowerCase()) &&
+        !l.policyType.toLowerCase().includes(search.toLowerCase()) &&
+        !l.practice.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   return (
-    <div className="flex flex-col gap-0 flex-1 min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
 
-      {/* ── Stat tiles ── */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {[
-          { label: "Total clients", value: leads.length,          color: "text-primary" },
-          { label: "Active",        value: activeLeads.length,    color: "text-brand-secondary" },
-          { label: "Open tasks",    value: totalOpenTasks,        color: "text-warning-primary" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl border border-secondary bg-secondary_alt px-3 py-3">
-            <p className="text-[10px] font-medium text-tertiary mb-1 truncate">{label}</p>
-            <p className={"text-xl font-semibold " + color}>{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Search + filter + download ── */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <div className="relative flex-1 min-w-0">
+      {/* ── Toolbar: search + filters + download ── */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="relative flex-1 min-w-[140px]">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
           </span>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..."
-            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-2 text-xs text-primary outline-none focus:border-brand" />
         </div>
-        <div className="flex items-center gap-1">
-          {(["all","active","complete"] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={"px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors capitalize " +
-                (filter === f ? "bg-brand-solid text-white" : "bg-secondary text-tertiary hover:text-secondary")}>
-              {f === "all" ? "All" : f === "active" ? "Active" : "Complete"}
-            </button>
-          ))}
+        {/* Status filter dropdown */}
+        <div className="relative">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="rounded-lg border border-secondary bg-primary pl-3 pr-7 py-2 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
+            <option value="all">All clients</option>
+            <option value="active">Active</option>
+            <option value="complete">Complete</option>
+          </select>
+          <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-fg-quaternary rotate-90 pointer-events-none" />
         </div>
-        <button onClick={downloadCSV} title="Download CSV"
-          className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
+        {(search || statusFilter !== "all") && (
+          <button onClick={() => { setSearch(""); setStatusFilter("all"); }}
+            className="rounded-lg border border-secondary bg-primary px-2.5 py-2 text-xs text-secondary hover:bg-secondary transition-colors whitespace-nowrap">
+            Clear all
+          </button>
+        )}
+        <button onClick={downloadCSV} title="Download all"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs font-medium text-secondary hover:bg-secondary transition-colors whitespace-nowrap">
           <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <span className="hidden sm:inline">Download all</span>
         </button>
       </div>
 
-      {/* ── Tile grid ── */}
-      <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
-        {filtered.length === 0 ? (
-          <div className="flex items-center justify-center py-10 text-xs text-tertiary rounded-xl border border-dashed border-secondary">No clients match</div>
-        ) : (
-          <div className="grid grid-cols-1 gap-2">
-            {filtered.map(lead => {
-              const lt = allTasks.filter(t => t.leadId === lead.id);
-              const openCount = lt.filter(t => t.status === "open").length;
-              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-              const pct = Math.round((done / total) * 100);
-              const isComplete = done === total;
-              return (
-                <button key={lead.id} onClick={() => onSelectClient(lead.id)}
-                  className={"group flex flex-col gap-2.5 rounded-xl border p-3 text-left transition-all hover:shadow-md " +
-                    (isComplete ? "border-success-solid bg-success-secondary hover:border-success-solid" :
-                     openCount > 0 ? "border-brand bg-brand-secondary hover:border-brand" :
-                                     "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary")}>
-                  {/* Tile header */}
-                  <div className="flex items-center gap-2">
-                    <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
-                      (isComplete ? "bg-success-solid text-white" : "bg-brand-secondary text-brand-secondary")}>
-                      {lead.firstName[0]}{lead.lastName[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
-                      <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
-                    </div>
-                    {openCount > 0
-                      ? <span className="shrink-0 rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-bold text-white">{openCount}</span>
-                      : isComplete && <span className="shrink-0 text-[10px] text-success-primary font-semibold">✓ Done</span>}
+      {/* ── Table ── */}
+      <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
+        {/* Header */}
+        <div className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr] bg-secondary_alt border-b border-secondary px-4 py-2.5">
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Client</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Policy</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Progress</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider text-right">Tasks</span>
+        </div>
+        {/* Body */}
+        <div className="overflow-y-auto" style={{ maxHeight: 340 }}>
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <Users01 className="size-6 text-fg-quaternary" />
+              <p className="text-xs text-tertiary">No clients match your filters</p>
+            </div>
+          ) : filtered.map((lead, idx) => {
+            const lt = allTasks.filter(t => t.leadId === lead.id);
+            const openCount = lt.filter(t => t.status === "open").length;
+            const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+            const pct = Math.round((done / total) * 100);
+            const isComplete = done === total;
+            return (
+              <button key={lead.id} onClick={() => onSelectClient(lead.id)}
+                className={"grid grid-cols-[2fr_1.5fr_1.5fr_1fr] items-center px-4 py-3 w-full text-left hover:bg-secondary_alt transition-colors group " +
+                  (idx < filtered.length - 1 ? "border-b border-secondary" : "")}>
+                {/* Client */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
+                    (isComplete ? "bg-success-secondary text-success-primary" : "bg-brand-secondary text-brand-secondary")}>
+                    {lead.firstName[0]}{lead.lastName[0]}
                   </div>
-                  {/* Policy tag */}
-                  <span className="inline-flex self-start rounded-md bg-secondary px-2 py-0.5 text-[10px] text-secondary font-medium truncate max-w-full">{lead.policyType}</span>
-                  {/* Progress bar */}
-                  <div className="space-y-1">
-                    <div className="h-1.5 w-full rounded-full bg-tertiary overflow-hidden">
-                      <div className={"h-full rounded-full transition-all " + (isComplete ? "bg-success-solid" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
-                    </div>
-                    <p className="text-[10px] text-quaternary">{done}/{total} tasks · {pct}%</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
+                    <p className="text-xs text-tertiary truncate">{lead.practice}</p>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                </div>
+                {/* Policy */}
+                <div className="min-w-0 pr-2">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-secondary bg-primary px-2 py-0.5 text-[11px] font-medium text-secondary truncate max-w-full">
+                    {isComplete
+                      ? <span className="size-1.5 rounded-full bg-success-solid shrink-0 inline-block" />
+                      : openCount > 0
+                        ? <span className="size-1.5 rounded-full bg-brand-solid shrink-0 inline-block" />
+                        : <span className="size-1.5 rounded-full bg-tertiary shrink-0 inline-block" />}
+                    {isComplete ? "Complete" : openCount > 0 ? "Active" : "Pending"}
+                  </span>
+                </div>
+                {/* Progress */}
+                <div className="space-y-1 pr-3">
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                    <div className={"h-full rounded-full transition-all " + (isComplete ? "bg-success-solid" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-[10px] text-quaternary">{done}/{total} · {pct}%</p>
+                </div>
+                {/* Tasks badge */}
+                <div className="flex justify-end">
+                  {openCount > 0
+                    ? <span className="rounded-full bg-brand-solid px-2 py-0.5 text-[11px] font-semibold text-white">{openCount}</span>
+                    : <span className="text-xs text-quaternary">—</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
