@@ -558,10 +558,6 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     );
   }
 
-  const total = APPLICATION_CHAIN.length;
-  const activeLeads   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open"));
-  const totalOpenTasks = allTasks.filter(t => t.status === "open").length;
-
   function downloadCSV() {
     const rows = [["Name","Policy","Practice","Open Tasks","Progress"]];
     leads.forEach(l => {
