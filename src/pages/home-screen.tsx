@@ -739,7 +739,7 @@ function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSel
 
 // ─── Widget card ──────────────────────────────────────────────────────────────
 const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => (
-  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs" style={{ minHeight: 420 }}>
+  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs" style={{ minHeight: 480 }}>
     <div className="flex items-center justify-between mb-4">
       <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
       <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition">Remove</button>
@@ -963,7 +963,7 @@ export function HomeScreen() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 480px), 1fr))", gridAutoRows: "1fr" }}>
                   {activeTab.widgets.map(id => (
                     <WidgetCard key={id} id={id} label={getWidget(id).label} onRemove={() => removeWidget(id)} onSelectTask={setActiveTask} onSelectClient={setSelectedClientId} />
                   ))}
