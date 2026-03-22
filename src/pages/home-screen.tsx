@@ -2340,13 +2340,30 @@ export function HomeScreen() {
           <Settings />
         ) : (
           <div className="flex flex-col h-full">
-            {/* Workbench Hero */}
-            <WorkbenchHero leads={leads} allTasks={heroTasks} />
-
-            {/* Tab bar + action buttons */}
-            <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center overflow-x-auto gap-0 -mb-px">
+            {/* Header — identical structure to Settings */}
+            <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
+                  <p className="text-sm text-tertiary mt-0.5">Your personalised CRM dashboard</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={handleReset} title="Reset"
+                    className="flex size-8 items-center justify-center rounded-lg border border-secondary bg-primary text-fg-quaternary hover:bg-secondary transition-colors">
+                    <RefreshCcw01 className="size-3.5" />
+                  </button>
+                  <button onClick={() => setSimModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-secondary px-3 py-1.5 text-xs font-medium text-tertiary hover:text-secondary transition-colors whitespace-nowrap">
+                    <Zap className="size-3 opacity-50" /><span className="hidden sm:inline">Simulate </span>client
+                  </button>
+                  <button onClick={() => setWidgetModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
+                    <Plus className="size-3" /><span className="hidden sm:inline">Add </span>widget
+                  </button>
+                </div>
+              </div>
+              {/* Tab bar */}
+              <div className="flex items-center overflow-x-auto gap-0 -mb-px">
                   {tabs.map(tab => {
                     const isActive = tab.id === activeTabId;
                     return (
@@ -2374,21 +2391,6 @@ export function HomeScreen() {
                   <button onClick={addTab} className="flex size-9 items-center justify-center text-fg-quaternary hover:text-secondary hover:bg-secondary_alt rounded transition-colors ml-1 mb-px">
                     <Plus className="size-4" />
                   </button>
-                </div>
-                <div className="flex items-center gap-2 py-2 shrink-0">
-                  <button onClick={handleReset} title="Reset"
-                    className="flex size-8 items-center justify-center rounded-lg border border-secondary bg-primary text-fg-quaternary hover:bg-secondary transition-colors">
-                    <RefreshCcw01 className="size-3.5" />
-                  </button>
-                  <button onClick={() => setSimModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-secondary px-3 py-1.5 text-xs font-medium text-tertiary hover:bg-secondary hover:text-secondary transition-colors whitespace-nowrap">
-                    <Zap className="size-3 opacity-50" /><span className="hidden sm:inline">Simulate </span>client
-                  </button>
-                  <button onClick={() => setWidgetModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
-                    <Plus className="size-3" /><span className="hidden sm:inline">Add </span>widget
-                  </button>
-                </div>
               </div>
             </div>
 
