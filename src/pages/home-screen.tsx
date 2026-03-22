@@ -303,20 +303,22 @@ const AVAILABLE_WIDGETS = [
 
 // ─── Beacon component ────────────────────────────────────────────────────────
 type BeaconColor = "red" | "amber" | "green" | "blue";
-const BEACON_COLORS: Record<BeaconColor, { dot: string; ring: string }> = {
-  red:   { dot: "bg-[#EF4444]", ring: "bg-[#EF4444]" },
-  amber: { dot: "bg-[#F59E0B]", ring: "bg-[#F59E0B]" },
-  green: { dot: "bg-[#22C55E]", ring: "bg-[#22C55E]" },
-  blue:  { dot: "bg-brand-solid", ring: "bg-brand-solid" },
+const BEACON_HEX: Record<BeaconColor, string> = {
+  red:   "#EF4444",
+  amber: "#F59E0B",
+  green: "#22C55E",
+  blue:  "#D34108",
 };
-function Beacon({ color = "green", size = "sm" }: { color?: BeaconColor; size?: "sm" | "md" }) {
-  const sz = size === "md" ? "size-2.5" : "size-2";
-  const ringSz = size === "md" ? "size-5" : "size-4";
-  const { dot, ring } = BEACON_COLORS[color];
+function Beacon({ color = "green", slow = false }: { color?: BeaconColor; slow?: boolean }) {
+  const hex = BEACON_HEX[color];
   return (
-    <span className="relative flex shrink-0 items-center justify-center" style={{ width: size === "md" ? 20 : 16, height: size === "md" ? 20 : 16 }}>
-      <span className={"absolute rounded-full " + ring + " " + ringSz + " beacon-ring opacity-60"} />
-      <span className={"relative rounded-full beacon-pulse " + dot + " " + sz} />
+    <span className="relative flex shrink-0 items-center justify-center" style={{ width: 16, height: 16 }}>
+      {/* Ping ring — starts at dot size, expands and fades */}
+      <span className={"absolute inline-flex rounded-full " + (slow ? "beacon-ping-slow" : "beacon-ping")}
+        style={{ width: 8, height: 8, backgroundColor: hex, opacity: 0.6 }} />
+      {/* Solid dot */}
+      <span className="relative inline-flex rounded-full"
+        style={{ width: 8, height: 8, backgroundColor: hex }} />
     </span>
   );
 }
@@ -404,15 +406,12 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
   const normalTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
 
-  // Legend
+  // 3 beacons — no labels
   const legend = (
-    <div className="flex items-center gap-3 px-1">
-      {([["green","On target"],["amber","Near target"],["red","Below target"]] as [BeaconColor, string][]).map(([c, label]) => (
-        <div key={c} className="flex items-center gap-1.5">
-          <Beacon color={c} size="sm" />
-          <span className="text-[10px] text-tertiary">{label}</span>
-        </div>
-      ))}
+    <div className="flex items-center gap-2 px-1">
+      <Beacon color="green" />
+      <Beacon color="amber" />
+      <Beacon color="red" />
     </div>
   );
 
