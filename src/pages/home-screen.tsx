@@ -669,6 +669,15 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
         </div>
       )}
 
+      {/* ── Divider between urgent and all clients ── */}
+      {urgentLead && filtered.length > 0 && (
+        <div className="flex items-center gap-2 my-3">
+          <div className="flex-1 h-px bg-secondary" />
+          <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">All clients</span>
+          <div className="flex-1 h-px bg-secondary" />
+        </div>
+      )}
+
       {/* ── Client tiles ── */}
       <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
         {filtered.length === 0 ? (
