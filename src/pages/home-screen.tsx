@@ -913,7 +913,7 @@ function PriorityCard({ item, onSelectTask, rank, isHero }: {
 function TopPrioritiesWidget({ onSelectTask }: { onSelectTask: (t: SimTask) => void }) {
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
-  const [showAll, setShowAll] = useState(false);
+  const [nbPage, setNbPage] = useState(0);
 
   useEffect(() => {
     const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
@@ -940,8 +940,7 @@ function TopPrioritiesWidget({ onSelectTask }: { onSelectTask: (t: SimTask) => v
   }
 
   const hero = queue[0];
-  const rest = queue.slice(1, showAll ? undefined : 4);
-  const hiddenCount = queue.length - 1 - (showAll ? queue.length - 1 : Math.min(4, queue.length - 1));
+  const queueItems = queue.slice(1); // everything after hero, paginated below
 
   // Summary counts
   const counts = { lapse_risk: 0, new_arrival: 0, stalled: 0, next_step: 0 };
@@ -978,24 +977,34 @@ function TopPrioritiesWidget({ onSelectTask }: { onSelectTask: (t: SimTask) => v
         </div>
       )}
 
-      {/* ── Queue ── */}
-      <div className="overflow-y-auto flex-1 min-h-0 space-y-2">
-        {rest.map((item, i) => (
-          <PriorityCard key={item.task.id} item={item} onSelectTask={onSelectTask} rank={i + 2} isHero={false} />
-        ))}
-        {hiddenCount > 0 && (
-          <button onClick={() => setShowAll(true)}
-            className="w-full rounded-xl border border-dashed border-secondary py-2.5 text-xs font-medium text-tertiary hover:text-secondary hover:border-primary transition-colors">
-            Show {hiddenCount} more action{hiddenCount !== 1 ? "s" : ""}
-          </button>
-        )}
-        {showAll && queue.length > 5 && (
-          <button onClick={() => setShowAll(false)}
-            className="w-full rounded-xl border border-dashed border-secondary py-2.5 text-xs font-medium text-tertiary hover:text-secondary hover:border-primary transition-colors">
-            Show less
-          </button>
-        )}
-      </div>
+      {/* ── Paginated queue ── */}
+      {queueItems.length > 0 && (() => {
+        const PAGE = 4;
+        const totalPages = Math.ceil(queueItems.length / PAGE);
+        const pageItems = queueItems.slice(nbPage * PAGE, nbPage * PAGE + PAGE);
+        return (
+          <div className="flex flex-col flex-1 min-h-0 gap-2">
+            <div className="flex-1 min-h-0 overflow-hidden space-y-2">
+              {pageItems.map((item, i) => (
+                <PriorityCard key={item.task.id} item={item} onSelectTask={onSelectTask} rank={nbPage * PAGE + i + 2} isHero={false} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-2 border-t border-secondary shrink-0">
+                <button onClick={() => setNbPage(p => Math.max(0, p - 1))} disabled={nbPage === 0}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-secondary border border-secondary hover:bg-secondary disabled:opacity-30 transition-colors">
+                  ← Prev
+                </button>
+                <span className="text-[10px] text-quaternary tabular-nums">Page {nbPage + 1} of {totalPages} · {queue.length} total</span>
+                <button onClick={() => setNbPage(p => Math.min(totalPages - 1, p + 1))} disabled={nbPage >= totalPages - 1}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-secondary border border-secondary hover:bg-secondary disabled:opacity-30 transition-colors">
+                  Next →
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1373,6 +1382,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [savePresetName, setSavePresetName] = useState("");
+  const [tablePage, setTablePage] = useState(0);
   const { presets, add: addPreset, remove: removePreset } = usePresetsStore();
 
   useEffect(() => {
@@ -1436,8 +1446,8 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
     else { setSortKey(key); setSortDir("desc"); }
   }
 
-  function clearFilters() { setFilters(DEFAULT_FILTERS); }
-  function applyPreset(p: CRMPreset) { setFilters(p.filters); }
+  function clearFilters() { setFilters(DEFAULT_FILTERS); setTablePage(0); }
+  function applyPreset(p: CRMPreset) { setFilters(p.filters); setTablePage(0); }
 
   const hasActiveFilters = !!(filters.search || filters.dateRange !== "all" || filters.appStatus.length > 0 ||
     filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter ||
@@ -1608,7 +1618,13 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
       )}
 
       {/* ── Table ── */}
-      <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-secondary">
+      {(() => {
+        const TABLE_PAGE = 8;
+        const totalPages = Math.ceil(sorted.length / TABLE_PAGE);
+        const pageRows = sorted.slice(tablePage * TABLE_PAGE, tablePage * TABLE_PAGE + TABLE_PAGE);
+        return (
+      <div className="flex flex-col flex-1 min-h-0 gap-2">
+        <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-secondary">
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
             <svg className="size-8 text-fg-quaternary" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -1632,7 +1648,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary bg-white">
-              {sorted.map(row => {
+              {pageRows.map(row => {
                 const { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress, module: rowModule } = row;
                     const MODULE_BADGE: Record<string, string> = { application: "bg-blue-100 text-blue-700", claim: "bg-purple-100 text-purple-700", policy: "bg-orange-100 text-orange-700", dishonour: "bg-red-100 text-red-700", renewal: "bg-green-100 text-green-700", complaint: "bg-yellow-100 text-yellow-700" };
                 const ageStr = ageMinutes < 1 ? "Just now" : ageMinutes < 60 ? `${Math.round(ageMinutes)}m` : `${Math.floor(ageMinutes / 60)}h ${Math.round(ageMinutes % 60)}m`;
@@ -1700,13 +1716,42 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
         )}
       </div>
 
-      {/* ── Row count ── */}
-      <div className="mt-2 flex items-center justify-between px-1">
-        <p className="text-[10px] text-quaternary">{sorted.length} of {totalCount} record{totalCount !== 1 ? "s" : ""}</p>
-        {hasActiveFilters && (
-          <p className="text-[10px] text-[#D34108] font-medium">{totalCount - sorted.length} filtered out</p>
+        {/* ── Pagination bar ── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-2 py-2 border-t border-secondary bg-white shrink-0">
+            <button onClick={() => setTablePage(p => Math.max(0, p - 1))} disabled={tablePage === 0}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-secondary border border-secondary hover:bg-secondary disabled:opacity-30 transition-colors">
+              ← Prev
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                const pg = totalPages <= 7 ? i : (tablePage <= 3 ? i : tablePage - 3 + i);
+                if (pg >= totalPages) return null;
+                return (
+                  <button key={pg} onClick={() => setTablePage(pg)}
+                    className={"size-6 rounded text-[10px] font-medium transition-colors " +
+                      (pg === tablePage ? "bg-[#D34108] text-white" : "text-quaternary hover:bg-secondary")}>
+                    {pg + 1}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setTablePage(p => Math.min(totalPages - 1, p + 1))} disabled={tablePage >= totalPages - 1}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-secondary border border-secondary hover:bg-secondary disabled:opacity-30 transition-colors">
+              Next →
+            </button>
+          </div>
         )}
       </div>
+      <div className="flex items-center justify-between px-1 shrink-0">
+        <p className="text-[10px] text-quaternary">
+          {sorted.length > 0 ? `${tablePage * 8 + 1}–${Math.min((tablePage + 1) * 8, sorted.length)} of ${sorted.length}` : "0"} record{sorted.length !== 1 ? "s" : ""}
+          {hasActiveFilters && totalCount > sorted.length && <span className="text-[#D34108] ml-1">({totalCount - sorted.length} filtered)</span>}
+        </p>
+      </div>
+      </div>
+        );
+      })()}
 
       {/* ── Save preset modal ── */}
       {saveModalOpen && (
@@ -2156,7 +2201,7 @@ function ResizableWorkbench({
       <div className="flex flex-col gap-4 w-full">
         {widgets.map(id => (
           <div key={id} className="flex flex-col rounded-2xl border border-secondary bg-white"
-            style={{ minHeight: 420, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+            style={{ height: "50vh", minHeight: 380, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-secondary shrink-0">
               <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{getWidget(id).label}</p>
               <button onClick={() => onRemove(id)} className="text-xs text-quaternary hover:text-secondary px-2 py-1 rounded hover:bg-secondary">Remove</button>
@@ -2177,13 +2222,13 @@ function ResizableWorkbench({
 
   // Desktop: resizable flex row
   const widgetRow = (
-    <div ref={containerRef} className="flex gap-0 w-full select-none" style={{ minHeight: 520 }}>
+    <div ref={containerRef} className="flex gap-0 w-full select-none">
       {widgets.map((id, i) => (
         <React.Fragment key={id}>
           {/* Widget */}
           <div className="flex flex-col" style={{ width: `${widths[i] ?? 50}%`, minWidth: 0 }}>
-            <div className="flex flex-col rounded-2xl border border-secondary bg-white h-full"
-              style={{ margin: "0 6px", minHeight: 480, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+            <div className="flex flex-col rounded-2xl border border-secondary bg-white"
+              style={{ margin: "0 6px", height: "50vh", minHeight: 400, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-secondary shrink-0">
                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
                   {getWidget(id).label}
