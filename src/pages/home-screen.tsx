@@ -17,11 +17,16 @@ import {
 
 // ─── Seed names for "Simulate client" button ───────────────────────────────────
 const NEW_LEAD_POOL: Omit<SimLead, "id" | "createdAt">[] = [
-  { firstName: "Tom",     lastName: "Patterson",  dob: "1983-06-12", email: "tom.patterson@email.com",  phone: "0411 222 333", policyType: "Life + TPD", practice: "LIP" },
-  { firstName: "Natalie", lastName: "Brooks",     dob: "1990-02-27", email: "natalie.brooks@email.com", phone: "0422 333 444", policyType: "Life + Income Protection", practice: "Surehaven" },
-  { firstName: "Marcus",  lastName: "Chen",       dob: "1977-10-08", email: "marcus.chen@email.com",    phone: "0433 444 555", policyType: "Life + Trauma", practice: "Tony Insurance" },
-  { firstName: "Priya",   lastName: "Mehta",      dob: "1994-04-15", email: "priya.mehta@email.com",    phone: "0444 555 666", policyType: "Life only", practice: "Living Rich" },
-  { firstName: "Daniel",  lastName: "Okafor",     dob: "1986-08-03", email: "daniel.okafor@email.com",  phone: "0455 666 777", policyType: "Life + TPD + Income Protection", practice: "LIP" },
+  { firstName: "Tom",      lastName: "Patterson",  dob: "1983-06-12", email: "tom.patterson@email.com",    phone: "0411 222 333", policyType: "Life + TPD", practice: "LIP" },
+  { firstName: "Natalie",  lastName: "Brooks",     dob: "1990-02-27", email: "natalie.brooks@email.com",   phone: "0422 333 444", policyType: "Life + Income Protection", practice: "Surehaven" },
+  { firstName: "Marcus",   lastName: "Chen",       dob: "1977-10-08", email: "marcus.chen@email.com",      phone: "0433 444 555", policyType: "Life + Trauma", practice: "Tony Insurance" },
+  { firstName: "Priya",    lastName: "Mehta",      dob: "1994-04-15", email: "priya.mehta@email.com",      phone: "0444 555 666", policyType: "Life only", practice: "Living Rich" },
+  { firstName: "Daniel",   lastName: "Okafor",     dob: "1986-08-03", email: "daniel.okafor@email.com",    phone: "0455 666 777", policyType: "Life + TPD + Income Protection", practice: "LIP" },
+  { firstName: "Sophie",   lastName: "Hartley",    dob: "1988-11-22", email: "sophie.hartley@email.com",   phone: "0466 777 888", policyType: "Life + Trauma (Claim)", practice: "Surehaven" },
+  { firstName: "Ryan",     lastName: "Castellano", dob: "1975-03-09", email: "ryan.castellano@email.com",  phone: "0477 888 999", policyType: "Income Protection (Claim)", practice: "LIP" },
+  { firstName: "Mei",      lastName: "Zhang",      dob: "1992-07-14", email: "mei.zhang@email.com",        phone: "0488 999 000", policyType: "Life + TPD (Dishonour)", practice: "Tony Insurance" },
+  { firstName: "James",    lastName: "O'Sullivan", dob: "1980-05-30", email: "james.osullivan@email.com",  phone: "0499 000 111", policyType: "Life + Income Protection (Renewal)", practice: "Living Rich" },
+  { firstName: "Aisha",    lastName: "Patel",      dob: "1997-01-18", email: "aisha.patel@email.com",      phone: "0400 111 222", policyType: "Life + TPD + Trauma", practice: "Surehaven" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -1819,7 +1824,7 @@ const WIDGET_STYLES: Record<string, { header: string; card: string }> = {
 const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => {
   const styles = WIDGET_STYLES[id] ?? WIDGET_STYLES.default;
   return (
-    <div className={"flex flex-col rounded-2xl p-5 " + styles.card} style={{ minHeight: 480 }}>
+    <div className={"flex flex-col rounded-2xl p-5 " + styles.card} style={{ minHeight: 600 }}>
       <div className="flex items-center justify-between mb-4">
         <p className={"text-base font-semibold " + styles.header} style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
         <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
@@ -1964,7 +1969,7 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
         {/* ── LEFT: gradient dark panel ── */}
         <div className="relative flex items-center gap-4 px-5 py-5 min-w-0 lg:flex-1"
-          style={{ background: "linear-gradient(105deg, #1A2535 0%, #1F2D3D 30%, #6B2D0E 58%, #D34108 76%, #EA6921 88%, #FFFFFF 100%)" }}>
+          style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 20%, #6B2D0E 42%, #D34108 58%, #EA6921 68%, #FFF0E8 80%, #FFFFFF 88%)" }}>
           {/* Subtle inner glow */}
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(234,105,33,0.18), transparent 60%)" }} />
           <div className="shrink-0 relative flex size-12 items-center justify-center rounded-xl"
@@ -2200,7 +2205,7 @@ function ResizableWorkbench({
       <div className="flex flex-col gap-4 w-full">
         {widgets.map(id => (
           <div key={id} className="flex flex-col rounded-2xl border border-secondary bg-white"
-            style={{ height: "50vh", minHeight: 380, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+            style={{ height: "62vh", minHeight: 480, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-secondary shrink-0">
               <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{getWidget(id).label}</p>
               <button onClick={() => onRemove(id)} className="text-xs text-quaternary hover:text-secondary px-2 py-1 rounded hover:bg-secondary">Remove</button>
@@ -2340,6 +2345,36 @@ export function HomeScreen() {
   function handleSimulated() { dispatchUpdate(); }
   function handleTaskAction() { setActiveTask(null); dispatchUpdate(); }
 
+  // Auto-simulate a new client/claim/dishonour every 30 seconds
+  const autoSimIdxRef = React.useRef(5); // start from expanded pool entries
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const pool = NEW_LEAD_POOL;
+      const preview = pool[autoSimIdxRef.current % pool.length];
+      autoSimIdxRef.current += 1;
+      const lead = addLead(preview);
+      const firstTask = fireFirstTask(lead);
+      window.dispatchEvent(new Event("axis_sim_update"));
+      const moduleHint = preview.policyType.includes("Claim") ? "claim" :
+                         preview.policyType.includes("Dishonour") ? "dishonour" :
+                         preview.policyType.includes("Renewal") ? "renewal" : "application";
+      toast({
+        title: moduleHint === "claim" ? "New claim lodged" :
+               moduleHint === "dishonour" ? "Dishonour received" :
+               moduleHint === "renewal" ? "Renewal due" : "New application",
+        description: `${lead.firstName} ${lead.lastName} — ${lead.policyType}`,
+        variant: moduleHint === "dishonour" ? "warning" :
+                 moduleHint === "claim" ? "error" : "info",
+        duration: 6000,
+        actions: [
+          { label: "Open", onClick: () => { setTimeout(() => setActiveTask(firstTask), 50); } },
+          { label: "Dismiss", variant: "ghost", onClick: () => {} },
+        ],
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   function handleReset() {
     if (confirm("Reset all simulation data? This will remove all clients and tasks.")) {
       resetSim();
@@ -2399,8 +2434,8 @@ export function HomeScreen() {
                     <RefreshCcw01 className="size-3.5" />
                   </button>
                   <button onClick={() => setSimModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-3 py-1.5 text-xs font-medium text-brand-secondary hover:bg-brand-primary_alt transition-colors whitespace-nowrap">
-                    <Zap className="size-3" /><span className="hidden sm:inline">Simulate </span>client
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-secondary px-3 py-1.5 text-xs font-medium text-tertiary hover:bg-secondary hover:text-secondary transition-colors whitespace-nowrap">
+                    <Zap className="size-3 opacity-50" /><span className="hidden sm:inline">Simulate </span>client
                   </button>
                   <button onClick={() => setWidgetModalOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">

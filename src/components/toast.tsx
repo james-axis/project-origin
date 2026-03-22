@@ -115,13 +115,13 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
 
   return (
     <div className={
-      "relative w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl " +
+      "relative w-full max-w-sm overflow-hidden rounded-2xl border border-secondary bg-primary shadow-lg " +
       "transition-all duration-300 ease-out " +
-      (item.exiting ? "opacity-0 translate-x-full scale-95" : "opacity-100 translate-x-0 scale-100")
-    } style={{ background: "#1A2535", border: "1px solid rgba(255,255,255,0.1)" }}>
+      (item.exiting ? "opacity-0 translate-x-full" : "opacity-100 translate-x-0")
+    }>
       {/* Progress bar */}
       {duration > 0 && (
-        <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: "rgba(255,255,255,0.1)" }}>
+        <div className="absolute bottom-0 left-0 h-0.5 bg-secondary w-full">
           <div className={"h-full transition-none " + styles.bar} style={{ width: progress + "%" }} />
         </div>
       )}
@@ -136,9 +136,9 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
 
         {/* Content */}
         <div className="flex-1 min-w-0 pt-0.5">
-          <p className="text-sm font-semibold leading-snug" style={{ color: "#FFFFFF" }}>{item.title}</p>
+          <p className="text-sm font-semibold text-primary leading-snug">{item.title}</p>
           {item.description && (
-            <p className="text-sm mt-0.5 leading-snug" style={{ color: "rgba(255,255,255,0.6)" }}>{item.description}</p>
+            <p className="text-sm text-tertiary mt-0.5 leading-snug">{item.description}</p>
           )}
 
           {/* Actions */}
@@ -161,7 +161,7 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
 
         {/* Dismiss */}
         <button onClick={() => onDismiss(item.id)}
-          className="flex size-6 shrink-0 items-center justify-center rounded-md transition-colors mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+          className="flex size-6 shrink-0 items-center justify-center rounded-md text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors mt-0.5">
           <X className="size-3.5" aria-hidden />
         </button>
       </div>
