@@ -4,6 +4,7 @@ import { navItems, footerNavItems } from "@/components/application/app-navigatio
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router";
 import { Settings } from "@/pages/settings";
+import { useToast } from "@/components/toast";
 import {
   initSimStore, getLeads, addLead, getTasks, getOpenTasks,
   fireFirstTask, completeTask, attemptTask, resetSim,
@@ -30,11 +31,12 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 // ─── Task action modal ────────────────────────────────────────────────────────
-function TaskActionModal({ task, lead, onClose, onAction }: {
+function TaskActionModal({ task, lead, onClose, onAction, onToast }: {
   task: SimTask;
   lead: SimLead | undefined;
   onClose: () => void;
   onAction: () => void;
+  onToast: (opts: import("@/components/toast").ToastOptions) => void;
 }) {
   const [notes, setNotes] = useState("");
   const [acting, setActing] = useState(false);
@@ -53,6 +55,19 @@ function TaskActionModal({ task, lead, onClose, onAction }: {
     setActing(true);
     const next = completeTask(task.id, notes);
     setResult({ type: "completed", next });
+    if (next) {
+      onToast({
+        title: "Task completed",
+        description: `Next up: ${next.name} → ${next.assigneeRole}`,
+        variant: "success",
+        actions: [
+          { label: "Complete now", onClick: () => { completeTask(next.id); onAction(); } },
+          { label: "Dismiss", variant: "ghost", onClick: () => {} },
+        ],
+      });
+    } else {
+      onToast({ title: "🎉 Lead is inforce!", description: `${lead?.firstName} ${lead?.lastName} — all tasks complete`, variant: "success", duration: 7000 });
+    }
     setTimeout(() => { onAction(); onClose(); }, 1800);
   }
 
@@ -60,6 +75,19 @@ function TaskActionModal({ task, lead, onClose, onAction }: {
     setActing(true);
     const next = attemptTask(task.id, notes);
     setResult({ type: "attempted", next });
+    if (next) {
+      onToast({
+        title: "Task attempted",
+        description: `Subtask created: ${next.name}`,
+        variant: "warning",
+        actions: [
+          { label: "Complete now", onClick: () => { completeTask(next.id); onAction(); } },
+          { label: "Undo", variant: "ghost", onClick: () => {} },
+        ],
+      });
+    } else {
+      onToast({ title: "Task attempted", description: "No subtasks configured for this task.", variant: "warning" });
+    }
     setTimeout(() => { onAction(); onClose(); }, 1800);
   }
 
@@ -177,7 +205,7 @@ function TaskActionModal({ task, lead, onClose, onAction }: {
 }
 
 // ─── Simulate lead modal ──────────────────────────────────────────────────────
-function SimulateLeadModal({ open, onClose, onSimulated }: { open: boolean; onClose: () => void; onSimulated: (lead: SimLead) => void }) {
+function SimulateLeadModal({ open, onClose, onSimulated, onToast }: { open: boolean; onClose: () => void; onSimulated: (lead: SimLead) => void; onToast: (opts: import("@/components/toast").ToastOptions) => void }) {
   const [idx, setIdx] = useState(0);
   if (!open) return null;
   const preview = NEW_LEAD_POOL[idx % NEW_LEAD_POOL.length];
@@ -188,6 +216,16 @@ function SimulateLeadModal({ open, onClose, onSimulated }: { open: boolean; onCl
     setIdx(i => i + 1);
     onSimulated(lead);
     onClose();
+    onToast({
+      title: "New lead arrived",
+      description: `${lead.firstName} ${lead.lastName} — Introduction Call assigned to Consultant`,
+      variant: "info",
+      duration: 6000,
+      actions: [
+        { label: "View task", onClick: () => {} },
+        { label: "Dismiss", variant: "ghost", onClick: () => {} },
+      ],
+    });
   }
 
   return (
@@ -227,8 +265,8 @@ function SimulateLeadModal({ open, onClose, onSimulated }: { open: boolean; onCl
 
 // ─── Widget definitions ───────────────────────────────────────────────────────
 const AVAILABLE_WIDGETS = [
-  { id: "tasks",        label: "Tasks",        description: "Open tasks across all leads" },
-  { id: "leads",        label: "Leads",        description: "All active leads" },
+  { id: "tasks",        label: "Tasks",        description: "Open tasks across all clients" },
+  { id: "leads",        label: "Clients",      description: "All active clients" },
   { id: "applications", label: "Applications", description: "In-progress applications by status" },
   { id: "compliance",   label: "Compliance",   description: "Items awaiting review" },
   { id: "claims",       label: "Claims",       description: "Open claims by status" },
@@ -307,7 +345,7 @@ function LeadsWidget() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
         <Users01 className="size-6 text-fg-quaternary" />
-        <p className="text-xs text-tertiary">No leads yet — simulate one from the Workbench header</p>
+        <p className="text-xs text-tertiary">No clients yet — simulate a lead to get started</p>
       </div>
     );
   }
@@ -448,6 +486,8 @@ export function HomeScreen() {
   const location = useLocation();
   const isSettings = location.pathname === "/settings" || location.pathname.startsWith("/settings/");
 
+  const { toast } = useToast();
+
   // Init sim store on mount
   useEffect(() => { initSimStore(); }, []);
 
@@ -493,10 +533,11 @@ export function HomeScreen() {
   function handleTaskAction() { setActiveTask(null); dispatchUpdate(); }
 
   function handleReset() {
-    if (confirm("Reset all simulation data? This will remove all leads and tasks.")) {
+    if (confirm("Reset all simulation data? This will remove all clients and tasks.")) {
       resetSim();
       initSimStore();
       dispatchUpdate();
+      toast({ title: "Simulation reset", description: "Seed data reloaded, ready for a fresh demo.", variant: "info", duration: 4000 });
     }
   }
 
@@ -595,8 +636,8 @@ export function HomeScreen() {
 
       <AddWidgetModal open={widgetModalOpen} onClose={() => setWidgetModalOpen(false)} onAdd={addWidget} existingWidgets={activeTab.widgets} />
       <RenameTabModal open={renameModal.open} current={renameModal.current} onSave={label => renameTab(renameModal.tabId, label)} onClose={() => setRenameModal({ open: false, tabId: "", current: "" })} />
-      <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} />
-      {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} />}
+      <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} onToast={toast} />
+      {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} onToast={toast} />}
     </div>
   );
 }
