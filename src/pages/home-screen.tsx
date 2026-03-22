@@ -497,7 +497,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center py-10 text-xs text-tertiary rounded-xl border border-dashed border-secondary">No tasks match this filter</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {filtered.map(task => {
               const l = getLead(task.leadId);
               const p = getTaskPriority(task);
@@ -639,7 +639,7 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center py-10 text-xs text-tertiary rounded-xl border border-dashed border-secondary">No clients match</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {filtered.map(lead => {
               const lt = allTasks.filter(t => t.leadId === lead.id);
               const openCount = lt.filter(t => t.status === "open").length;
