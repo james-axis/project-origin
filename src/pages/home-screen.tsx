@@ -15,7 +15,7 @@ import {
   type SimLead, type SimTask,
 } from "@/store/sim-store";
 
-// ─── Seed names for "Simulate lead" button ────────────────────────────────────
+// ─── Seed names for "Simulate client" button ───────────────────────────────────
 const NEW_LEAD_POOL: Omit<SimLead, "id" | "createdAt">[] = [
   { firstName: "Tom",     lastName: "Patterson",  dob: "1983-06-12", email: "tom.patterson@email.com",  phone: "0411 222 333", policyType: "Life + TPD", practice: "LIP" },
   { firstName: "Natalie", lastName: "Brooks",     dob: "1990-02-27", email: "natalie.brooks@email.com", phone: "0422 333 444", policyType: "Life + Income Protection", practice: "Surehaven" },
@@ -77,7 +77,7 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask, o
         ],
       });
     } else {
-      onToast({ title: "🎉 Lead is inforce!", description: `${lead?.firstName} ${lead?.lastName} — all tasks complete`, variant: "success", duration: 7000 });
+      onToast({ title: "🎉 Client is inforce!", description: `${lead?.firstName} ${lead?.lastName} — all tasks complete`, variant: "success", duration: 7000 });
     }
     setTimeout(() => { onAction(); onClose(); }, 1800);
   }
@@ -232,7 +232,7 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask, o
   );
 }
 
-// ─── Simulate lead modal ──────────────────────────────────────────────────────
+// ─── Simulate client modal ─────────────────────────────────────────────────────
 function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: { open: boolean; onClose: () => void; onSimulated: (lead: SimLead) => void; onToast: (opts: import("@/components/toast").ToastOptions) => void; onOpenTask: (task: SimTask) => void }) {
   const [idx, setIdx] = useState(0);
   if (!open) return null;
@@ -245,7 +245,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
     onSimulated(lead);
     onClose();
     onToast({
-      title: "New lead arrived",
+      title: "New client arrived",
       description: `${lead.firstName} ${lead.lastName} — Introduction Call assigned to you`,
       variant: "info",
       duration: 6000,
@@ -262,8 +262,8 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
       <div className="relative z-10 w-full sm:max-w-md rounded-2xl border border-secondary bg-primary shadow-2xl">
         <div className="flex items-center justify-between border-b border-secondary px-5 py-4">
           <div>
-            <h3 className="text-base font-semibold text-primary">Simulate new lead</h3>
-            <p className="text-sm text-tertiary mt-0.5">Fires Task 1 of the Application chain</p>
+            <h3 className="text-base font-semibold text-primary">Simulate new client</h3>
+            <p className="text-sm text-tertiary mt-0.5">Creates a new client and fires Task 1</p>
           </div>
           <button onClick={onClose} className="flex size-7 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary"><X className="size-4" /></button>
         </div>
@@ -283,7 +283,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
           <button onClick={onClose} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
           <button onClick={fire} className="flex-1 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-            <span className="flex items-center justify-center gap-1.5"><Zap className="size-3.5" />Fire lead</span>
+            <span className="flex items-center justify-center gap-1.5"><Zap className="size-3.5" />Simulate client</span>
           </button>
         </div>
       </div>
@@ -366,7 +366,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
         <List className="size-6 text-fg-quaternary" />
-        <p className="text-xs text-tertiary">No open tasks — simulate a lead to get started</p>
+        <p className="text-xs text-tertiary">No open tasks — simulate a client to get started</p>
       </div>
     );
   }
@@ -492,7 +492,33 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   );
 }
 
-// ─── Leads (Clients) widget — Untitled UI table style ─────────────────────────
+// ─── Countdown timer (MM:SS from createdAt + 20 min) ──────────────────────────
+function Countdown({ createdAt }: { createdAt: string }) {
+  const endTime = new Date(createdAt).getTime() + 20 * 60 * 1000;
+  const [remaining, setRemaining] = useState(() => Math.max(0, endTime - Date.now()));
+
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const t = setInterval(() => {
+      const r = Math.max(0, endTime - Date.now());
+      setRemaining(r);
+      if (r <= 0) clearInterval(t);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [endTime, remaining]);
+
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  const isUrgent = remaining < 5 * 60 * 1000;
+  if (remaining <= 0) return <span className="text-[10px] text-quaternary font-mono">expired</span>;
+  return (
+    <span className={"text-[10px] font-mono font-semibold tabular-nums " + (isUrgent ? "text-[#B91C1C]" : "text-tertiary")}>
+      {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+    </span>
+  );
+}
+
+// ─── Leads (Clients) widget ─────────────────────────────────────────────────────
 function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void }) {
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
@@ -522,7 +548,7 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
         <Users01 className="size-6 text-fg-quaternary" />
-        <p className="text-xs text-tertiary">No clients yet — simulate a lead to get started</p>
+        <p className="text-xs text-tertiary">No clients yet — simulate a new client to get started</p>
       </div>
     );
   }
@@ -603,33 +629,40 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
               const isNew = isNewLead(lead);
               const overdue = hasOverdueTasks(lead.id);
               return (
-                <button key={lead.id} onClick={() => onSelectClient(lead.id)}
-                  className={"group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all hover:shadow-sm " +
-                    (overdue
-                      ? "border-secondary bg-gradient-to-br from-[#FFF5F5] via-[#FFF8F8] to-white"
-                      : "border-secondary bg-gradient-to-br from-[#F0FDF4] via-[#F6FEF9] to-white")}>
-                  <div className="flex items-center gap-2">
-                    <Beacon color={overdue ? "red" : "green"} />
-                    <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold " +
-                      (overdue ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
-                      {lead.firstName[0]}{lead.lastName[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
-                        {overdue && <span className="shrink-0 rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">Overdue</span>}
-                        {isNew && !overdue && <span className="shrink-0 rounded-full bg-success-secondary text-success-primary text-[10px] font-semibold px-1.5 py-0.5">New</span>}
+                <div key={lead.id} className="space-y-1.5">
+                  <button onClick={() => onSelectClient(lead.id)}
+                    className={"group flex flex-col gap-2 rounded-xl border p-3 text-left w-full transition-all hover:shadow-sm " +
+                      (overdue
+                        ? "border-secondary bg-gradient-to-br from-[#FFF5F5] via-[#FFF8F8] to-white"
+                        : "border-secondary bg-gradient-to-br from-[#F0FDF4] via-[#F6FEF9] to-white")}>
+                    <div className="flex items-center gap-2">
+                      <Beacon color={overdue ? "red" : "green"} />
+                      <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold " +
+                        (overdue ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
+                        {lead.firstName[0]}{lead.lastName[0]}
                       </div>
-                      <p className="text-[10px] text-tertiary">{lead.policyType} · {lead.practice}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
+                          {overdue && <span className="shrink-0 rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">Overdue</span>}
+                          {isNew && !overdue && <span className="shrink-0 rounded-full bg-success-secondary text-success-primary text-[10px] font-semibold px-1.5 py-0.5">New</span>}
+                          {isNew && !overdue && <Countdown createdAt={lead.createdAt} />}
+                        </div>
+                        <p className="text-[10px] text-tertiary">{lead.policyType} · {lead.practice}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <div className={"h-full rounded-full " + (overdue ? "bg-[#EF4444]" : "bg-success-solid")} style={{ width: `${pct}%` }} />
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div className={"h-full rounded-full " + (overdue ? "bg-[#EF4444]" : "bg-success-solid")} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-quaternary shrink-0">{done}/{total}</span>
                     </div>
-                    <span className="text-[10px] text-quaternary shrink-0">{done}/{total}</span>
-                  </div>
-                </button>
+                  </button>
+                  {/* Divider between urgent items */}
+                  {(showAllUrgent ? attentionLeads : [urgentLead]).indexOf(lead) < (showAllUrgent ? attentionLeads : [urgentLead]).length - 1 && (
+                    <div className="h-px bg-secondary" />
+                  )}
+                </div>
               );
             })}
           </div>
@@ -872,7 +905,7 @@ export function HomeScreen() {
                   </button>
                   <button onClick={() => setSimModalOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-3 py-2 text-sm font-medium text-brand-secondary hover:bg-brand-primary_alt transition-colors whitespace-nowrap">
-                    <Zap className="size-3.5" aria-hidden /><span className="hidden sm:inline">Simulate </span>lead
+                    <Zap className="size-3.5" aria-hidden /><span className="hidden sm:inline">Simulate </span>client
                   </button>
                   <button onClick={() => setWidgetModalOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
