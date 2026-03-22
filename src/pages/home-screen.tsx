@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router";
 import { Settings } from "@/pages/settings";
 import { useToast } from "@/components/toast";
+import { ClientSlideout } from "@/components/client-slideout";
 import { TaskPanel, type TaskPanelData } from "@/components/task-panels";
 import { getPanelData, savePanelData } from "@/store/sim-store";
 import {
@@ -468,7 +469,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
 }
 
 // ─── Leads widget ─────────────────────────────────────────────────────────────
-function LeadsWidget() {
+function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void }) {
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
 
@@ -497,7 +498,7 @@ function LeadsWidget() {
         const total = APPLICATION_CHAIN.length;
         const pct = Math.round((completedCount / total) * 100);
         return (
-          <div key={lead.id} className="flex items-center gap-3 rounded-xl border border-secondary bg-primary px-3 py-3">
+          <button key={lead.id} onClick={() => onSelectClient(lead.id)} className="flex items-center gap-3 rounded-xl border border-secondary bg-primary px-3 py-3 w-full text-left hover:border-brand hover:bg-brand-secondary transition-colors group">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-xs font-semibold text-brand-secondary">
               {lead.firstName[0]}{lead.lastName[0]}
             </div>
@@ -514,7 +515,7 @@ function LeadsWidget() {
             {openCount > 0 && (
               <span className="shrink-0 rounded-full bg-brand-solid px-2 py-0.5 text-[10px] font-semibold text-white">{openCount}</span>
             )}
-          </div>
+          </button>
         );
       })}
     </div>
@@ -528,21 +529,21 @@ const PlaceholderWidget = ({ description }: { description: string }) => (
   </div>
 );
 
-function WidgetContent({ id, onSelectTask }: { id: string; onSelectTask: (t: SimTask) => void }) {
+function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
   const w = AVAILABLE_WIDGETS.find(w => w.id === id);
   if (id === "tasks") return <TasksWidget onSelectTask={onSelectTask} />;
-  if (id === "leads") return <LeadsWidget />;
+  if (id === "leads") return <LeadsWidget onSelectClient={onSelectClient} />;
   return <PlaceholderWidget description={w?.description ?? ""} />;
 }
 
 // ─── Widget card ──────────────────────────────────────────────────────────────
-const WidgetCard = ({ id, label, onRemove, onSelectTask }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void }) => (
+const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => (
   <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs min-h-64">
     <div className="flex items-center justify-between mb-4">
       <p className="text-sm font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
       <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition">Remove</button>
     </div>
-    <WidgetContent id={id} onSelectTask={onSelectTask} />
+    <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
   </div>
 );
 
@@ -635,6 +636,7 @@ export function HomeScreen() {
   const [renameModal, setRenameModal] = useState<{ open: boolean; tabId: string; current: string }>({ open: false, tabId: "", current: "" });
   const [simModalOpen, setSimModalOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<SimTask | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [leads, setLeads] = useState<SimLead[]>([]);
 
   useEffect(() => {
@@ -762,7 +764,7 @@ export function HomeScreen() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {activeTab.widgets.map(id => (
-                    <WidgetCard key={id} id={id} label={getWidget(id).label} onRemove={() => removeWidget(id)} onSelectTask={setActiveTask} />
+                    <WidgetCard key={id} id={id} label={getWidget(id).label} onRemove={() => removeWidget(id)} onSelectTask={setActiveTask} onSelectClient={setSelectedClientId} />
                   ))}
                   <EmptySlot onAdd={() => setWidgetModalOpen(true)} />
                 </div>
@@ -772,6 +774,14 @@ export function HomeScreen() {
         )}
       </main>
 
+      {/* Client slideout */}
+      <ClientSlideout
+        lead={leads.find(l => l.id === selectedClientId) ?? null}
+        tasks={getTasks().filter(t => t.leadId === selectedClientId)}
+        isOpen={!!selectedClientId}
+        onClose={() => setSelectedClientId(null)}
+        onSelectTask={(task) => { setSelectedClientId(null); setTimeout(() => setActiveTask(task), 50); }}
+      />
       <AddWidgetModal open={widgetModalOpen} onClose={() => setWidgetModalOpen(false)} onAdd={addWidget} existingWidgets={activeTab.widgets} />
       <RenameTabModal open={renameModal.open} current={renameModal.current} onSave={label => renameTab(renameModal.tabId, label)} onClose={() => setRenameModal({ open: false, tabId: "", current: "" })} />
       <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} onToast={toast} />
