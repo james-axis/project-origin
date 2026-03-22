@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01,
-  ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01, Lock01,
+  ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
   Zap, Toggle01Right, X, Check, InfoCircle, AlertCircle, ArrowLeft,
 } from "@untitledui/icons";
 
@@ -38,7 +38,6 @@ interface TaskItem {
   triggerType: TriggerType;
   assigneeRole: string;
   enabled: boolean;
-  locked?: boolean;
   condition?: string;
   completionOptions?: string[];
   subtasks?: string[];
@@ -79,7 +78,7 @@ const initialDomains: DomainConfig[] = [
         { id: 134, name: "Add Policy / Application Number", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
         { id: 117, name: "Send application submitted email to client", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true },
         { id: 159, name: "Upload face to face documents", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, condition: "meeting_type = face_to_face" },
-        { id: 99, name: "Compliance Audit", triggerType: "task_completed", assigneeRole: "Services", enabled: true, locked: true, completionOptions: ["Pass", "On Hold", "Remediation Required"] },
+        { id: 99, name: "Compliance Audit", triggerType: "task_completed", assigneeRole: "Services", enabled: true, completionOptions: ["Pass", "On Hold", "Remediation Required"] },
         { id: 135, name: "Compliance Billing", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
         { id: 154, name: "Audit Finalisation", triggerType: "task_completed", assigneeRole: "Services", enabled: true },
         { id: 133, name: "Input life insurance amounts & premiums", triggerType: "task_completed", assigneeRole: "Admin", enabled: true },
@@ -516,9 +515,9 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
   isDragOver: boolean;
 }) {
   return (
-    <div draggable={!task.locked} onDragStart={e => onDragStart(e, index)} onDragOver={e => onDragOver(e, index)} onDrop={e => onDrop(e, index)}
+    <div draggable onDragStart={e => onDragStart(e, index)} onDragOver={e => onDragOver(e, index)} onDrop={e => onDrop(e, index)}
       className={"group relative flex items-start sm:items-center gap-3 rounded-xl border px-3 sm:px-4 py-3 transition-all " + (isDragOver ? "border-brand bg-brand-primary_alt shadow-md" : "border-secondary bg-primary hover:border-primary hover:shadow-sm") + (!task.enabled ? " opacity-50" : "")}>
-      <div className={"hidden sm:block cursor-grab text-fg-quaternary mt-0.5 " + (task.locked ? "opacity-0 pointer-events-none" : "opacity-0 group-hover:opacity-100")}><DotsGrid className="size-4" aria-hidden /></div>
+      <div className="hidden sm:block cursor-grab text-fg-quaternary mt-0.5 opacity-0 group-hover:opacity-100"><DotsGrid className="size-4" aria-hidden /></div>
       <div className="flex flex-col items-center w-6 shrink-0 mt-0.5">
         {isFirst ? <div className={"flex size-6 items-center justify-center rounded-full text-white " + domainColor}><Zap className="size-3" aria-hidden /></div>
           : <div className="flex size-6 items-center justify-center rounded-full bg-secondary text-xs font-medium text-tertiary">{index + 1}</div>}
@@ -527,7 +526,6 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
         <div className="flex flex-1 flex-col min-w-0 gap-0.5">
           <div className="flex items-center gap-2">
             <span className={"text-sm font-medium " + (task.enabled ? "text-primary" : "text-disabled")}>{task.name}</span>
-            {task.locked && <Lock01 className="size-3 text-fg-quaternary shrink-0" aria-hidden />}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-tertiary">{isFirst ? "Fires on object created" : "Fires when previous is completed"}</span>
@@ -541,7 +539,7 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
           <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button onClick={() => onToggle(task.id)} className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")}><Toggle01Right className="size-4" aria-hidden /></button>
             <button onClick={() => onEdit(task)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary transition-colors"><Edit01 className="size-4" aria-hidden /></button>
-            {!task.locked && <button onClick={() => onDelete(task.id)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"><Trash01 className="size-4" aria-hidden /></button>}
+            <button onClick={() => onDelete(task.id)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"><Trash01 className="size-4" aria-hidden /></button>
           </div>
         </div>
       </div>
@@ -686,12 +684,7 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
-            <div className="flex items-center gap-2.5"><Lock01 className="size-4 text-fg-tertiary shrink-0" aria-hidden /><div><p className="text-sm font-medium text-primary">System locked</p><p className="text-xs text-tertiary">Prevent reordering or deleting</p></div></div>
-            <button onClick={() => setForm({ ...form, locked: !form.locked })} className={"relative inline-flex h-5 w-9 items-center rounded-full transition-colors " + (form.locked ? "bg-brand-solid" : "bg-tertiary")}>
-              <span className={"inline-block size-3.5 rounded-full bg-white shadow-sm transition-transform " + (form.locked ? "translate-x-4" : "translate-x-0.5")} />
-            </button>
-          </div>
+
         </div>
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
           <button onClick={onClose} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
