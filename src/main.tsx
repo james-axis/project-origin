@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { HomeScreen } from "@/pages/home-screen";
+import { TasksPage } from "@/pages/tasks";
 import { NotFound } from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { RouteProvider } from "@/providers/router-provider";
@@ -19,6 +20,8 @@ createRoot(document.getElementById("root")!).render(
             <Routes>
               <Route path="/" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/workbench" element={<RequireAuth><HomeScreen /></RequireAuth>} />
+              <Route path="/tasks" element={<RequireAuth><TasksPage /></RequireAuth>} />
+              <Route path="/tasks/*" element={<RequireAuth><TasksPage /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/settings/*" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/login" element={<Login />} />
