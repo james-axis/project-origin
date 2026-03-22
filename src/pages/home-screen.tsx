@@ -89,12 +89,6 @@ export function HomeScreen() {
             {/* Mobile header — only show on non-settings pages */}
             {!isSettings && (
                 <header className="flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
-                    <div className="flex items-center gap-2">
-                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                            <path d="M4 16L16 4L28 16L16 28L4 16Z" fill="#D34108" />
-                        </svg>
-                        <span className="text-sm font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>AXIS</span>
-                    </div>
                 </header>
             )}
             <main className="min-h-screen bg-primary overflow-x-hidden lg:flex-1">
