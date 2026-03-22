@@ -1853,28 +1853,72 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-      <div className="relative rounded-2xl overflow-hidden min-h-[88px]"
-        style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 20%, #6B2D0E 55%, #D34108 78%, #FF8C52 92%, #FFF0E8 100%)" }}>
-        <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 100%)" }} />
-        <div className="relative z-10 flex items-center gap-4 px-5 py-4">
-          <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
-            style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
-            <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      <div className="relative rounded-2xl overflow-hidden" style={{ minHeight: 96 }}>
+        {/* Full-width gradient: dark navy → orange → white */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 18%, #6B2D0E 46%, #D34108 64%, #FF8C52 76%, #FFF4EE 88%, #FFFFFF 100%)" }} />
+
+        <div className="relative z-10 flex items-stretch min-h-[96px]">
+          {/* ── Left: dark section — greeting + headline ── */}
+          <div className="flex items-center gap-4 px-5 py-4 flex-1 min-w-0">
+            <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
+              style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
+              <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting} 👋</p>
+              <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+                {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {leads.length} clients · {activeCount} active
+                {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting} 👋</p>
-            <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-              {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
-            </p>
-            <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-              {leads.length} clients · {activeCount} active
-              {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
-            </p>
-          </div>
-          <div className="shrink-0 text-right hidden sm:block">
-            <DonutChart pct={completionPct} color="#D34108" size={60} />
+
+          {/* ── Right: white section — achievement tiles ── */}
+          <div className="hidden lg:flex items-center gap-3 px-5 py-3 shrink-0">
+            {/* Completion donut */}
+            <div className="flex flex-col items-center justify-center gap-0.5 px-3">
+              <DonutChart pct={completionPct} color="#D34108" size={52} />
+              <p className="text-[9px] font-semibold text-quaternary uppercase tracking-wider">Completion</p>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-12 bg-black/8" />
+
+            {/* Adviser tier */}
+            <div className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl"
+              style={{ background: tier.color + "12", border: `1px solid ${tier.color}30` }}>
+              <span className="text-2xl leading-none">{tier.icon}</span>
+              <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: tier.color }}>{tier.label}</p>
+              <p className="text-[9px] text-quaternary">Adviser Tier</p>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-12 bg-black/8" />
+
+            {/* Inforce target */}
+            <div className="flex flex-col items-center justify-center gap-0.5 px-3">
+              <p className="text-2xl font-bold tabular-nums leading-none" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
+              <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Inforce</p>
+              <div className="w-14 h-1 rounded-full mt-1" style={{ background: "#F3E8E0" }}>
+                <div className="h-full rounded-full bg-[#D34108] transition-all" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
+              </div>
+              <p className="text-[9px] text-quaternary mt-0.5">{inforceCount}/10 target</p>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-12 bg-black/8" />
+
+            {/* Clients */}
+            <div className="flex flex-col items-center justify-center gap-0.5 px-3">
+              <p className="text-2xl font-bold tabular-nums leading-none text-[#1A2535]" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
+              <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Clients</p>
+              <p className="text-[9px] text-quaternary">{activeCount} active</p>
+            </div>
           </div>
         </div>
       </div>
@@ -2044,7 +2088,9 @@ function ResizableWorkbench({
     );
   }
 
-  return (
+  const addSlotInline = widgets.length < 2;
+
+  const widgetRow = (
     <div ref={containerRef} className="flex gap-0 w-full select-none" style={{ minHeight: 520 }}>
       {widgets.map((id, i) => (
         <React.Fragment key={id}>
@@ -2077,21 +2123,37 @@ function ResizableWorkbench({
               style={{ width: 12 }}
               onMouseDown={e => onDragStart(e, i)}>
               <div className="w-0.5 h-12 rounded-full bg-secondary group-hover:bg-brand-solid group-hover:h-20 transition-all duration-150" />
-              <div className="absolute inset-y-0 -left-1 -right-1" /> {/* wider hit target */}
+              <div className="absolute inset-y-0 -left-1 -right-1" />
             </div>
           )}
         </React.Fragment>
       ))}
 
-      {/* Empty slot */}
-      <div className="flex flex-col" style={{ width: 180, minWidth: 180 }}>
+      {/* Inline add slot — only when < 2 widgets */}
+      {addSlotInline && (
+        <div className="flex flex-col" style={{ width: 180, minWidth: 180 }}>
+          <button onClick={onAddWidget}
+            className="group mx-1.5 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-secondary bg-transparent p-6 text-center transition hover:border-brand hover:bg-brand-secondary cursor-pointer h-full"
+            style={{ minHeight: 100 }}>
+            <Plus className="size-5 text-fg-quaternary group-hover:text-brand-secondary" />
+            <p className="text-xs font-medium text-quaternary group-hover:text-brand-secondary">Add widget</p>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  /* When 2+ widgets fill the row, add-widget slot goes on its own row below */
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      {widgetRow}
+      {!addSlotInline && (
         <button onClick={onAddWidget}
-          className="group mx-1.5 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-secondary bg-transparent p-6 text-center transition hover:border-brand hover:bg-brand-secondary cursor-pointer h-full"
-          style={{ minHeight: 100 }}>
-          <Plus className="size-5 text-fg-quaternary group-hover:text-brand-secondary" />
+          className="group mx-1.5 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-secondary bg-transparent px-6 py-4 transition hover:border-brand hover:bg-brand-secondary cursor-pointer w-full">
+          <Plus className="size-4 text-fg-quaternary group-hover:text-brand-secondary" />
           <p className="text-xs font-medium text-quaternary group-hover:text-brand-secondary">Add widget</p>
         </button>
-      </div>
+      )}
     </div>
   );
 }
