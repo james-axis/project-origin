@@ -1241,6 +1241,99 @@ function ApplicationsWidget({ onSelectTask, onSelectClient }: {
   );
 }
 
+
+// ─── Placeholder widget ───────────────────────────────────────────────────────
+const PlaceholderWidget = ({ description }: { description: string }) => (
+  <div className="flex flex-1 flex-col items-center justify-center rounded-xl bg-secondary_alt py-10 text-center gap-2">
+    <p className="text-sm font-medium text-secondary">Coming soon</p>
+    <p className="text-xs text-quaternary">{description}</p>
+  </div>
+);
+
+// ─── Universal Search types & helpers ────────────────────────────────────────
+interface CRMFilters {
+  search: string;
+  dateRange: "7d" | "30d" | "90d" | "all";
+  appStatus: ("new" | "active" | "overdue" | "complete")[];
+  taskPriority: ("critical" | "high" | "normal")[];
+  practice: string;
+  policyType: string;
+  tileFilter: "total" | "overdue" | "amber" | "fresh" | null;
+}
+
+interface CRMPreset {
+  id: string;
+  name: string;
+  filters: CRMFilters;
+  color: string;
+}
+
+const PRESET_COLORS = ["#D34108", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B", "#EC4899"];
+const PRESET_KEY = "axis_crm_presets_v1";
+
+const DEFAULT_FILTERS: CRMFilters = {
+  search: "",
+  dateRange: "all",
+  appStatus: [],
+  taskPriority: [],
+  practice: "",
+  policyType: "",
+  tileFilter: null,
+};
+
+type SortKey = "name" | "policyType" | "practice" | "appStatus" | "step" | "priority" | "age" | "progress";
+type SortDir = "asc" | "desc";
+
+function loadPresets(): CRMPreset[] {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? "[]"); } catch { return []; }
+}
+function savePresets(ps: CRMPreset[]) {
+  localStorage.setItem(PRESET_KEY, JSON.stringify(ps));
+}
+
+function usePresetsStore() {
+  const [presets, setPresets] = useState<CRMPreset[]>(loadPresets);
+  const add = useCallback((p: CRMPreset) => {
+    setPresets(prev => { const next = [...prev, p]; savePresets(next); return next; });
+  }, []);
+  const remove = useCallback((id: string) => {
+    setPresets(prev => { const next = prev.filter(p => p.id !== id); savePresets(next); return next; });
+  }, []);
+  return { presets, add, remove };
+}
+
+type TableRow = {
+  lead: SimLead;
+  currentTask: SimTask | null;
+  chainStep: number;
+  ageMinutes: number;
+  priority: string;
+  appStatus: string;
+  completedCount: number;
+  progress: number;
+};
+
+function buildTableRows(leads: SimLead[], allTasks: SimTask[], total: number): TableRow[] {
+  return leads.map(lead => {
+    const lt = allTasks.filter(t => t.leadId === lead.id);
+    const openTasks = lt.filter(t => t.status === "open" && !t.parentTaskId).sort((a, b) => a.sortOrder - b.sortOrder);
+    const completedCount = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+    const currentTask = openTasks[0] ?? null;
+    const chainStep = currentTask ? APPLICATION_CHAIN.findIndex(c => c.id === currentTask.templateTaskId) : completedCount - 1;
+    const ageMinutes = currentTask ? (Date.now() - new Date(currentTask.createdAt).getTime()) / 60000 : 0;
+    const priority = currentTask ? getTaskPriority(currentTask) : "normal";
+    const appStatus = (() => {
+      if (completedCount >= total) return "complete";
+      if (priority === "critical") return "overdue";
+      const isNew = (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
+      if (isNew && chainStep <= 0) return "new";
+      return "active";
+    })();
+    const progress = Math.round((completedCount / total) * 100);
+    return { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress };
+  });
+}
+
 // ─── Universal Search widget ──────────────────────────────────────────────────
 function CRMTableWidget({ onSelectTask, onSelectClient, globalTileFilter }: {
   onSelectTask: (t: SimTask) => void;
