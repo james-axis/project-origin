@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { HomeScreen } from "@/pages/home-screen";
 import { TasksPage } from "@/pages/tasks";
+import { ClientsPage } from "@/pages/clients";
 import { NotFound } from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { RouteProvider } from "@/providers/router-provider";
@@ -22,6 +23,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/workbench" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/tasks" element={<RequireAuth><TasksPage /></RequireAuth>} />
               <Route path="/tasks/*" element={<RequireAuth><TasksPage /></RequireAuth>} />
+              <Route path="/clients" element={<RequireAuth><ClientsPage /></RequireAuth>} />
+              <Route path="/clients/*" element={<RequireAuth><ClientsPage /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/settings/*" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/login" element={<Login />} />
