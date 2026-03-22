@@ -402,13 +402,11 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
 
   // Split into priority (critical/high) and normal
   const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
-  const normalTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "overdue" | "amber" | "fresh">("all");
 
   const overdueTasks = tasks.filter(t => getTaskPriority(t) === "critical");
-  const amberTasks   = tasks.filter(t => getTaskPriority(t) === "high");
   const freshTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
 
   function downloadCSV() {
@@ -558,7 +556,6 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
 
   const total = APPLICATION_CHAIN.length;
   const activeLeads   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open"));
-  const completeLeads = leads.filter(l => allTasks.filter(t => t.leadId === l.id && t.status === "completed" && !t.parentTaskId).length === total);
   const totalOpenTasks = allTasks.filter(t => t.status === "open").length;
 
   function downloadCSV() {
@@ -849,18 +846,18 @@ export function HomeScreen() {
                   <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
                   <p className="text-sm text-tertiary mt-0.5">Your personalised CRM dashboard</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={handleReset} title="Reset simulation data"
-                    className="flex size-8 items-center justify-center rounded-lg border border-secondary bg-primary text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <button onClick={handleReset} title="Reset"
+                    className="flex size-8 items-center justify-center rounded-lg border border-secondary bg-primary text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors shrink-0">
                     <RefreshCcw01 className="size-3.5" aria-hidden />
                   </button>
                   <button onClick={() => setSimModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-3 py-2 text-sm font-medium text-brand-secondary hover:bg-brand-primary_alt transition-colors">
-                    <Zap className="size-3.5" aria-hidden />Simulate lead
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-3 py-2 text-sm font-medium text-brand-secondary hover:bg-brand-primary_alt transition-colors whitespace-nowrap">
+                    <Zap className="size-3.5" aria-hidden /><span className="hidden sm:inline">Simulate </span>lead
                   </button>
                   <button onClick={() => setWidgetModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-                    <Plus className="size-3.5" aria-hidden />Add widget
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
+                    <Plus className="size-3.5" aria-hidden /><span className="hidden sm:inline">Add </span>widget
                   </button>
                 </div>
               </div>
