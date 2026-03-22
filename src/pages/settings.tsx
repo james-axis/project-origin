@@ -284,7 +284,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
         <div className="flex items-center justify-between border-b border-secondary px-6 py-4 flex-shrink-0">
           <div>
             <h2 className="text-base font-semibold text-primary">Task chain builder</h2>
-            <p className="text-sm text-tertiary mt-0.5">Step {s.step} of 3 ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ {STEP_LABELS[s.step - 1]}</p>
+            <p className="text-sm text-tertiary mt-0.5">Step {s.step} of 3 — {STEP_LABELS[s.step - 1]}</p>
           </div>
           <button onClick={onClose} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary transition-colors"><X className="size-4" aria-hidden /></button>
         </div>
@@ -564,7 +564,7 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Task Builder ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 function TaskBuilder() {
   const [domains, setDomains] = useState<DomainConfig[]>(initialDomains);
-  const [view, setView] = useState<TaskBuilderView>("workflows");
+  const [view, setView] = useState<TaskBuilderView>("templates");
   const [activeDomainId, setActiveDomainId] = useState<string | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -650,44 +650,57 @@ function TaskBuilder() {
 
   // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ View: Workflows table ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
   if (view === "workflows") {
+    // Legacy fallback — redirect to templates view
+    setView("templates");
+    return null;
+  }
+
+  // View: Task Flows table (all templates across all domains)
+  if (view === "templates") {
+    const allFlows: Array<{ domainId: string; domainLabel: string; domainColor: string; template: WorkflowTemplate }> = [];
+    domains.forEach(d => d.templates.forEach(t => allFlows.push({ domainId: d.id, domainLabel: d.label, domainColor: d.color, template: t })));
+
     return (
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-primary">Workflows</h2>
-            <p className="text-sm text-tertiary mt-0.5">All active task chain categories across the CRM</p>
+            <h2 className="text-lg font-semibold text-primary">Task Flows</h2>
+            <p className="text-sm text-tertiary mt-0.5">All task chains across the CRM</p>
           </div>
           <button onClick={() => openWizard(1)} className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-            <Plus className="size-3.5" aria-hidden />New workflow
+            <Plus className="size-3.5" aria-hidden />New task flow
           </button>
         </div>
 
         <div className="rounded-xl border border-secondary overflow-hidden">
-          {/* Table header */}
-          <div className="grid grid-cols-[2fr_3fr_1fr_1fr_1fr] gap-4 px-4 py-3 bg-secondary_alt border-b border-secondary">
+          <div className="grid grid-cols-[2fr_1.5fr_2fr_1.5fr_1fr_auto] gap-4 px-4 py-3 bg-secondary_alt border-b border-secondary">
+            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Task flow</span>
             <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Workflow</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Description</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Templates</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Published</span>
+            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Applies to</span>
+            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Status</span>
+            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Tasks</span>
             <span className="text-xs font-semibold text-quaternary uppercase tracking-wider"></span>
           </div>
-          {/* Rows */}
-          {domains.map((d, i) => {
-            const publishedCount = d.templates.filter(t => t.status === "published").length;
-            return (
-              <div key={d.id} onClick={() => { setActiveDomainId(d.id); setView("templates"); }}
-                className={"grid grid-cols-[2fr_3fr_1fr_1fr_1fr] gap-4 px-4 py-4 items-center cursor-pointer transition-colors hover:bg-secondary_alt " + (i < domains.length - 1 ? "border-b border-secondary" : "")}>
-                <div className="flex items-center gap-3">
-                  <span className={"size-2.5 rounded-full shrink-0 " + d.color} />
-                  <span className="text-sm font-medium text-primary">{d.label}</span>
-                </div>
-                <span className="text-sm text-tertiary truncate">{d.description}</span>
-                <span className="text-sm text-secondary">{d.templates.length}</span>
-                <span className="text-sm text-secondary">{publishedCount}</span>
-                <div className="flex justify-end"><ChevronRight className="size-4 text-fg-quaternary" aria-hidden /></div>
+          {allFlows.length === 0 && (
+            <div className="px-4 py-12 text-center">
+              <p className="text-sm font-medium text-secondary">No task flows yet</p>
+              <p className="text-xs text-tertiary mt-1">Click New task flow to create your first</p>
+            </div>
+          )}
+          {allFlows.map(({ domainId, domainLabel, domainColor, template }, i) => (
+            <div key={template.id} onClick={() => { setActiveDomainId(domainId); setActiveTemplateId(template.id); setView("tasks"); }}
+              className={"grid grid-cols-[2fr_1.5fr_2fr_1.5fr_1fr_auto] gap-4 px-4 py-4 items-center cursor-pointer transition-colors hover:bg-secondary_alt " + (i < allFlows.length - 1 ? "border-b border-secondary" : "")}>
+              <span className="text-sm font-medium text-primary">{template.name}</span>
+              <div className="flex items-center gap-2">
+                <span className={"size-2 rounded-full shrink-0 " + domainColor} />
+                <span className="text-sm text-secondary">{domainLabel}</span>
               </div>
-            );
-          })}
+              <span className="text-sm text-tertiary truncate">{template.practices.join(", ")}</span>
+              <div><StatusBadge status={template.status} /></div>
+              <span className="text-sm text-secondary">{template.tasks.filter(x => x.enabled).length} active</span>
+              <ChevronRight className="size-4 text-fg-quaternary" aria-hidden />
+            </div>
+          ))}
         </div>
 
         {wizardOpen && <Wizard domains={domains} startStep={wizardStep} onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} />}
@@ -695,54 +708,6 @@ function TaskBuilder() {
     );
   }
 
-  // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ View: Templates table ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
-  if (view === "templates" && activeDomain) {
-    return (
-      <div className="p-4 sm:p-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-tertiary mb-5">
-          <button onClick={() => setView("workflows")} className="hover:text-primary transition-colors">Workflows</button>
-          <ChevronRight className="size-3.5 text-quaternary" aria-hidden />
-          <span className="font-medium text-primary">{activeDomain.label}</span>
-        </div>
-
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className={"size-3 rounded-full " + activeDomain.color} />
-              <h2 className="text-lg font-semibold text-primary">{activeDomain.label}</h2>
-            </div>
-            <p className="text-sm text-tertiary mt-0.5">{activeDomain.description}</p>
-          </div>
-          <button onClick={() => openWizard(2)} className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-            <Plus className="size-3.5" aria-hidden />New template
-          </button>
-        </div>
-
-        <div className="rounded-xl border border-secondary overflow-hidden">
-          <div className="grid grid-cols-[2fr_2fr_2fr_1fr_auto] gap-4 px-4 py-3 bg-secondary_alt border-b border-secondary">
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Template</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Applies to</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Status</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider">Tasks</span>
-            <span className="text-xs font-semibold text-quaternary uppercase tracking-wider"></span>
-          </div>
-          {activeDomain.templates.map((t, i) => (
-            <div key={t.id} onClick={() => { setActiveTemplateId(t.id); setView("tasks"); }}
-              className={"grid grid-cols-[2fr_2fr_2fr_1fr_auto] gap-4 px-4 py-4 items-center cursor-pointer transition-colors hover:bg-secondary_alt " + (i < activeDomain.templates.length - 1 ? "border-b border-secondary" : "")}>
-              <span className="text-sm font-medium text-primary">{t.name}</span>
-              <span className="text-sm text-tertiary">{t.practices.join(", ")}</span>
-              <div><StatusBadge status={t.status} /></div>
-              <span className="text-sm text-secondary">{t.tasks.filter(x => x.enabled).length} active</span>
-              <ChevronRight className="size-4 text-fg-quaternary" aria-hidden />
-            </div>
-          ))}
-        </div>
-
-        {wizardOpen && <Wizard domains={domains} startStep={2} prefillDomainId={activeDomain.id} onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} />}
-      </div>
-    );
-  }
 
   // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ View: Tasks (drag-drop chain) ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
   if (view === "tasks" && activeDomain && activeTemplate) {
@@ -751,9 +716,7 @@ function TaskBuilder() {
         {/* Breadcrumb + toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-secondary">
           <div className="flex items-center gap-2 text-sm text-tertiary">
-            <button onClick={() => setView("workflows")} className="hover:text-primary transition-colors">Workflows</button>
-            <ChevronRight className="size-3.5 text-quaternary" aria-hidden />
-            <button onClick={() => setView("templates")} className="hover:text-primary transition-colors">{activeDomain.label}</button>
+            <button onClick={() => setView("templates")} className="hover:text-primary transition-colors">Task Flows</button>
             <ChevronRight className="size-3.5 text-quaternary" aria-hidden />
             <span className="font-medium text-primary">{activeTemplate.name}</span>
           </div>
