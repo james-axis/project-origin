@@ -151,8 +151,7 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
                     (action.variant === "ghost"
                       ? "hover:opacity-70"
                       : "font-semibold")
-                  } style={{ color: action.variant === "ghost" ? "rgba(255,255,255,0.5)" : "#FF8C52" }}
-                  }>
+                  } style={{ color: action.variant === "ghost" ? "rgba(255,255,255,0.5)" : "#FF8C52" }}>
                   {action.label}
                 </button>
               ))}
