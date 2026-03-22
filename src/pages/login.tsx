@@ -4,8 +4,9 @@ import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Form } from "@/components/base/form/form";
 import { Input } from "@/components/base/input/input";
 import { RatingStars } from "@/components/foundations/rating-stars";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useState } from "react";
+import { setAuthenticated } from "@/providers/auth-provider";
 
 const AxisLogoSymbol = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Axis">
@@ -24,12 +25,15 @@ const AxisLogoSymbol = ({ className }: { className?: string }) => (
 
 export const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [email, setEmail] = useState("test@gmail.com");
     const [password, setPassword] = useState("form123");
 
     const handleSignIn = (e: React.FormEvent) => {
         e.preventDefault();
-        navigate("/workbench");
+        setAuthenticated();
+        const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/workbench";
+        navigate(from, { replace: true });
     };
 
     return (
