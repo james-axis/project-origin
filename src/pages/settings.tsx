@@ -31,6 +31,7 @@ interface TaskItem {
   locked?: boolean;
   condition?: string;
   completionOptions?: string[];
+  subtasks?: string[];
 }
 
 interface WorkflowTemplate {
@@ -520,6 +521,7 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-tertiary">{isFirst ? "Fires on object created" : "Fires when previous is completed"}</span>
             {task.condition && <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary font-mono">if {task.condition}</span>}
+            {task.subtasks && task.subtasks.length > 0 && <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-tertiary">{task.subtasks.length} subtask{task.subtasks.length !== 1 ? "s" : ""}</span>}
           </div>
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-2">
@@ -537,7 +539,19 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
 
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Edit task modal ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSave: (t: TaskItem) => void; onClose: () => void }) {
-  const [form, setForm] = useState<TaskItem>(task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true });
+  const [form, setForm] = useState<TaskItem>(task ?? { id: Date.now(), name: "", triggerType: "task_completed", assigneeRole: "Consultant", enabled: true, subtasks: [] });
+  const [newSubtask, setNewSubtask] = useState("");
+
+  function addSubtask() {
+    if (!newSubtask.trim()) return;
+    setForm(prev => ({ ...prev, subtasks: [...(prev.subtasks ?? []), newSubtask.trim()] }));
+    setNewSubtask("");
+  }
+
+  function removeSubtask(i: number) {
+    setForm(prev => ({ ...prev, subtasks: (prev.subtasks ?? []).filter((_, idx) => idx !== i) }));
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
@@ -547,14 +561,68 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
           <button onClick={onClose} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary"><X className="size-4" aria-hidden /></button>
         </div>
         <div className="space-y-4 px-5 py-4">
-          <div className="space-y-1.5"><label className="block text-sm font-medium text-secondary">Task name</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. Introduction Call" /></div>
-          <div className="space-y-1.5"><label className="block text-sm font-medium text-secondary">Assignee role</label><select value={form.assigneeRole} onChange={e => setForm({ ...form, assigneeRole: e.target.value })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand">{ASSIGNEE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
-          <div className="space-y-1.5"><label className="block text-sm font-medium text-secondary">Condition <span className="font-normal text-tertiary">(optional)</span></label><input value={form.condition ?? ""} onChange={e => setForm({ ...form, condition: e.target.value || undefined })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary font-mono outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. meeting_type = face_to_face" /></div>
-          <div className="flex items-center justify-between rounded-xl border border-secondary bg-secondary_alt px-4 py-3"><div className="flex items-center gap-2.5"><Lock01 className="size-4 text-fg-tertiary shrink-0" aria-hidden /><div><p className="text-sm font-medium text-primary">System locked</p><p className="text-xs text-tertiary">Prevent reordering or deleting</p></div></div><button onClick={() => setForm({ ...form, locked: !form.locked })} className={"relative inline-flex h-5 w-9 items-center rounded-full transition-colors " + (form.locked ? "bg-brand-solid" : "bg-tertiary")}><span className={"inline-block size-3.5 rounded-full bg-white shadow-sm transition-transform " + (form.locked ? "translate-x-4" : "translate-x-0.5")} /></button></div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Task name</label>
+            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. Introduction Call" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Assignee role</label>
+            <select value={form.assigneeRole} onChange={e => setForm({ ...form, assigneeRole: e.target.value })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+              {ASSIGNEE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-secondary">Condition <span className="font-normal text-tertiary">(optional)</span></label>
+            <input value={form.condition ?? ""} onChange={e => setForm({ ...form, condition: e.target.value || undefined })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary font-mono outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. meeting_type = face_to_face" />
+          </div>
+
+          {/* Subtasks */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-secondary">Subtasks <span className="font-normal text-tertiary">(optional)</span></label>
+              {(form.subtasks ?? []).length > 0 && <span className="text-xs text-quaternary">{form.subtasks?.length} item{form.subtasks?.length !== 1 ? "s" : ""}</span>}
+            </div>
+            <p className="text-xs text-tertiary">Checklist items the assignee must complete within this task</p>
+            {(form.subtasks ?? []).length > 0 && (
+              <div className="rounded-xl border border-secondary overflow-hidden">
+                {(form.subtasks ?? []).map((sub, i) => (
+                  <div key={i} className={"flex items-center gap-2 px-3 py-2.5 " + (i < (form.subtasks?.length ?? 0) - 1 ? "border-b border-secondary" : "")}>
+                    <div className="size-4 rounded border border-secondary shrink-0" />
+                    <span className="flex-1 text-sm text-primary">{sub}</span>
+                    <button onClick={() => removeSubtask(i)} className="flex size-6 items-center justify-center rounded text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors">
+                      <X className="size-3" aria-hidden />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={newSubtask}
+                onChange={e => setNewSubtask(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && addSubtask()}
+                className="flex-1 rounded-lg border border-primary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                placeholder="Add a subtask..."
+              />
+              <button onClick={addSubtask} disabled={!newSubtask.trim()}
+                className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary disabled:opacity-40 transition-colors">
+                <Plus className="size-4" aria-hidden />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
+            <div className="flex items-center gap-2.5"><Lock01 className="size-4 text-fg-tertiary shrink-0" aria-hidden /><div><p className="text-sm font-medium text-primary">System locked</p><p className="text-xs text-tertiary">Prevent reordering or deleting</p></div></div>
+            <button onClick={() => setForm({ ...form, locked: !form.locked })} className={"relative inline-flex h-5 w-9 items-center rounded-full transition-colors " + (form.locked ? "bg-brand-solid" : "bg-tertiary")}>
+              <span className={"inline-block size-3.5 rounded-full bg-white shadow-sm transition-transform " + (form.locked ? "translate-x-4" : "translate-x-0.5")} />
+            </button>
+          </div>
         </div>
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
           <button onClick={onClose} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
-          <button onClick={() => form.name.trim() && onSave(form)} disabled={!form.name.trim()} className="flex-1 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover disabled:opacity-50 transition-colors"><span className="flex items-center justify-center gap-1.5"><Check className="size-3.5" aria-hidden />Save task</span></button>
+          <button onClick={() => form.name.trim() && onSave(form)} disabled={!form.name.trim()} className="flex-1 rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover disabled:opacity-50 transition-colors">
+            <span className="flex items-center justify-center gap-1.5"><Check className="size-3.5" aria-hidden />Save task</span>
+          </button>
         </div>
       </div>
     </div>
