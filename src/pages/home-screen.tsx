@@ -293,7 +293,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
 
 // ─── Widget definitions ───────────────────────────────────────────────────────
 const AVAILABLE_WIDGETS = [
-  { id: "priorities",   label: "Top Priorities", description: "Next best actions to drive revenue" },
+  { id: "priorities",   label: "Next Best Action", description: "Next best actions to drive revenue" },
   { id: "crm_table",    label: "CRM Table",      description: "Mega filter table — every client, task and status" },
   { id: "tasks",        label: "Tasks",        description: "Open tasks across all clients" },
   { id: "leads",        label: "Clients",      description: "All active clients" },
@@ -747,7 +747,7 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
 }
 
 
-// ─── Top Priorities widget ────────────────────────────────────────────────────
+// ─── Next Best Action widget ─────────────────────────────────────────────────
 // Surfaces the highest-impact actions across all clients using a priority score.
 // Score model:
 //   100 — Lapse Risk: late-stage task (step 9+) overdue >2hrs → revenue at risk
@@ -1780,18 +1780,17 @@ function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSel
 // ─── Widget card ──────────────────────────────────────────────────────────────
 const WIDGET_STYLES: Record<string, { header: string; card: string }> = {
   priorities:   { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+  crm_table:    { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
   tasks:        { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
   leads:        { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
   applications: { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
   default:      { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
 };
 
-const FULL_WIDTH_WIDGETS = new Set(["crm_table"]);
 const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => {
   const styles = WIDGET_STYLES[id] ?? WIDGET_STYLES.default;
-  const isFull = FULL_WIDTH_WIDGETS.has(id);
   return (
-    <div className={"flex flex-col rounded-2xl p-5 " + styles.card + (isFull ? " col-span-full" : "")} style={{ minHeight: isFull ? 600 : 480 }}>
+    <div className={"flex flex-col rounded-2xl p-5 " + styles.card} style={{ minHeight: 480 }}>
       <div className="flex items-center justify-between mb-4">
         <p className={"text-base font-semibold " + styles.header} style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
         <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
@@ -1937,9 +1936,10 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
         {/* Hero banner */}
         <div className="relative rounded-2xl overflow-hidden min-h-[96px]"
-          style={{ background: "linear-gradient(135deg, #1C2B3A 0%, #2D3F55 60%, #3B485B 100%)" }}>
-          <div className="absolute -top-6 -right-6 size-36 rounded-full" style={{ background: "radial-gradient(circle, rgba(211,65,8,0.25), transparent 70%)" }} />
-          <div className="absolute bottom-0 left-1/4 size-20 rounded-full" style={{ background: "radial-gradient(circle, rgba(211,65,8,0.12), transparent 70%)" }} />
+          style={{ background: "linear-gradient(90deg, #1C2B3A 0%, #243347 30%, #2D3F55 60%, #4A3028 85%, #6B2D12 100%)" }}>
+          <div className="absolute inset-y-0 right-0 w-1/3 pointer-events-none" style={{ background: "linear-gradient(90deg, transparent, rgba(211,65,8,0.18))" }} />
+          <div className="absolute -top-4 right-16 size-28 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(234,105,33,0.30), transparent 70%)" }} />
+          <div className="absolute bottom-0 right-1/3 size-16 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(211,65,8,0.15), transparent 70%)" }} />
           <div className="relative z-10 flex items-center gap-4 px-5 py-4">
             <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
               style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
