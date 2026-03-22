@@ -233,3 +233,30 @@ export function resetSim() {
   localStorage.removeItem(KEYS.tasks);
   localStorage.removeItem(KEYS.seeded);
 }
+
+// ─── Task panel data (persisted per task instance) ────────────────────────────
+const PANEL_KEY = "axis_sim_panel_data";
+
+type PanelStore = Record<string, Record<string, string | string[] | boolean | undefined>>;
+
+export function getPanelData(taskId: string) {
+  try {
+    const store: PanelStore = JSON.parse(localStorage.getItem(PANEL_KEY) ?? "{}");
+    return store[taskId] ?? {};
+  } catch { return {}; }
+}
+
+export function savePanelData(taskId: string, data: Record<string, string | string[] | boolean | undefined>) {
+  try {
+    const store: PanelStore = JSON.parse(localStorage.getItem(PANEL_KEY) ?? "{}");
+    store[taskId] = data;
+    localStorage.setItem(PANEL_KEY, JSON.stringify(store));
+  } catch {}
+}
+
+// Also wipe panel data on reset
+const _origReset = resetSim;
+export function resetSim() {
+  _origReset();
+  localStorage.removeItem(PANEL_KEY);
+}

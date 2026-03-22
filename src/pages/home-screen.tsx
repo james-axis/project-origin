@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router";
 import { Settings } from "@/pages/settings";
 import { useToast } from "@/components/toast";
+import { TaskPanel, type TaskPanelData } from "@/components/task-panels";
+import { getPanelData, savePanelData } from "@/store/sim-store";
 import {
   initSimStore, getLeads, addLead, getTasks, getOpenTasks,
   fireFirstTask, completeTask, attemptTask, resetSim,
@@ -42,6 +44,12 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask }:
   const [notes, setNotes] = useState("");
   const [acting, setActing] = useState(false);
   const [result, setResult] = useState<{ type: "completed" | "attempted"; next: SimTask | null } | null>(null);
+  const [panelData, setPanelData] = useState<TaskPanelData>(() => getPanelData(task.id));
+
+  function handlePanelChange(data: TaskPanelData) {
+    setPanelData(data);
+    savePanelData(task.id, data);
+  }
 
   const allTasks = getTasks().filter(t => t.leadId === task.leadId).sort((a, b) => {
     if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
@@ -158,6 +166,18 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask }:
                 <div><p className="text-[10px] text-quaternary uppercase tracking-wider">Policy type</p><p className="text-sm text-secondary">{lead.policyType}</p></div>
                 <div><p className="text-[10px] text-quaternary uppercase tracking-wider">Practice</p><p className="text-sm text-secondary">{lead.practice}</p></div>
                 <div><p className="text-[10px] text-quaternary uppercase tracking-wider">DOB</p><p className="text-sm text-secondary">{lead.dob}</p></div>
+              </div>
+            )}
+
+            {/* Task-specific panel */}
+            {!task.parentTaskId && (
+              <div className="mx-5 mt-4 rounded-xl border border-secondary bg-primary p-4">
+                <TaskPanel
+                  templateTaskId={task.templateTaskId}
+                  lead={lead}
+                  savedData={panelData}
+                  onChange={handlePanelChange}
+                />
               </div>
             )}
 
