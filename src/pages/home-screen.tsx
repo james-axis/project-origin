@@ -377,6 +377,9 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   const [tasks, setTasks] = useState<SimTask[]>([]);
   const [leads, setLeads] = useState<SimLead[]>([]);
 
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "overdue" | "amber" | "fresh">("all");
+
   const refresh = useCallback(() => {
     setTasks(getOpenTasks());
     setLeads(getLeads());
@@ -391,6 +394,9 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
 
   const getLead = (id: string) => leads.find(l => l.id === id);
 
+  // Split into priority (critical/high) and normal
+  const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
@@ -399,12 +405,6 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
       </div>
     );
   }
-
-  // Split into priority (critical/high) and normal
-  const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
-
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "overdue" | "amber" | "fresh">("all");
 
   const overdueTasks = tasks.filter(t => getTaskPriority(t) === "critical");
   const freshTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
@@ -544,6 +544,10 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     window.addEventListener("axis_sim_update", refresh);
     return () => window.removeEventListener("axis_sim_update", refresh);
   }, []);
+
+  const total = APPLICATION_CHAIN.length;
+  const activeLeads   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open"));
+  const totalOpenTasks = allTasks.filter(t => t.status === "open").length;
 
   if (leads.length === 0) {
     return (
