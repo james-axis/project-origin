@@ -1853,72 +1853,62 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-      <div className="relative rounded-2xl overflow-hidden" style={{ minHeight: 96 }}>
-        {/* Full-width gradient: dark navy → orange → white */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 18%, #6B2D0E 46%, #D34108 64%, #FF8C52 76%, #FFF4EE 88%, #FFFFFF 100%)" }} />
+      {/* Outer wrapper: rounded card, clips overflow */}
+      <div className="rounded-2xl overflow-hidden border border-secondary flex flex-col lg:flex-row" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)" }}>
 
-        <div className="relative z-10 flex items-stretch min-h-[96px]">
-          {/* ── Left: dark section — greeting + headline ── */}
-          <div className="flex items-center gap-4 px-5 py-4 flex-1 min-w-0">
-            <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
-              style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
-              <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting} 👋</p>
-              <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-                {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
-              </p>
-              <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-                {leads.length} clients · {activeCount} active
-                {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
-              </p>
-            </div>
+        {/* ── LEFT: gradient dark panel ── */}
+        <div className="relative flex items-center gap-4 px-5 py-5 min-w-0 lg:flex-1"
+          style={{ background: "linear-gradient(105deg, #1A2535 0%, #1F2D3D 30%, #6B2D0E 62%, #D34108 82%, #EA6921 100%)" }}>
+          {/* Subtle inner glow */}
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(234,105,33,0.18), transparent 60%)" }} />
+          <div className="shrink-0 relative flex size-12 items-center justify-center rounded-xl"
+            style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
+            <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="relative min-w-0">
+            <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting} 👋</p>
+            <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+              {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+              {leads.length} clients · {activeCount} active
+              {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
+            </p>
+          </div>
+        </div>
+
+        {/* ── RIGHT: clean white panel — achievement tiles ── */}
+        <div className="flex items-center gap-0 bg-white border-t lg:border-t-0 lg:border-l border-secondary divide-x divide-secondary">
+          {/* Completion donut */}
+          <div className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 sm:px-5">
+            <DonutChart pct={completionPct} color="#D34108" size={48} />
+            <p className="text-[9px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Done</p>
           </div>
 
-          {/* ── Right: white section — achievement tiles ── */}
-          <div className="hidden lg:flex items-center gap-3 px-5 py-3 shrink-0">
-            {/* Completion donut */}
-            <div className="flex flex-col items-center justify-center gap-0.5 px-3">
-              <DonutChart pct={completionPct} color="#D34108" size={52} />
-              <p className="text-[9px] font-semibold text-quaternary uppercase tracking-wider">Completion</p>
+          {/* Adviser tier */}
+          <div className="flex flex-col items-center justify-center gap-0 px-4 py-3 sm:px-5">
+            <span className="text-xl leading-none">{tier.icon}</span>
+            <p className="text-[10px] font-bold mt-1 uppercase tracking-wider" style={{ color: tier.color }}>{tier.label}</p>
+            <p className="text-[9px] text-quaternary leading-tight">Adviser Tier</p>
+          </div>
+
+          {/* Inforce target */}
+          <div className="flex flex-col items-center justify-center gap-0 px-4 py-3 sm:px-5">
+            <p className="text-xl font-bold tabular-nums leading-none" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
+            <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Inforce</p>
+            <div className="w-12 h-1 rounded-full mt-1.5 bg-orange-100 overflow-hidden">
+              <div className="h-full rounded-full bg-[#D34108]" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
             </div>
+            <p className="text-[9px] text-quaternary mt-0.5">{inforceCount}/10</p>
+          </div>
 
-            {/* Divider */}
-            <div className="w-px h-12 bg-black/8" />
-
-            {/* Adviser tier */}
-            <div className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl"
-              style={{ background: tier.color + "12", border: `1px solid ${tier.color}30` }}>
-              <span className="text-2xl leading-none">{tier.icon}</span>
-              <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: tier.color }}>{tier.label}</p>
-              <p className="text-[9px] text-quaternary">Adviser Tier</p>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-12 bg-black/8" />
-
-            {/* Inforce target */}
-            <div className="flex flex-col items-center justify-center gap-0.5 px-3">
-              <p className="text-2xl font-bold tabular-nums leading-none" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
-              <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Inforce</p>
-              <div className="w-14 h-1 rounded-full mt-1" style={{ background: "#F3E8E0" }}>
-                <div className="h-full rounded-full bg-[#D34108] transition-all" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
-              </div>
-              <p className="text-[9px] text-quaternary mt-0.5">{inforceCount}/10 target</p>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-12 bg-black/8" />
-
-            {/* Clients */}
-            <div className="flex flex-col items-center justify-center gap-0.5 px-3">
-              <p className="text-2xl font-bold tabular-nums leading-none text-[#1A2535]" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
-              <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Clients</p>
-              <p className="text-[9px] text-quaternary">{activeCount} active</p>
-            </div>
+          {/* Clients */}
+          <div className="flex flex-col items-center justify-center gap-0 px-4 py-3 sm:px-5">
+            <p className="text-xl font-bold tabular-nums leading-none text-[#1A2535]" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
+            <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Clients</p>
+            <p className="text-[9px] text-quaternary">{activeCount} active</p>
           </div>
         </div>
       </div>
@@ -2088,8 +2078,42 @@ function ResizableWorkbench({
     );
   }
 
+  // Use window width to decide layout (server-safe default = desktop)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   const addSlotInline = widgets.length < 2;
 
+  // Mobile: vertical stack — no drag, full width each
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-4 w-full">
+        {widgets.map(id => (
+          <div key={id} className="flex flex-col rounded-2xl border border-secondary bg-white"
+            style={{ minHeight: 420, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-secondary shrink-0">
+              <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{getWidget(id).label}</p>
+              <button onClick={() => onRemove(id)} className="text-xs text-quaternary hover:text-secondary px-2 py-1 rounded hover:bg-secondary">Remove</button>
+            </div>
+            <div className="flex flex-col flex-1 min-h-0 p-4 overflow-hidden">
+              <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
+            </div>
+          </div>
+        ))}
+        <button onClick={onAddWidget}
+          className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-secondary bg-transparent px-6 py-5 transition hover:border-brand hover:bg-brand-secondary cursor-pointer w-full">
+          <Plus className="size-4 text-fg-quaternary group-hover:text-brand-secondary" />
+          <p className="text-xs font-medium text-quaternary group-hover:text-brand-secondary">Add widget</p>
+        </button>
+      </div>
+    );
+  }
+
+  // Desktop: resizable flex row
   const widgetRow = (
     <div ref={containerRef} className="flex gap-0 w-full select-none" style={{ minHeight: 520 }}>
       {widgets.map((id, i) => (
@@ -2098,28 +2122,25 @@ function ResizableWorkbench({
           <div className="flex flex-col" style={{ width: `${widths[i] ?? 50}%`, minWidth: 0 }}>
             <div className="flex flex-col rounded-2xl border border-secondary bg-white h-full"
               style={{ margin: "0 6px", minHeight: 480, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
-              {/* Widget header */}
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-secondary shrink-0">
                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
                   {getWidget(id).label}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-quaternary hidden sm:block">{Math.round(widths[i] ?? 50)}%</span>
+                  <span className="text-[10px] text-quaternary">{Math.round(widths[i] ?? 50)}%</span>
                   <button onClick={() => onRemove(id)}
                     className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
                 </div>
               </div>
-              {/* Widget content */}
               <div className="flex flex-col flex-1 min-h-0 p-5 overflow-hidden">
                 <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
               </div>
             </div>
           </div>
 
-          {/* Drag handle between adjacent widgets */}
+          {/* Drag handle */}
           {i < widgets.length - 1 && (
-            <div
-              className="group relative flex items-center justify-center shrink-0 cursor-col-resize z-10"
+            <div className="group relative flex items-center justify-center shrink-0 cursor-col-resize z-10"
               style={{ width: 12 }}
               onMouseDown={e => onDragStart(e, i)}>
               <div className="w-0.5 h-12 rounded-full bg-secondary group-hover:bg-brand-solid group-hover:h-20 transition-all duration-150" />
@@ -2129,7 +2150,7 @@ function ResizableWorkbench({
         </React.Fragment>
       ))}
 
-      {/* Inline add slot — only when < 2 widgets */}
+      {/* Inline add slot — only when < 2 widgets on desktop */}
       {addSlotInline && (
         <div className="flex flex-col" style={{ width: 180, minWidth: 180 }}>
           <button onClick={onAddWidget}
@@ -2143,7 +2164,6 @@ function ResizableWorkbench({
     </div>
   );
 
-  /* When 2+ widgets fill the row, add-widget slot goes on its own row below */
   return (
     <div className="flex flex-col gap-4 w-full">
       {widgetRow}
