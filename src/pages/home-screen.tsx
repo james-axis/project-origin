@@ -245,12 +245,12 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
     onSimulated(lead);
     onClose();
     onToast({
-      title: "New client arrived",
-      description: `${lead.firstName} ${lead.lastName} — Introduction Call assigned to you`,
+      title: "New application",
+      description: `${lead.firstName} ${lead.lastName} — ${lead.policyType} · Introduction Call ready`,
       variant: "info",
       duration: 6000,
       actions: [
-        { label: "View task", onClick: () => onOpenTask(firstTask) },
+        { label: "Open application", onClick: () => onOpenTask(firstTask) },
         { label: "Dismiss", variant: "ghost", onClick: () => {} },
       ],
     });
@@ -744,6 +744,296 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
   );
 }
 
+// ─── Applications widget ────────────────────────────────────────────────────
+// An "application" = one client + their Application task chain.
+// Status is derived from where they are in the 14-task chain.
+function ApplicationsWidget({ onSelectTask, onSelectClient }: {
+  onSelectTask: (t: SimTask) => void;
+  onSelectClient: (id: string) => void;
+}) {
+  const [leads, setLeads] = useState<SimLead[]>([]);
+  const [allTasks, setAllTasks] = useState<SimTask[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "new" | "active" | "overdue" | "complete">("all");
+  const [showAllUrgent, setShowAllUrgent] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
+    refresh();
+    window.addEventListener("axis_sim_update", refresh);
+    return () => window.removeEventListener("axis_sim_update", refresh);
+  }, []);
+
+  const total = APPLICATION_CHAIN.length;
+
+  function isNewApp(lead: SimLead) {
+    return (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
+  }
+  function getAppStatus(leadId: string): "new" | "overdue" | "active" | "complete" {
+    const lt = allTasks.filter(t => t.leadId === leadId);
+    const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+    if (done >= total) return "complete";
+    const open = lt.filter(t => t.status === "open");
+    if (open.some(t => getTaskPriority(t) === "critical")) return "overdue";
+    const lead = leads.find(l => l.id === leadId);
+    if (lead && isNewApp(lead)) return "new";
+    return "active";
+  }
+  function getCurrentTask(leadId: string): SimTask | undefined {
+    return allTasks.filter(t => t.leadId === leadId && t.status === "open" && !t.parentTaskId)
+      .sort((a, b) => a.sortOrder - b.sortOrder)[0];
+  }
+
+  function matchesSearch(lead: SimLead) {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return `${lead.firstName} ${lead.lastName}`.toLowerCase().includes(q) ||
+      lead.policyType.toLowerCase().includes(q) ||
+      lead.practice.toLowerCase().includes(q);
+  }
+  function matchesStatusFilter(lead: SimLead) {
+    if (statusFilter === "all") return true;
+    return getAppStatus(lead.id) === statusFilter;
+  }
+
+  if (leads.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
+        <List className="size-6 text-fg-quaternary" />
+        <p className="text-xs text-tertiary">No applications yet — simulate a client to get started</p>
+      </div>
+    );
+  }
+
+  const urgentApps = leads.filter(l => {
+    const s = getAppStatus(l.id);
+    if (s !== "new" && s !== "overdue") return false;
+    return matchesSearch(l) && matchesStatusFilter(l);
+  });
+  const urgentApp = urgentApps[0] ?? null;
+
+  const filtered = leads.slice().reverse().filter(l => matchesSearch(l) && matchesStatusFilter(l));
+
+  // Stats
+  const newCount      = leads.filter(l => getAppStatus(l.id) === "new").length;
+  const overdueCount  = leads.filter(l => getAppStatus(l.id) === "overdue").length;
+  const activeCount   = leads.filter(l => getAppStatus(l.id) === "active").length;
+  const completeCount = leads.filter(l => getAppStatus(l.id) === "complete").length;
+
+  function downloadCSV() {
+    const rows = [["Client","Policy","Practice","Status","Progress","Current Task"]];
+    leads.forEach(l => {
+      const lt = allTasks.filter(t => t.leadId === l.id);
+      const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+      const ct = getCurrentTask(l.id);
+      rows.push([`${l.firstName} ${l.lastName}`, l.policyType, l.practice, getAppStatus(l.id), `${done}/${total}`, ct?.name ?? "—"]);
+    });
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv); a.download = "applications.csv"; a.click();
+  }
+
+  const STATUS_BADGE: Record<string, string> = {
+    new:      "bg-success-secondary text-success-primary",
+    overdue:  "bg-[#FEE2E2] text-[#B91C1C]",
+    active:   "bg-brand-secondary text-brand-secondary",
+    complete: "bg-success-secondary text-success-primary",
+  };
+  const STATUS_DOT: Record<string, string> = {
+    new: "bg-success-solid", overdue: "bg-[#EF4444]", active: "bg-brand-solid", complete: "bg-success-solid",
+  };
+  const STATUS_LABEL: Record<string, string> = {
+    new: "New", overdue: "Overdue", active: "Active", complete: "Complete",
+  };
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+
+      {/* ── Stat tiles ── */}
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {([
+          { label: "New",      value: newCount,      filterKey: "new"      as const, beacon: "green" as BeaconColor },
+          { label: "Overdue",  value: overdueCount,  filterKey: "overdue"  as const, beacon: "red"   as BeaconColor },
+          { label: "Active",   value: activeCount,   filterKey: "active"   as const, beacon: "amber" as BeaconColor },
+          { label: "Complete", value: completeCount, filterKey: "complete" as const, beacon: undefined },
+        ]).map(({ label, value, filterKey, beacon }) => {
+          const isActive = statusFilter === filterKey;
+          return (
+            <button key={label} onClick={() => setStatusFilter(isActive ? "all" : filterKey)}
+              className={"rounded-xl border px-3 py-3 text-left transition-all " +
+                (isActive
+                  ? (filterKey === "overdue" ? "border-[#EF4444] bg-[#FFF5F5]" :
+                     filterKey === "new"     ? "border-success-solid bg-success-secondary" :
+                     filterKey === "active"  ? "border-brand bg-brand-secondary" :
+                                               "border-success-solid bg-success-secondary")
+                  : "border-secondary bg-secondary_alt hover:border-primary")}>
+              <div className="flex items-center gap-1.5 mb-1">
+                {beacon && <Beacon color={beacon} />}
+                <p className="text-[10px] font-medium text-tertiary truncate">{label}</p>
+              </div>
+              <p className={"text-xl font-semibold " +
+                (filterKey === "overdue" ? "text-[#B91C1C]" :
+                 filterKey === "new"     ? "text-success-primary" :
+                 filterKey === "active"  ? "text-brand-secondary" : "text-primary")}>{value}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Search + filter + download ── */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="relative flex-1 min-w-0">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search applications..."
+            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+        </div>
+        <div className="relative">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="rounded-lg border border-secondary bg-primary pl-3 pr-7 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
+            <option value="all">All</option>
+            <option value="new">New</option>
+            <option value="overdue">Overdue</option>
+            <option value="active">Active</option>
+            <option value="complete">Complete</option>
+          </select>
+          <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-fg-quaternary rotate-90 pointer-events-none" />
+        </div>
+        <button onClick={downloadCSV}
+          className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
+          <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+
+      {/* ── URGENT section ── */}
+      {urgentApp && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Urgent</span>
+              <span className="rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">{urgentApps.length}</span>
+            </div>
+            {urgentApps.length > 1 && (
+              <button onClick={() => setShowAllUrgent(v => !v)}
+                className="text-[10px] text-brand-secondary hover:underline font-medium">
+                {showAllUrgent ? "Show less" : `View all ${urgentApps.length}`}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {(showAllUrgent ? urgentApps : [urgentApp]).map((lead, i, arr) => {
+              const lt = allTasks.filter(t => t.leadId === lead.id);
+              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+              const pct = Math.round((done / total) * 100);
+              const appStatus = getAppStatus(lead.id);
+              const isNew = isNewApp(lead);
+              const ct = getCurrentTask(lead.id);
+              return (
+                <div key={lead.id}>
+                  <button onClick={() => { ct ? onSelectTask(ct) : onSelectClient(lead.id); }}
+                    className={"group flex flex-col gap-2 rounded-xl border p-3 text-left w-full transition-all hover:shadow-sm " +
+                      (appStatus === "overdue"
+                        ? "border-secondary bg-gradient-to-br from-[#FFF5F5] via-[#FFF8F8] to-white"
+                        : "border-secondary bg-gradient-to-br from-[#F0FDF4] via-[#F6FEF9] to-white")}>
+                    <div className="flex items-center gap-2">
+                      <Beacon color={appStatus === "overdue" ? "red" : "green"} />
+                      <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold " +
+                        (appStatus === "overdue" ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
+                        {lead.firstName[0]}{lead.lastName[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
+                          <span className={"rounded-full text-[10px] font-semibold px-1.5 py-0.5 " + STATUS_BADGE[appStatus]}>{STATUS_LABEL[appStatus]}</span>
+                          {isNew && appStatus !== "overdue" && <Countdown createdAt={lead.createdAt} />}
+                        </div>
+                        <p className="text-[10px] text-tertiary truncate">{lead.policyType} · {ct ? ct.name : "No open task"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div className={"h-full rounded-full " + (appStatus === "overdue" ? "bg-[#EF4444]" : "bg-success-solid")} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-quaternary shrink-0">{done}/{total}</span>
+                    </div>
+                  </button>
+                  {i < arr.length - 1 && <div className="h-px bg-secondary mt-1.5" />}
+                </div>
+              );
+            })}
+        </div>
+      </div>
+      )}
+
+      {/* ── Divider ── */}
+      {urgentApp && filtered.length > 0 && (
+        <div className="flex items-center gap-2 my-3">
+          <div className="flex-1 h-px bg-secondary" />
+          <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">All applications</span>
+          <div className="flex-1 h-px bg-secondary" />
+        </div>
+      )}
+
+      {/* ── Application tiles ── */}
+      <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-xl border border-dashed border-secondary">
+            <List className="size-5 text-fg-quaternary" />
+            <p className="text-xs text-tertiary">No applications match</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2">
+            {filtered.map(lead => {
+              const lt = allTasks.filter(t => t.leadId === lead.id);
+              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+              const pct = Math.round((done / total) * 100);
+              const appStatus = getAppStatus(lead.id);
+              const ct = getCurrentTask(lead.id);
+              return (
+                <button key={lead.id}
+                  onClick={() => { ct ? onSelectTask(ct) : onSelectClient(lead.id); }}
+                  className="group flex flex-col gap-2 rounded-xl border border-secondary bg-primary p-3 text-left transition-all hover:border-brand hover:shadow-sm">
+                  {/* Header */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-xs font-bold text-brand-secondary">
+                      {lead.firstName[0]}{lead.lastName[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
+                      <p className="text-[10px] text-tertiary truncate">{lead.policyType} · {lead.practice}</p>
+                    </div>
+                    <span className={"inline-flex items-center gap-1 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] font-medium " + STATUS_BADGE[appStatus]}>
+                      <span className={"size-1.5 rounded-full inline-block shrink-0 " + STATUS_DOT[appStatus]} />
+                      {STATUS_LABEL[appStatus]}
+                    </span>
+                  </div>
+                  {/* Current task */}
+                  {ct && (
+                    <div className="flex items-center gap-1.5 rounded-lg bg-secondary_alt px-2.5 py-1.5">
+                      <Beacon color={getTaskPriority(ct) === "critical" ? "red" : getTaskPriority(ct) === "high" ? "amber" : "green"} />
+                      <p className="text-[10px] text-secondary truncate flex-1">
+                        Step {APPLICATION_CHAIN.findIndex(c => c.id === ct.templateTaskId) + 1}: {ct.name}
+                      </p>
+                      <span className="text-[10px] text-quaternary shrink-0">{ct.assigneeRole}</span>
+                    </div>
+                  )}
+                  {/* Progress */}
+                  <div className="space-y-0.5">
+                    <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                      <div className={"h-full rounded-full transition-all " + (appStatus === "complete" ? "bg-success-solid" : appStatus === "overdue" ? "bg-[#EF4444]" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-[10px] text-quaternary">{done}/{total} tasks complete · {pct}%</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Generic placeholder widget ───────────────────────────────────────────────
 const PlaceholderWidget = ({ description }: { description: string }) => (
   <div className="flex flex-1 items-center justify-center rounded-lg bg-secondary_alt">
@@ -753,8 +1043,9 @@ const PlaceholderWidget = ({ description }: { description: string }) => (
 
 function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
   const w = AVAILABLE_WIDGETS.find(w => w.id === id);
-  if (id === "tasks") return <TasksWidget onSelectTask={onSelectTask} />;
-  if (id === "leads") return <LeadsWidget onSelectClient={onSelectClient} />;
+  if (id === "tasks")        return <TasksWidget onSelectTask={onSelectTask} />;
+  if (id === "leads")        return <LeadsWidget onSelectClient={onSelectClient} />;
+  if (id === "applications") return <ApplicationsWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
   return <PlaceholderWidget description={w?.description ?? ""} />;
 }
 
@@ -852,7 +1143,7 @@ export function HomeScreen() {
   // Init sim store on mount
   useEffect(() => { initSimStore(); }, []);
 
-  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["tasks", "leads"] }]);
+  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["tasks", "leads", "applications"] }]);
   const [activeTabId, setActiveTabId] = useState("default");
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
   const [renameModal, setRenameModal] = useState<{ open: boolean; tabId: string; current: string }>({ open: false, tabId: "", current: "" });
