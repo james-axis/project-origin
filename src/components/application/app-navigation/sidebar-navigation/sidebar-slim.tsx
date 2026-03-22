@@ -163,7 +163,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
         <>
             {/* Desktop sidebar navigation */}
             <div
-                className="z-50 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex"
+                className="z-40 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex"
                 onPointerEnter={() => setIsHovering(true)}
                 onPointerLeave={() => setIsHovering(false)}
             >

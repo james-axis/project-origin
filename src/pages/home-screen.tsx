@@ -34,13 +34,14 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 // ─── Task action modal ────────────────────────────────────────────────────────
-function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask }: {
+function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask, onViewProfile }: {
   task: SimTask;
   lead: SimLead | undefined;
   onClose: () => void;
   onAction: () => void;
   onToast: (opts: import("@/components/toast").ToastOptions) => void;
   onOpenTask: (t: SimTask) => void;
+  onViewProfile: (leadId: string) => void;
 }) {
   const [notes, setNotes] = useState("");
   const [acting, setActing] = useState(false);
@@ -116,7 +117,7 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask }:
               <p className="text-base font-semibold text-primary">{task.name}</p>
               <p className="text-xs text-tertiary mt-0.5">
                 {isSubtask ? "Subtask" : `Step ${chainStep + 1} of ${total}`} · {task.assigneeRole}
-                {lead && <> · <span className="text-secondary">{lead.firstName} {lead.lastName}</span></>}
+                {lead && <> · <span className="text-secondary">{lead.firstName} {lead.lastName}</span> · <button onClick={() => { onClose(); onViewProfile(task.leadId); }} className="text-brand-secondary hover:underline font-medium transition-colors">View profile</button></>}
               </p>
             </div>
           </div>
@@ -781,7 +782,7 @@ export function HomeScreen() {
       <AddWidgetModal open={widgetModalOpen} onClose={() => setWidgetModalOpen(false)} onAdd={addWidget} existingWidgets={activeTab.widgets} />
       <RenameTabModal open={renameModal.open} current={renameModal.current} onSave={label => renameTab(renameModal.tabId, label)} onClose={() => setRenameModal({ open: false, tabId: "", current: "" })} />
       <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} onToast={toast} />
-      {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} onToast={toast} onOpenTask={(t) => { setActiveTask(null); setTimeout(() => setActiveTask(t), 50); }} />}
+      {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} onToast={toast} onOpenTask={(t) => { setActiveTask(null); setTimeout(() => setActiveTask(t), 50); }} onViewProfile={(id) => { setActiveTask(null); setTimeout(() => setSelectedClientId(id), 50); }} />}
     </div>
   );
 }
