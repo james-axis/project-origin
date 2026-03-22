@@ -22,6 +22,16 @@ const settingsTabs = [
   { id: "integrations", label: "Integrations", icon: Link01 },
 ];
 
+type RuleType = "overdue_assign" | "auto_not_completed";
+
+interface TaskRule {
+  id: string;
+  type: RuleType;
+  minutes?: number;    // for overdue_assign: trigger after N minutes
+  assignTo?: string;   // for overdue_assign: user/role to reassign to
+  hours?: number;      // for auto_not_completed: mark after N hours
+}
+
 interface TaskItem {
   id: number;
   name: string;
@@ -32,6 +42,7 @@ interface TaskItem {
   condition?: string;
   completionOptions?: string[];
   subtasks?: string[];
+  rules?: TaskRule[];
 }
 
 interface WorkflowTemplate {
@@ -521,6 +532,7 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-tertiary">{isFirst ? "Fires on object created" : "Fires when previous is completed"}</span>
             {task.condition && <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary font-mono">if {task.condition}</span>}
+            {task.rules && task.rules.length > 0 && <span className="rounded-md bg-brand-secondary px-1.5 py-0.5 text-[11px] text-brand-secondary">{task.rules.length} rule{task.rules.length !== 1 ? "s" : ""}</span>}
             {task.subtasks && task.subtasks.length > 0 && <span className="rounded-md bg-warning-secondary px-1.5 py-0.5 text-[11px] text-warning-primary">if attempted: {task.subtasks.length} subtask{task.subtasks.length !== 1 ? "s" : ""}</span>}
           </div>
         </div>
@@ -571,9 +583,67 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
               {ASSIGNEE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-secondary">Condition <span className="font-normal text-tertiary">(optional)</span></label>
-            <input value={form.condition ?? ""} onChange={e => setForm({ ...form, condition: e.target.value || undefined })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary font-mono outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. meeting_type = face_to_face" />
+          {/* Rules */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-secondary">Rules <span className="font-normal text-tertiary">(optional)</span></label>
+                <p className="text-xs text-tertiary mt-0.5">Automation that fires based on time or inactivity</p>
+              </div>
+              <button onClick={() => setForm(prev => ({ ...prev, rules: [...(prev.rules ?? []), { id: Date.now().toString(), type: "overdue_assign", minutes: 60, assignTo: "" }] }))}
+                className="inline-flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
+                <Plus className="size-3" aria-hidden />Add rule
+              </button>
+            </div>
+
+            {(form.rules ?? []).length === 0 && (
+              <div className="rounded-xl border border-dashed border-secondary px-4 py-4 text-center">
+                <p className="text-xs text-tertiary">No rules yet — click Add rule to automate this task</p>
+              </div>
+            )}
+
+            {(form.rules ?? []).map((rule, i) => (
+              <div key={rule.id} className="rounded-xl border border-secondary bg-secondary_alt p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <select value={rule.type}
+                    onChange={e => setForm(prev => ({ ...prev, rules: (prev.rules ?? []).map((r, ri) => ri === i ? { ...r, type: e.target.value as RuleType } : r) }))}
+                    className="flex-1 rounded-lg border border-primary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+                    <option value="overdue_assign">Task is overdue — reassign to another user</option>
+                    <option value="auto_not_completed">Mark as Not Completed after time limit</option>
+                  </select>
+                  <button onClick={() => setForm(prev => ({ ...prev, rules: (prev.rules ?? []).filter((_, ri) => ri !== i) }))}
+                    className="ml-2 flex size-7 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors shrink-0">
+                    <X className="size-3.5" aria-hidden />
+                  </button>
+                </div>
+
+                {rule.type === "overdue_assign" && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-secondary shrink-0">After</span>
+                    <input type="number" min={1} value={rule.minutes ?? 60}
+                      onChange={e => setForm(prev => ({ ...prev, rules: (prev.rules ?? []).map((r, ri) => ri === i ? { ...r, minutes: parseInt(e.target.value) || 60 } : r) }))}
+                      className="w-20 rounded-lg border border-primary bg-primary px-2.5 py-1.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+                    <span className="text-xs text-secondary shrink-0">minutes with no completion, reassign to</span>
+                    <select value={rule.assignTo ?? ""}
+                      onChange={e => setForm(prev => ({ ...prev, rules: (prev.rules ?? []).map((r, ri) => ri === i ? { ...r, assignTo: e.target.value } : r) }))}
+                      className="flex-1 min-w-[120px] rounded-lg border border-primary bg-primary px-2.5 py-1.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand">
+                      <option value="">Select role...</option>
+                      {ASSIGNEE_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {rule.type === "auto_not_completed" && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-secondary shrink-0">After</span>
+                    <input type="number" min={1} value={rule.hours ?? 24}
+                      onChange={e => setForm(prev => ({ ...prev, rules: (prev.rules ?? []).map((r, ri) => ri === i ? { ...r, hours: parseInt(e.target.value) || 24 } : r) }))}
+                      className="w-20 rounded-lg border border-primary bg-primary px-2.5 py-1.5 text-sm text-primary outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+                    <span className="text-xs text-secondary shrink-0">hours, automatically mark this task as <strong>Not Completed</strong> and advance the chain</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Attempted subtasks */}
@@ -796,7 +866,7 @@ function TaskBuilder() {
           <div className="flex items-center gap-2">
             <StatusBadge status={activeTemplate.status} />
             <button onClick={() => openWizard(3)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-              <Plus className="size-3.5" aria-hidden />New task
+              <Edit01 className="size-3.5" aria-hidden />Edit
             </button>
             {activeTemplate.status !== "published"
               ? <button onClick={() => setConfirmPublish(true)} className="rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">Publish</button>
