@@ -293,6 +293,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
 
 // ─── Widget definitions ───────────────────────────────────────────────────────
 const AVAILABLE_WIDGETS = [
+  { id: "priorities",   label: "Top Priorities", description: "Next best actions to drive revenue" },
   { id: "tasks",        label: "Tasks",        description: "Open tasks across all clients" },
   { id: "leads",        label: "Clients",      description: "All active clients" },
   { id: "applications", label: "Applications", description: "In-progress applications by status" },
@@ -744,6 +745,260 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
   );
 }
 
+
+// ─── Top Priorities widget ────────────────────────────────────────────────────
+// Surfaces the highest-impact actions across all clients using a priority score.
+// Score model:
+//   100 — Lapse Risk: late-stage task (step 9+) overdue >2hrs → revenue at risk
+//    90 — New Arrival: client <20 min, first task open → window closing
+//    70 — Stalled: any overdue task mid-chain → momentum lost
+//    40 — Next Step: oldest open task, on track
+
+type PriorityReason = "lapse_risk" | "new_arrival" | "stalled" | "next_step";
+
+interface PriorityItem {
+  score: number;
+  reason: PriorityReason;
+  lead: SimLead;
+  task: SimTask;
+  chainStep: number;
+  ageMinutes: number;
+}
+
+const REASON_META: Record<PriorityReason, {
+  label: string; bg: string; text: string; border: string;
+  impact: string; beacon: BeaconColor;
+}> = {
+  lapse_risk: {
+    label: "Lapse Risk",
+    bg: "bg-[#FFF5F5]", text: "text-[#B91C1C]", border: "border-[#FECACA]",
+    impact: "Policy at risk",
+    beacon: "red",
+  },
+  new_arrival: {
+    label: "New Arrival",
+    bg: "bg-[#F0FDF4]", text: "text-success-primary", border: "border-success-solid",
+    impact: "Strike while hot",
+    beacon: "green",
+  },
+  stalled: {
+    label: "Stalled",
+    bg: "bg-[#FFFBEB]", text: "text-[#92400E]", border: "border-[#FDE68A]",
+    impact: "Momentum at risk",
+    beacon: "amber",
+  },
+  next_step: {
+    label: "Next Step",
+    bg: "bg-primary", text: "text-brand-secondary", border: "border-secondary",
+    impact: "Keep moving",
+    beacon: "blue",
+  },
+};
+
+function buildPriorityQueue(leads: SimLead[], allTasks: SimTask[]): PriorityItem[] {
+  const items: PriorityItem[] = [];
+
+  leads.forEach(lead => {
+    const openTasks = allTasks
+      .filter(t => t.leadId === lead.id && t.status === "open" && !t.parentTaskId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+    if (openTasks.length === 0) return;
+    const task = openTasks[0];
+    const chainStep = APPLICATION_CHAIN.findIndex(c => c.id === task.templateTaskId);
+    const ageMinutes = (Date.now() - new Date(task.createdAt).getTime()) / 60000;
+    const isNewClient = (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
+
+    let reason: PriorityReason;
+    let score: number;
+
+    if (chainStep >= 9 && ageMinutes > 120) {
+      // Late-stage (Compliance+) and overdue — lapse risk
+      reason = "lapse_risk";
+      score = 100 + chainStep; // later stage = higher urgency
+    } else if (isNewClient && chainStep === 0) {
+      // Brand new, first task not touched yet
+      reason = "new_arrival";
+      score = 90 + Math.max(0, 20 - Math.floor(ageMinutes)); // fresher = higher
+    } else if (ageMinutes > 120) {
+      reason = "stalled";
+      score = 70 + chainStep;
+    } else {
+      reason = "next_step";
+      score = 40 - ageMinutes / 60; // older = slightly higher within this band
+    }
+
+    items.push({ score, reason, lead, task, chainStep, ageMinutes });
+  });
+
+  return items.sort((a, b) => b.score - a.score);
+}
+
+function PriorityCard({ item, onSelectTask, rank, isHero }: {
+  item: PriorityItem;
+  onSelectTask: (t: SimTask) => void;
+  rank: number;
+  isHero: boolean;
+}) {
+  const meta = REASON_META[item.reason];
+  const age = item.ageMinutes < 1
+    ? "Just now"
+    : item.ageMinutes < 60
+      ? `${Math.round(item.ageMinutes)}m ago`
+      : `${Math.floor(item.ageMinutes / 60)}h ${Math.round(item.ageMinutes % 60)}m ago`;
+
+  return (
+    <button onClick={() => onSelectTask(item.task)}
+      className={"group w-full text-left rounded-xl border p-4 transition-all hover:shadow-md " +
+        (isHero ? meta.border + " " + meta.bg : "border-secondary bg-primary hover:border-brand")}>
+      <div className="flex items-start gap-3">
+        {/* Rank + beacon */}
+        <div className="flex flex-col items-center gap-1.5 shrink-0 pt-0.5">
+          <span className={"text-[10px] font-bold tabular-nums " + (isHero ? meta.text : "text-quaternary")}>#{rank}</span>
+          <Beacon color={meta.beacon} />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 space-y-2">
+          {/* Header row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold " +
+              (isHero ? meta.text + " " + meta.bg + " border " + meta.border : "bg-secondary text-secondary")}>
+              {meta.label}
+            </span>
+            <span className="text-[10px] text-quaternary">{age}</span>
+          </div>
+
+          {/* Client + action */}
+          <div>
+            <p className={"font-semibold truncate " + (isHero ? "text-sm text-primary" : "text-xs text-primary")}>
+              {item.lead.firstName} {item.lead.lastName}
+            </p>
+            <p className={"text-tertiary truncate mt-0.5 " + (isHero ? "text-xs" : "text-[10px]")}>
+              Step {item.chainStep + 1}: {item.task.name}
+            </p>
+            <p className={"font-medium mt-0.5 " + (isHero ? "text-xs " + meta.text : "text-[10px] text-quaternary")}>
+              {meta.impact} · {item.lead.policyType}
+            </p>
+          </div>
+
+          {/* Hero CTA */}
+          {isHero && (
+            <div className={"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors " +
+              (item.reason === "lapse_risk" ? "bg-[#B91C1C] text-white group-hover:bg-[#991B1B]" :
+               item.reason === "new_arrival" ? "bg-success-solid text-white group-hover:opacity-90" :
+               item.reason === "stalled"     ? "bg-[#F59E0B] text-white group-hover:opacity-90" :
+                                               "bg-brand-solid text-white group-hover:bg-brand-solid_hover")}>
+              <Zap className="size-3" />Action now
+            </div>
+          )}
+        </div>
+
+        {/* Step progress pill */}
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          <span className={"text-[10px] font-mono font-semibold tabular-nums " + (isHero ? meta.text : "text-quaternary")}>
+            {item.chainStep + 1}/{APPLICATION_CHAIN.length}
+          </span>
+          <div className="w-10 h-1 rounded-full bg-secondary overflow-hidden">
+            <div className="h-full rounded-full bg-brand-solid"
+              style={{ width: `${Math.round(((item.chainStep + 1) / APPLICATION_CHAIN.length) * 100)}%` }} />
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function TopPrioritiesWidget({ onSelectTask }: { onSelectTask: (t: SimTask) => void }) {
+  const [leads, setLeads] = useState<SimLead[]>([]);
+  const [allTasks, setAllTasks] = useState<SimTask[]>([]);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
+    refresh();
+    const handler = () => refresh();
+    window.addEventListener("axis_sim_update", handler);
+    return () => window.removeEventListener("axis_sim_update", handler);
+  }, []);
+
+  const queue = buildPriorityQueue(leads, allTasks);
+
+  if (queue.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 py-10 text-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-success-secondary">
+          <Check className="size-6 text-success-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-primary">All clear</p>
+          <p className="text-xs text-tertiary mt-1">No priority actions right now — simulate a client to get started</p>
+        </div>
+      </div>
+    );
+  }
+
+  const hero = queue[0];
+  const rest = queue.slice(1, showAll ? undefined : 4);
+  const hiddenCount = queue.length - 1 - (showAll ? queue.length - 1 : Math.min(4, queue.length - 1));
+
+  // Summary counts
+  const counts = { lapse_risk: 0, new_arrival: 0, stalled: 0, next_step: 0 };
+  queue.forEach(i => counts[i.reason]++);
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-3">
+
+      {/* ── Summary bar ── */}
+      <div className="flex items-center gap-3 px-1 flex-wrap">
+        {(Object.entries(counts) as [PriorityReason, number][])
+          .filter(([, v]) => v > 0)
+          .map(([reason, count]) => {
+            const m = REASON_META[reason];
+            return (
+              <div key={reason} className="flex items-center gap-1.5">
+                <Beacon color={m.beacon} />
+                <span className={"text-[10px] font-semibold " + m.text}>{count} {m.label}</span>
+              </div>
+            );
+          })}
+        <span className="ml-auto text-[10px] text-quaternary">{queue.length} action{queue.length !== 1 ? "s" : ""} queued</span>
+      </div>
+
+      {/* ── Hero: #1 action ── */}
+      <PriorityCard item={hero} onSelectTask={onSelectTask} rank={1} isHero />
+
+      {/* ── Divider ── */}
+      {rest.length > 0 && (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-px bg-secondary" />
+          <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">Up next</span>
+          <div className="flex-1 h-px bg-secondary" />
+        </div>
+      )}
+
+      {/* ── Queue ── */}
+      <div className="overflow-y-auto flex-1 min-h-0 space-y-2" style={{ maxHeight: 280 }}>
+        {rest.map((item, i) => (
+          <PriorityCard key={item.task.id} item={item} onSelectTask={onSelectTask} rank={i + 2} isHero={false} />
+        ))}
+        {hiddenCount > 0 && (
+          <button onClick={() => setShowAll(true)}
+            className="w-full rounded-xl border border-dashed border-secondary py-2.5 text-xs font-medium text-tertiary hover:text-secondary hover:border-primary transition-colors">
+            Show {hiddenCount} more action{hiddenCount !== 1 ? "s" : ""}
+          </button>
+        )}
+        {showAll && queue.length > 5 && (
+          <button onClick={() => setShowAll(false)}
+            className="w-full rounded-xl border border-dashed border-secondary py-2.5 text-xs font-medium text-tertiary hover:text-secondary hover:border-primary transition-colors">
+            Show less
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Applications widget ────────────────────────────────────────────────────
 // An "application" = one client + their Application task chain.
 // Status is derived from where they are in the 14-task chain.
@@ -1046,6 +1301,7 @@ function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSel
   if (id === "tasks")        return <TasksWidget onSelectTask={onSelectTask} />;
   if (id === "leads")        return <LeadsWidget onSelectClient={onSelectClient} />;
   if (id === "applications") return <ApplicationsWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
+  if (id === "priorities")    return <TopPrioritiesWidget onSelectTask={onSelectTask} />;
   return <PlaceholderWidget description={w?.description ?? ""} />;
 }
 
@@ -1143,7 +1399,7 @@ export function HomeScreen() {
   // Init sim store on mount
   useEffect(() => { initSimStore(); }, []);
 
-  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["tasks", "leads", "applications"] }]);
+  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities", "tasks", "leads", "applications"] }]);
   const [activeTabId, setActiveTabId] = useState("default");
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
   const [renameModal, setRenameModal] = useState<{ open: boolean; tabId: string; current: string }>({ open: false, tabId: "", current: "" });
