@@ -1623,7 +1623,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
         const totalPages = Math.ceil(sorted.length / TABLE_PAGE);
         const pageRows = sorted.slice(tablePage * TABLE_PAGE, tablePage * TABLE_PAGE + TABLE_PAGE);
         return (
-      <div className="flex flex-col flex-1 min-h-0 gap-2">
+      <div className="flex flex-col flex-1 min-h-0 gap-2 overflow-hidden">
         <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-secondary">
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
@@ -1742,13 +1742,12 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
             </button>
           </div>
         )}
-      </div>
-      <div className="flex items-center justify-between px-1 shrink-0">
-        <p className="text-[10px] text-quaternary">
-          {sorted.length > 0 ? `${tablePage * 8 + 1}–${Math.min((tablePage + 1) * 8, sorted.length)} of ${sorted.length}` : "0"} record{sorted.length !== 1 ? "s" : ""}
-          {hasActiveFilters && totalCount > sorted.length && <span className="text-[#D34108] ml-1">({totalCount - sorted.length} filtered)</span>}
-        </p>
-      </div>
+        <div className="flex items-center justify-between px-1 shrink-0 pt-1">
+          <p className="text-[10px] text-quaternary">
+            {sorted.length > 0 ? `${tablePage * 8 + 1}–${Math.min((tablePage + 1) * 8, sorted.length)} of ${sorted.length}` : "0"} record{sorted.length !== 1 ? "s" : ""}
+            {hasActiveFilters && totalCount > sorted.length && <span className="text-[#D34108] ml-1">({totalCount - sorted.length} filtered)</span>}
+          </p>
+        </div>
       </div>
         );
       })()}
