@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
-import { Check, Calendar, Mail, Upload, FileCheck01, CurrencyDollar, Phone, User01, Plus, X } from "@untitledui/icons";
+import { Check, Calendar, Mail01, Upload01, FileCheck01, CurrencyDollar, Phone, User01, Plus, X } from "@untitledui/icons";
 import type { SimLead } from "@/store/sim-store";
 
 export interface TaskPanelData {
@@ -40,7 +40,7 @@ const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
 );
 
 // ─── 1. Introduction Call — Appointment booking ───────────────────────────────
-export function IntroductionCallPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function IntroductionCallPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -79,7 +79,7 @@ export function IntroductionCallPanel({ lead, savedData, onChange }: TaskPanelPr
 }
 
 // ─── 2. Initial Life Discussion — Meeting notes ───────────────────────────────
-export function InitialLifeDiscussionPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function InitialLifeDiscussionPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const TOPICS = ["Current cover", "Income & expenses", "Dependants", "Health history", "Lifestyle & occupation", "Estate planning goals"];
   const covered = (d.topics as string[]) ?? [];
@@ -110,7 +110,7 @@ export function InitialLifeDiscussionPanel({ lead, savedData, onChange }: TaskPa
 }
 
 // ─── 3. Life Insurance Discussion — Policy needs ──────────────────────────────
-export function LifeInsuranceDiscussionPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function LifeInsuranceDiscussionPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -145,7 +145,7 @@ export function LifeInsuranceDiscussionPanel({ lead, savedData, onChange }: Task
 }
 
 // ─── 4. Quote Review — Quote summary ─────────────────────────────────────────
-export function QuoteReviewPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function QuoteReviewPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -222,12 +222,12 @@ export function FollowUpPanel({ label, savedData, onChange }: { label?: string }
 }
 
 // ─── 6. Book Insurance Review — Appointment ───────────────────────────────────
-export function BookReviewPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function BookReviewPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   return <IntroductionCallPanel lead={lead} savedData={savedData} onChange={onChange} />;
 }
 
 // ─── 7. Add Policy / Application Number ───────────────────────────────────────
-export function AddPolicyNumberPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function AddPolicyNumberPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -262,7 +262,7 @@ export function AddPolicyNumberPanel({ lead, savedData, onChange }: TaskPanelPro
 }
 
 // ─── 8. Send application submitted email ──────────────────────────────────────
-export function SendEmailPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function SendEmailPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const defaultBody = lead
     ? `Hi ${lead.firstName},\n\nGreat news — your ${lead.policyType} application has been submitted to the insurer.\n\nWe'll be in touch once we receive confirmation. In the meantime, please don't hesitate to reach out if you have any questions.\n\nKind regards`
@@ -270,7 +270,7 @@ export function SendEmailPanel({ lead, savedData, onChange }: TaskPanelProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-xs text-brand-secondary font-medium">
-        <Mail className="size-3.5" />Email to client
+        <Mail01 className="size-3.5" />Email to client
       </div>
       <Field label="To">
         <Input value={lead?.email ?? ""} readOnly className="opacity-60" />
@@ -284,7 +284,7 @@ export function SendEmailPanel({ lead, savedData, onChange }: TaskPanelProps) {
       {!(d.sent as boolean) ? (
         <button onClick={() => onChange({ ...d, sent: true })}
           className="w-full rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-          <span className="flex items-center justify-center gap-1.5"><Mail className="size-3.5" />Send email</span>
+          <span className="flex items-center justify-center gap-1.5"><Mail01 className="size-3.5" />Send email</span>
         </button>
       ) : (
         <div className="flex items-center gap-2 rounded-lg bg-success-secondary border border-success-solid px-3 py-2">
@@ -297,7 +297,7 @@ export function SendEmailPanel({ lead, savedData, onChange }: TaskPanelProps) {
 }
 
 // ─── 9. Upload face to face documents ─────────────────────────────────────────
-export function UploadDocumentsPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function UploadDocumentsPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const docs = (d.docs as string[]) ?? [];
   const REQUIRED = ["Signed SOA", "Fact Find", "Photo ID", "Privacy consent", "Application form"];
@@ -310,7 +310,7 @@ export function UploadDocumentsPanel({ lead, savedData, onChange }: TaskPanelPro
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-xs text-brand-secondary font-medium">
-        <Upload className="size-3.5" />Document checklist
+        <Upload01 className="size-3.5" />Document checklist
       </div>
       <Field label="Required documents">
         <div className="space-y-2">
@@ -331,7 +331,7 @@ export function UploadDocumentsPanel({ lead, savedData, onChange }: TaskPanelPro
 }
 
 // ─── 10. Compliance Audit ─────────────────────────────────────────────────────
-export function ComplianceAuditPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function ComplianceAuditPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const checks = (d.checks as string[]) ?? [];
   const CHECKLIST = [
@@ -380,7 +380,7 @@ export function ComplianceAuditPanel({ lead, savedData, onChange }: TaskPanelPro
 }
 
 // ─── 11. Compliance Billing ───────────────────────────────────────────────────
-export function ComplianceBillingPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function ComplianceBillingPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -406,7 +406,7 @@ export function ComplianceBillingPanel({ lead, savedData, onChange }: TaskPanelP
 }
 
 // ─── 12. Audit Finalisation ───────────────────────────────────────────────────
-export function AuditFinalisationPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function AuditFinalisationPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -435,7 +435,7 @@ export function AuditFinalisationPanel({ lead, savedData, onChange }: TaskPanelP
 }
 
 // ─── 13. Input life insurance amounts & premiums ──────────────────────────────
-export function InputAmountsPanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function InputAmountsPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   return (
     <div className="space-y-4">
@@ -470,7 +470,7 @@ export function InputAmountsPanel({ lead, savedData, onChange }: TaskPanelProps)
 }
 
 // ─── 14. Inforce call & email ─────────────────────────────────────────────────
-export function InforcePanel({ lead, savedData, onChange }: TaskPanelProps) {
+export function InforcePanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const defaultEmail = lead
     ? `Hi ${lead.firstName},\n\nFantastic news — your ${lead.policyType} policy is now inforce!\n\nYour cover is active and protecting you and your family from today. We'll be in touch annually to review your cover.\n\nThank you for trusting us with this important decision.\n\nKind regards`
@@ -494,7 +494,7 @@ export function InforcePanel({ lead, savedData, onChange }: TaskPanelProps) {
       {!(d.emailSent as boolean) ? (
         <button onClick={() => onChange({ ...d, emailSent: true })}
           className="w-full rounded-lg bg-brand-solid px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-          <span className="flex items-center justify-center gap-1.5"><Mail className="size-3.5" />Send inforce email</span>
+          <span className="flex items-center justify-center gap-1.5"><Mail01 className="size-3.5" />Send inforce email</span>
         </button>
       ) : (
         <div className="flex items-center gap-2 rounded-lg bg-success-secondary border border-success-solid px-3 py-2">
@@ -513,7 +513,7 @@ export function TaskPanel({ templateTaskId, lead, savedData, onChange }: {
   savedData?: TaskPanelData;
   onChange: (data: TaskPanelData) => void;
 }) {
-  const props = { lead, savedData, onChange };
+  const props = { lead: _lead, savedData, onChange };
   switch (templateTaskId) {
     case 166: return <IntroductionCallPanel {...props} />;
     case 207: return <InitialLifeDiscussionPanel {...props} />;

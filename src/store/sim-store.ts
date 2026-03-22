@@ -232,6 +232,7 @@ export function resetSim() {
   localStorage.removeItem(KEYS.leads);
   localStorage.removeItem(KEYS.tasks);
   localStorage.removeItem(KEYS.seeded);
+  localStorage.removeItem(PANEL_KEY);
 }
 
 // ─── Task panel data (persisted per task instance) ────────────────────────────
@@ -254,9 +255,4 @@ export function savePanelData(taskId: string, data: Record<string, string | stri
   } catch {}
 }
 
-// Also wipe panel data on reset
-const _origReset = resetSim;
-export function resetSim() {
-  _origReset();
-  localStorage.removeItem(PANEL_KEY);
-}
+
