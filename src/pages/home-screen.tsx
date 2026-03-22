@@ -433,25 +433,29 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   return (
     <div className="flex flex-col gap-0 flex-1 min-h-0">
 
-      {/* ── Stat tiles ── */}
+      {/* ── Stat tiles — clickable to filter ── */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {[
-          { label: "Open tasks",  value: tasks.length,       color: "text-primary" },
-          { label: "Overdue",     value: overdueTasks.length, color: "text-[#B91C1C]", beacon: "red"   as BeaconColor },
-          { label: "Fresh",       value: freshTasks.length,   color: "text-success-primary", beacon: "green" as BeaconColor },
-        ].map(({ label, value, color, beacon }) => (
-          <div key={label} className="rounded-xl border border-secondary bg-secondary_alt px-3 py-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              {beacon && <Beacon color={beacon} />}
-              <p className="text-[10px] font-medium text-tertiary truncate">{label}</p>
-            </div>
-            <p className={"text-xl font-semibold " + color}>{value}</p>
-          </div>
-        ))}
+        {([
+          { label: "Overdue", value: overdueTasks.length,                              filterKey: "overdue" as const, beacon: "red"   as BeaconColor, active: "border-[#EF4444] bg-[#FFF5F5]", inactive: "border-secondary bg-secondary_alt hover:border-[#FECACA]" },
+          { label: "Near",    value: tasks.filter(t => getTaskPriority(t) === "high").length, filterKey: "amber"   as const, beacon: "amber" as BeaconColor, active: "border-[#F59E0B] bg-[#FFFBEB]", inactive: "border-secondary bg-secondary_alt hover:border-[#FDE68A]"  },
+          { label: "Fresh",   value: freshTasks.length,                                filterKey: "fresh"   as const, beacon: "green" as BeaconColor, active: "border-success-solid bg-success-secondary", inactive: "border-secondary bg-secondary_alt hover:border-success-solid" },
+        ]).map(({ label, value, filterKey, beacon, active, inactive }) => {
+          const isActive = filter === filterKey;
+          return (
+            <button key={label} onClick={() => setFilter(isActive ? "all" : filterKey)}
+              className={"rounded-xl border px-3 py-3 text-left transition-all " + (isActive ? active + " ring-1 ring-inset " + active.split(" ")[0] : inactive)}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Beacon color={beacon} />
+                <p className="text-[10px] font-medium text-tertiary truncate">{label}</p>
+              </div>
+              <p className={"text-xl font-semibold " + (beacon === "red" ? "text-[#B91C1C]" : beacon === "amber" ? "text-[#92400E]" : "text-success-primary")}>{value}</p>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Priority section ── */}
-      {priorityTasks.length > 0 && (
+      {priorityTasks.length > 0 && filter === "all" && (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Priority</span>
@@ -468,8 +472,8 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
         </div>
       )}
 
-      {/* ── Search + filter + download ── */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      {/* ── Search + download ── */}
+      <div className="flex items-center gap-2 mb-3">
         <div className="relative flex-1 min-w-0">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -477,15 +481,11 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks or clients..."
             className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
         </div>
-        <div className="flex items-center gap-1">
-          {(["all","overdue","amber","fresh"] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={"px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors capitalize " +
-                (filter === f ? "bg-brand-solid text-white" : "bg-secondary text-tertiary hover:bg-secondary hover:text-secondary")}>
-              {f === "all" ? "All" : f === "overdue" ? "🔴 Overdue" : f === "amber" ? "🟡 Near" : "🟢 Fresh"}
-            </button>
-          ))}
-        </div>
+        {filter !== "all" && (
+          <button onClick={() => setFilter("all")} className="flex items-center gap-1 rounded-lg border border-secondary bg-secondary px-2.5 py-1.5 text-[10px] font-semibold text-secondary hover:bg-secondary_alt transition-colors whitespace-nowrap">
+            <X className="size-3" /> Clear
+          </button>
+        )}
         <button onClick={downloadCSV} title="Download CSV"
           className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
           <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
