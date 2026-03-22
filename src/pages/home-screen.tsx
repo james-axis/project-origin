@@ -969,7 +969,7 @@ function TopPrioritiesWidget({ onSelectTask }: { onSelectTask: (t: SimTask) => v
       <PriorityCard item={hero} onSelectTask={onSelectTask} rank={1} isHero />
 
       {/* ── Divider ── */}
-      {rest.length > 0 && (
+      {queueItems.length > 0 && (
         <div className="flex items-center gap-2">
           <div className="flex-1 h-px bg-secondary" />
           <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">Up next</span>
