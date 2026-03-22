@@ -71,11 +71,11 @@ input[type="search"]::-webkit-search-cancel-button {
 /* ─── Beacon animations ─────────────────────────────────────────────────────── */
 @keyframes beacon-ping {
   0%   { transform: scale(1);   opacity: 0.75; }
-  75%, 100% { transform: scale(2.2); opacity: 0; }
+  75%, 100% { transform: scale(1.8); opacity: 0; }
 }
 @keyframes beacon-ping-slow {
   0%   { transform: scale(1);   opacity: 0.6; }
-  75%, 100% { transform: scale(2.2); opacity: 0; }
+  75%, 100% { transform: scale(1.8); opacity: 0; }
 }
 .beacon-ping      { animation: beacon-ping      1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
 .beacon-ping-slow { animation: beacon-ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite; }

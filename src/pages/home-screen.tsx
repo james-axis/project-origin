@@ -359,7 +359,7 @@ function TaskRow({ task, lead, onSelectTask, compact = false }: {
          priority === "high"     ? "border-[#FEF3C7] bg-[#FFFBEB] hover:border-[#FDE68A]" :
                                    "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary") +
         (compact ? " py-2" : " py-3")}>
-      <Beacon color={beacon} size={compact ? "sm" : "sm"} />
+      <Beacon color={beacon} />
       <div className={"flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
         {isSubtask ? "↳" : APPLICATION_CHAIN.findIndex(t => t.id === task.templateTaskId) + 1}
       </div>
@@ -433,7 +433,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
 
         {priorityTasks.length === 0 ? (
           <div className="flex items-center gap-2 rounded-xl border border-secondary bg-secondary_alt px-3 py-2.5">
-            <Beacon color="green" size="sm" />
+            <Beacon color="green" />
             <p className="text-xs text-tertiary">All tasks on target</p>
           </div>
         ) : (
