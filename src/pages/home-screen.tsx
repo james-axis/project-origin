@@ -492,40 +492,53 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
         </button>
       </div>
 
-      {/* ── Table ── */}
-      <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-0 px-3 py-2 bg-secondary_alt border-b border-secondary">
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider w-6" />
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Task</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider px-3 hidden sm:block">Client</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider px-3 hidden sm:block">Role</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider w-6" />
-        </div>
-        <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
-          {filtered.length === 0 ? (
-            <div className="flex items-center justify-center py-10 text-xs text-tertiary">No tasks match this filter</div>
-          ) : filtered.map((task, idx) => {
-            const l = getLead(task.leadId);
-            const p = getTaskPriority(task);
-            const bc = getPriorityBeacon(p);
-            const isSubtask = !!task.parentTaskId;
-            return (
-              <button key={task.id} onClick={() => onSelectTask(task)}
-                className={"grid grid-cols-[auto_1fr_auto_auto_auto] gap-0 items-center px-3 py-2.5 w-full text-left transition-colors group " +
-                  (idx < filtered.length - 1 ? "border-b border-secondary " : "") +
-                  (p === "critical" ? "bg-[#FFF5F5] hover:bg-[#FEE2E2]" : p === "high" ? "bg-[#FFFBEB] hover:bg-[#FEF3C7]" : "bg-primary hover:bg-secondary_alt")}>
-                <span className="flex items-center w-6"><Beacon color={bc} /></span>
-                <span className="min-w-0">
-                  <p className={"text-xs font-medium truncate " + (p === "critical" ? "text-[#B91C1C]" : "text-primary")}>{task.name}</p>
-                  {isSubtask && <p className="text-[10px] text-warning-primary">subtask</p>}
-                </span>
-                <span className="text-xs text-tertiary px-3 truncate hidden sm:block max-w-[100px]">{l ? `${l.firstName} ${l.lastName}` : "—"}</span>
-                <span className="text-[10px] text-quaternary px-3 hidden sm:block">{task.assigneeRole}</span>
-                <ChevronRight className={"size-3.5 text-fg-quaternary group-hover:text-brand-secondary shrink-0 " + (p === "critical" ? "text-[#EF4444]" : "")} />
-              </button>
-            );
-          })}
-        </div>
+      {/* ── Tile grid ── */}
+      <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
+        {filtered.length === 0 ? (
+          <div className="flex items-center justify-center py-10 text-xs text-tertiary rounded-xl border border-dashed border-secondary">No tasks match this filter</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {filtered.map(task => {
+              const l = getLead(task.leadId);
+              const p = getTaskPriority(task);
+              const bc = getPriorityBeacon(p);
+              const isSubtask = !!task.parentTaskId;
+              const chainStep = APPLICATION_CHAIN.findIndex(t => t.id === task.templateTaskId);
+              return (
+                <button key={task.id} onClick={() => onSelectTask(task)}
+                  className={"group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all hover:shadow-md " +
+                    (p === "critical" ? "border-[#FECACA] bg-[#FFF5F5] hover:border-[#EF4444]" :
+                     p === "high"     ? "border-[#FDE68A] bg-[#FFFBEB] hover:border-[#F59E0B]" :
+                                        "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary")}>
+                  {/* Tile header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Beacon color={bc} />
+                      <p className={"text-xs font-semibold truncate " + (p === "critical" ? "text-[#B91C1C]" : "text-primary")}>{task.name}</p>
+                    </div>
+                    <span className={"shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
+                      {task.assigneeRole}
+                    </span>
+                  </div>
+                  {/* Tile meta */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className={"flex size-5 items-center justify-center rounded-full text-[9px] font-bold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
+                        {l ? `${l.firstName[0]}${l.lastName[0]}` : "?"}
+                      </div>
+                      <span className="text-[10px] text-tertiary truncate max-w-[80px]">{l ? `${l.firstName} ${l.lastName}` : "Unknown"}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {isSubtask
+                        ? <span className="text-[10px] text-warning-primary font-medium">↳ subtask</span>
+                        : <span className="text-[10px] text-quaternary">Step {chainStep + 1}/{APPLICATION_CHAIN.length}</span>}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -621,51 +634,52 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
         </button>
       </div>
 
-      {/* ── Table ── */}
-      <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
-        <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-0 px-3 py-2 bg-secondary_alt border-b border-secondary">
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Client</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider hidden sm:block">Policy</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider hidden sm:block">Progress</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider w-10 text-right">Tasks</span>
-        </div>
-        <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
-          {filtered.length === 0 ? (
-            <div className="flex items-center justify-center py-10 text-xs text-tertiary">No clients match</div>
-          ) : filtered.map((lead, idx) => {
-            const lt = allTasks.filter(t => t.leadId === lead.id);
-            const openCount = lt.filter(t => t.status === "open").length;
-            const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-            const pct = Math.round((done / total) * 100);
-            return (
-              <button key={lead.id} onClick={() => onSelectClient(lead.id)}
-                className={"grid grid-cols-[2fr_1fr_1fr_auto] gap-0 items-center px-3 py-2.5 w-full text-left hover:bg-secondary_alt transition-colors group " +
-                  (idx < filtered.length - 1 ? "border-b border-secondary" : "")}>
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-[10px] font-bold text-brand-secondary">
-                    {lead.firstName[0]}{lead.lastName[0]}
+      {/* ── Tile grid ── */}
+      <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
+        {filtered.length === 0 ? (
+          <div className="flex items-center justify-center py-10 text-xs text-tertiary rounded-xl border border-dashed border-secondary">No clients match</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {filtered.map(lead => {
+              const lt = allTasks.filter(t => t.leadId === lead.id);
+              const openCount = lt.filter(t => t.status === "open").length;
+              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+              const pct = Math.round((done / total) * 100);
+              const isComplete = done === total;
+              return (
+                <button key={lead.id} onClick={() => onSelectClient(lead.id)}
+                  className={"group flex flex-col gap-2.5 rounded-xl border p-3 text-left transition-all hover:shadow-md " +
+                    (isComplete ? "border-success-solid bg-success-secondary hover:border-success-solid" :
+                     openCount > 0 ? "border-brand bg-brand-secondary hover:border-brand" :
+                                     "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary")}>
+                  {/* Tile header */}
+                  <div className="flex items-center gap-2">
+                    <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
+                      (isComplete ? "bg-success-solid text-white" : "bg-brand-secondary text-brand-secondary")}>
+                      {lead.firstName[0]}{lead.lastName[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
+                      <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
+                    </div>
+                    {openCount > 0
+                      ? <span className="shrink-0 rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-bold text-white">{openCount}</span>
+                      : isComplete && <span className="shrink-0 text-[10px] text-success-primary font-semibold">✓ Done</span>}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-primary truncate">{lead.firstName} {lead.lastName}</p>
-                    <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
+                  {/* Policy tag */}
+                  <span className="inline-flex self-start rounded-md bg-secondary px-2 py-0.5 text-[10px] text-secondary font-medium truncate max-w-full">{lead.policyType}</span>
+                  {/* Progress bar */}
+                  <div className="space-y-1">
+                    <div className="h-1.5 w-full rounded-full bg-tertiary overflow-hidden">
+                      <div className={"h-full rounded-full transition-all " + (isComplete ? "bg-success-solid" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-[10px] text-quaternary">{done}/{total} tasks · {pct}%</p>
                   </div>
-                </div>
-                <span className="text-[10px] text-tertiary truncate pr-2 hidden sm:block">{lead.policyType}</span>
-                <div className="hidden sm:flex items-center gap-1.5 pr-2">
-                  <div className="flex-1 h-1 rounded-full bg-tertiary overflow-hidden">
-                    <div className="h-full rounded-full bg-brand-solid transition-all" style={{ width: pct + "%" }} />
-                  </div>
-                  <span className="text-[10px] text-quaternary shrink-0 w-8">{done}/{total}</span>
-                </div>
-                <div className="flex items-center justify-end w-10">
-                  {openCount > 0
-                    ? <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-semibold text-white">{openCount}</span>
-                    : <span className="text-[10px] text-quaternary">—</span>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
