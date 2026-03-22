@@ -1963,61 +1963,14 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
              :                      { label: "New",       icon: "🌱", color: "#22C55E" };
 
   return (
-    <>
-      {/* ── Settings-style page header ── */}
-      <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
-        <div className="flex items-end justify-between mb-4">
-          <div>
-            <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
-            <p className="text-sm text-tertiary mt-0.5">{greeting} — {leads.length} clients · {activeCount} active{overdueCount > 0 ? ` · ${overdueCount} overdue` : ""}</p>
-          </div>
+    <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
+      <div className="flex items-end justify-between mb-4">
+        <div>
+          <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
+          <p className="text-sm text-tertiary mt-0.5">Your personalised CRM dashboard</p>
         </div>
       </div>
-
-      {/* ── Achievement tiles ── */}
-      <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center gap-3 overflow-x-auto">
-          {/* Completion donut */}
-          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
-            <DonutChart pct={completionPct} color="#D34108" size={36} />
-            <div>
-              <p className="text-xs font-bold text-primary tabular-nums">{completionPct}%</p>
-              <p className="text-[9px] text-quaternary uppercase tracking-wider">Done</p>
-            </div>
-          </div>
-
-          {/* Adviser tier */}
-          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
-            <span className="text-lg leading-none">{tier.icon}</span>
-            <div>
-              <p className="text-xs font-bold" style={{ color: tier.color }}>{tier.label}</p>
-              <p className="text-[9px] text-quaternary uppercase tracking-wider">Adviser Tier</p>
-            </div>
-          </div>
-
-          {/* Inforce target */}
-          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
-            <p className="text-lg font-bold tabular-nums" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
-            <div>
-              <p className="text-[9px] text-quaternary uppercase tracking-wider">Inforce</p>
-              <div className="w-14 h-1 rounded-full mt-0.5 bg-orange-100 overflow-hidden">
-                <div className="h-full rounded-full bg-[#D34108]" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
-              </div>
-              <p className="text-[9px] text-quaternary">{inforceCount}/10</p>
-            </div>
-          </div>
-
-          {/* Clients */}
-          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
-            <p className="text-lg font-bold tabular-nums text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
-            <div>
-              <p className="text-[9px] text-quaternary uppercase tracking-wider">Clients</p>
-              <p className="text-[9px] text-quaternary">{activeCount} active</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
 
