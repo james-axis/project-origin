@@ -68,14 +68,24 @@ input[type="search"]::-webkit-search-cancel-button {
     outline: none;
 }
 
-/* ─── Beacon animations ─────────────────────────────────────────────────────── */
-@keyframes beacon-ping {
-  0%   { transform: scale(1);   opacity: 0.75; }
-  75%, 100% { transform: scale(1.8); opacity: 0; }
+/* ─── Beacon animations (box-shadow pulse — matches LIP dashboard exactly) ─── */
+@keyframes beacon-pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.55); }
+  70%       { box-shadow: 0 0 0 7px rgba(18, 183, 106, 0); }
 }
-@keyframes beacon-ping-slow {
-  0%   { transform: scale(1);   opacity: 0.6; }
-  75%, 100% { transform: scale(1.8); opacity: 0; }
+@keyframes beacon-pulse-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.55); }
+  70%       { box-shadow: 0 0 0 7px rgba(234, 179, 8, 0); }
 }
-.beacon-ping      { animation: beacon-ping      1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
-.beacon-ping-slow { animation: beacon-ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes beacon-pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(180, 35, 24, 0.55); }
+  70%       { box-shadow: 0 0 0 7px rgba(180, 35, 24, 0); }
+}
+@keyframes beacon-pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(211, 65, 8, 0.55); }
+  70%       { box-shadow: 0 0 0 7px rgba(211, 65, 8, 0); }
+}
+.beacon-green { animation: beacon-pulse-green 2s ease infinite; }
+.beacon-amber { animation: beacon-pulse-amber 2s ease infinite; }
+.beacon-red   { animation: beacon-pulse-red   2s ease infinite; }
+.beacon-blue  { animation: beacon-pulse-blue  2s ease infinite; }

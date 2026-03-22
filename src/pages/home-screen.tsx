@@ -302,25 +302,21 @@ const AVAILABLE_WIDGETS = [
   { id: "payments",     label: "Payments",     description: "Recent payment activity" },
 ];
 
-// ─── Beacon component ────────────────────────────────────────────────────────
+// ─── Beacon component — matches LIP dashboard exactly ────────────────────────
+// 9px dot, box-shadow pulses outward 7px then fades — no separate ring element
 type BeaconColor = "red" | "amber" | "green" | "blue";
-const BEACON_HEX: Record<BeaconColor, string> = {
-  red:   "#EF4444",
-  amber: "#F59E0B",
-  green: "#22C55E",
-  blue:  "#D34108",
+const BEACON_BG: Record<BeaconColor, string> = {
+  green: "rgb(18, 183, 106)",
+  amber: "rgb(234, 179, 8)",
+  red:   "rgb(180, 35, 24)",
+  blue:  "rgb(211, 65, 8)",
 };
-function Beacon({ color = "green", slow = false }: { color?: BeaconColor; slow?: boolean }) {
-  const hex = BEACON_HEX[color];
+function Beacon({ color = "green" }: { color?: BeaconColor }) {
   return (
-    <span className="relative flex shrink-0 items-center justify-center" style={{ width: 16, height: 16 }}>
-      {/* Ping ring — starts at dot size, expands and fades */}
-      <span className={"absolute inline-flex rounded-full " + (slow ? "beacon-ping-slow" : "beacon-ping")}
-        style={{ width: 8, height: 8, backgroundColor: hex, opacity: 0.6 }} />
-      {/* Solid dot */}
-      <span className="relative inline-flex rounded-full"
-        style={{ width: 8, height: 8, backgroundColor: hex }} />
-    </span>
+    <span
+      className={"inline-block shrink-0 rounded-full beacon-" + color}
+      style={{ width: 9, height: 9, backgroundColor: BEACON_BG[color] }}
+    />
   );
 }
 
