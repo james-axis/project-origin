@@ -466,9 +466,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
                       <Beacon color={bc} />
                       <p className={"text-xs font-semibold truncate " + (p === "critical" ? "text-[#B91C1C]" : "text-primary")}>{task.name}</p>
                     </div>
-                    <span className={"shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
-                      {task.assigneeRole}
-                    </span>
+
                   </div>
                   {/* Tile meta */}
                   <div className="flex items-center justify-between">
@@ -708,7 +706,7 @@ function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSel
 
 // ─── Widget card ──────────────────────────────────────────────────────────────
 const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => (
-  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs col-span-1 lg:col-span-2 xl:col-span-1" style={{ minHeight: 480 }}>
+  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs" style={{ minHeight: 420 }}>
     <div className="flex items-center justify-between mb-4">
       <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
       <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition">Remove</button>
@@ -932,7 +930,7 @@ export function HomeScreen() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {activeTab.widgets.map(id => (
                     <WidgetCard key={id} id={id} label={getWidget(id).label} onRemove={() => removeWidget(id)} onSelectTask={setActiveTask} onSelectClient={setSelectedClientId} />
                   ))}
