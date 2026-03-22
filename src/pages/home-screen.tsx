@@ -294,6 +294,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
 // ─── Widget definitions ───────────────────────────────────────────────────────
 const AVAILABLE_WIDGETS = [
   { id: "priorities",   label: "Top Priorities", description: "Next best actions to drive revenue" },
+  { id: "crm_table",    label: "CRM Table",      description: "Mega filter table — every client, task and status" },
   { id: "tasks",        label: "Tasks",        description: "Open tasks across all clients" },
   { id: "leads",        label: "Clients",      description: "All active clients" },
   { id: "applications", label: "Applications", description: "In-progress applications by status" },
@@ -1296,12 +1297,483 @@ const PlaceholderWidget = ({ description }: { description: string }) => (
   </div>
 );
 
+
+// ─── CRM Table widget ─────────────────────────────────────────────────────────
+// Mega filter table: every lead × task dimension, saveable presets, tile shortcuts.
+
+interface CRMFilters {
+  search: string;
+  dateRange: "7d" | "30d" | "90d" | "all";
+  appStatus: ("new" | "active" | "overdue" | "complete")[];
+  taskPriority: ("critical" | "high" | "normal")[];
+  practice: string;
+  policyType: string;
+  tileFilter: "total" | "overdue" | "amber" | "fresh" | null;
+}
+
+interface CRMPreset {
+  id: string;
+  name: string;
+  filters: CRMFilters;
+  color: string;
+}
+
+const PRESET_COLORS = ["#D34108", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B", "#EC4899"];
+const PRESET_KEY = "axis_crm_presets_v1";
+
+const DEFAULT_FILTERS: CRMFilters = {
+  search: "",
+  dateRange: "all",
+  appStatus: [],
+  taskPriority: [],
+  practice: "",
+  policyType: "",
+  tileFilter: null,
+};
+
+function loadPresets(): CRMPreset[] {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? "[]"); } catch { return []; }
+}
+function savePresets(ps: CRMPreset[]) {
+  localStorage.setItem(PRESET_KEY, JSON.stringify(ps));
+}
+
+function usePresetsStore() {
+  const [presets, setPresets] = useState<CRMPreset[]>(loadPresets);
+  const add = useCallback((p: CRMPreset) => {
+    setPresets(prev => { const next = [...prev, p]; savePresets(next); return next; });
+  }, []);
+  const remove = useCallback((id: string) => {
+    setPresets(prev => { const next = prev.filter(p => p.id !== id); savePresets(next); return next; });
+  }, []);
+  return { presets, add, remove };
+}
+
+type SortKey = "name" | "policyType" | "practice" | "appStatus" | "step" | "priority" | "age" | "progress";
+type SortDir = "asc" | "desc";
+
+// Derive per-lead row data
+function buildTableRows(leads: SimLead[], allTasks: SimTask[], total: number) {
+  return leads.map(lead => {
+    const lt = allTasks.filter(t => t.leadId === lead.id);
+    const openTasks = lt.filter(t => t.status === "open" && !t.parentTaskId).sort((a, b) => a.sortOrder - b.sortOrder);
+    const completedCount = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+    const currentTask = openTasks[0] ?? null;
+    const chainStep = currentTask ? APPLICATION_CHAIN.findIndex(c => c.id === currentTask.templateTaskId) : completedCount - 1;
+    const ageMinutes = currentTask ? (Date.now() - new Date(currentTask.createdAt).getTime()) / 60000 : 0;
+    const priority = currentTask ? getTaskPriority(currentTask) : "normal";
+    const appStatus = (() => {
+      if (completedCount >= total) return "complete";
+      if (priority === "critical") return "overdue";
+      const isNew = (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
+      if (isNew && chainStep === 0) return "new";
+      return "active";
+    })();
+    const progress = Math.round((completedCount / total) * 100);
+    return { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress };
+  });
+}
+
+type TableRow = ReturnType<typeof buildTableRows>[number];
+
+function CRMTableWidget({ onSelectTask, onSelectClient }: { onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
+  const [leads, setLeads] = useState<SimLead[]>([]);
+  const [allTasks, setAllTasks] = useState<SimTask[]>([]);
+  const [filters, setFilters] = useState<CRMFilters>(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("priority");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [savePresetName, setSavePresetName] = useState("");
+  const { presets, add: addPreset, remove: removePreset } = usePresetsStore();
+
+  useEffect(() => {
+    const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
+    refresh();
+    window.addEventListener("axis_sim_update", refresh);
+    return () => window.removeEventListener("axis_sim_update", refresh);
+  }, []);
+
+  const total = APPLICATION_CHAIN.length;
+  const allRows = buildTableRows(leads, allTasks, total);
+
+  // ── Stats for tiles ──
+  const totalCount    = allRows.length;
+  const overdueCount  = allRows.filter(r => r.priority === "critical").length;
+  const amberCount    = allRows.filter(r => r.priority === "high").length;
+  const freshCount    = allRows.filter(r => r.priority === "normal" && r.appStatus !== "complete").length;
+
+  // ── Apply all filters ──
+  const cutoff = (days: number) => Date.now() - days * 24 * 60 * 60 * 1000;
+  const filtered = allRows.filter(row => {
+    const { lead, priority, appStatus } = row;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!`${lead.firstName} ${lead.lastName} ${lead.policyType} ${lead.practice}`.toLowerCase().includes(q)) return false;
+    }
+    if (filters.dateRange !== "all") {
+      const days = filters.dateRange === "7d" ? 7 : filters.dateRange === "30d" ? 30 : 90;
+      if (new Date(lead.createdAt).getTime() < cutoff(days)) return false;
+    }
+    if (filters.appStatus.length > 0 && !filters.appStatus.includes(appStatus as any)) return false;
+    if (filters.taskPriority.length > 0 && !filters.taskPriority.includes(priority as any)) return false;
+    if (filters.practice && lead.practice !== filters.practice) return false;
+    if (filters.policyType && !lead.policyType.includes(filters.policyType)) return false;
+    if (filters.tileFilter === "overdue" && priority !== "critical") return false;
+    if (filters.tileFilter === "amber"   && priority !== "high")     return false;
+    if (filters.tileFilter === "fresh"   && priority !== "normal")   return false;
+    return true;
+  });
+
+  // ── Sort ──
+  const sorted = [...filtered].sort((a, b) => {
+    let va: any, vb: any;
+    switch (sortKey) {
+      case "name":       va = `${a.lead.firstName} ${a.lead.lastName}`; vb = `${b.lead.firstName} ${b.lead.lastName}`; break;
+      case "policyType": va = a.lead.policyType; vb = b.lead.policyType; break;
+      case "practice":   va = a.lead.practice;   vb = b.lead.practice;   break;
+      case "appStatus":  va = a.appStatus;        vb = b.appStatus;        break;
+      case "step":       va = a.chainStep;        vb = b.chainStep;        break;
+      case "priority": {
+        const p = { critical: 3, high: 2, normal: 1 } as Record<string, number>;
+        va = p[a.priority] ?? 0; vb = p[b.priority] ?? 0; break;
+      }
+      case "age":        va = a.ageMinutes;  vb = b.ageMinutes;  break;
+      case "progress":   va = a.progress;    vb = b.progress;    break;
+    }
+    const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("desc"); }
+  }
+
+  function setTile(tile: typeof filters.tileFilter) {
+    setFilters(f => ({ ...f, tileFilter: f.tileFilter === tile ? null : tile }));
+  }
+
+  function applyPreset(p: CRMPreset) { setFilters(p.filters); }
+
+  function clearFilters() { setFilters(DEFAULT_FILTERS); }
+
+  const hasActiveFilters = filters.search || filters.dateRange !== "all" || filters.appStatus.length > 0 ||
+    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter;
+
+  // Unique practice/policy options
+  const practices = [...new Set(leads.map(l => l.practice))];
+  const policyTypes = [...new Set(leads.map(l => l.policyType.split(" + ")[0]))];
+
+  // ── Column header helper ──
+  const SortTh = ({ k, label, className = "" }: { k: SortKey; label: string; className?: string }) => (
+    <th onClick={() => toggleSort(k)}
+      className={"cursor-pointer select-none px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-quaternary hover:text-tertiary whitespace-nowrap " + className}>
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {sortKey === k ? (
+          <svg className="size-2.5" viewBox="0 0 10 10" fill="currentColor">
+            {sortDir === "asc" ? <path d="M5 2l4 6H1z" /> : <path d="M5 8L1 2h8z" />}
+          </svg>
+        ) : (
+          <svg className="size-2.5 opacity-30" viewBox="0 0 10 10" fill="currentColor"><path d="M5 2l4 6H1zM5 8L1 2h8z" opacity="0.5"/></svg>
+        )}
+      </span>
+    </th>
+  );
+
+  const APP_STATUS_STYLE: Record<string, string> = {
+    new:      "bg-success-secondary text-success-primary",
+    active:   "bg-brand-secondary text-brand-secondary",
+    overdue:  "bg-[#FEE2E2] text-[#B91C1C]",
+    complete: "bg-[#ECFDF5] text-[#059669]",
+  };
+  const PRIORITY_STYLE: Record<string, { label: string; dot: string }> = {
+    critical: { label: "Overdue", dot: "bg-[#EF4444]" },
+    high:     { label: "Amber",   dot: "bg-[#F59E0B]" },
+    normal:   { label: "Fresh",   dot: "bg-[#22C55E]" },
+  };
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-0">
+
+      {/* ── Stat tiles ── */}
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {[
+          { key: null as typeof filters.tileFilter,       label: "Total",   value: totalCount,   color: "text-primary",     activeColor: "border-[#D34108] bg-[#FFF4F0]" },
+          { key: "overdue" as typeof filters.tileFilter,  label: "Overdue", value: overdueCount, color: "text-[#B91C1C]",   activeColor: "border-[#EF4444] bg-[#FFF5F5]" },
+          { key: "amber"   as typeof filters.tileFilter,  label: "Amber",   value: amberCount,   color: "text-[#92400E]",   activeColor: "border-[#F59E0B] bg-[#FFFBEB]" },
+          { key: "fresh"   as typeof filters.tileFilter,  label: "New",     value: freshCount,   color: "text-success-primary", activeColor: "border-success-solid bg-success-secondary" },
+        ].map(({ key, label, value, color, activeColor }) => {
+          const isActive = key === null ? filters.tileFilter === null && !hasActiveFilters : filters.tileFilter === key;
+          return (
+            <button key={label}
+              onClick={() => key === null ? clearFilters() : setTile(key)}
+              className={"rounded-xl border px-4 py-3 text-left transition-all hover:shadow-sm " +
+                (isActive ? activeColor : "border-secondary bg-white hover:border-primary")}>
+              <p className={"text-2xl font-bold tabular-nums " + color} style={{ fontFamily: "'Metrophobic', sans-serif" }}>{value}</p>
+              <p className="text-[10px] font-medium text-quaternary mt-0.5 uppercase tracking-wide">{label}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Preset pills + filter toggle ── */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0 pb-0.5">
+          {presets.length === 0 && (
+            <span className="text-[10px] text-quaternary italic shrink-0">No saved presets yet</span>
+          )}
+          {presets.map(p => (
+            <div key={p.id} className="group relative shrink-0 flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-all hover:shadow-sm cursor-pointer"
+              style={{ borderColor: p.color + "66", backgroundColor: p.color + "15", color: p.color }}
+              onClick={() => applyPreset(p)}>
+              {p.name}
+              <button onClick={e => { e.stopPropagation(); removePreset(p.id); }}
+                className="ml-1.5 hidden group-hover:inline-flex size-3.5 items-center justify-center rounded-full hover:bg-black/10">
+                <X className="size-2.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="shrink-0 flex items-center gap-2">
+          {hasActiveFilters && (
+            <button onClick={clearFilters}
+              className="text-[10px] font-medium text-[#D34108] hover:underline whitespace-nowrap">Clear filters</button>
+          )}
+          <button onClick={() => setSaveModalOpen(true)}
+            className="inline-flex items-center gap-1 rounded-lg border border-secondary bg-white px-2.5 py-1.5 text-[10px] font-medium text-secondary hover:border-primary hover:bg-secondary transition-colors whitespace-nowrap">
+            <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M13 2H4l-1 1v10l1 1h9l1-1V4l-1-2zm-3 11H6V9h4v4zm2 0h-1V9H5V8h6v5h1V3H4v1h8v9zM6 3h4v2H6V3z" fill="currentColor"/></svg>
+            Save preset
+          </button>
+          <button onClick={() => setFiltersOpen(f => !f)}
+            className={"inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors whitespace-nowrap " +
+              (filtersOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-white text-secondary hover:border-primary")}>
+            <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            Filters {hasActiveFilters && <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand-solid text-white text-[9px] font-bold">!</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Filter panel ── */}
+      {filtersOpen && (
+        <div className="mb-3 rounded-xl border border-secondary bg-[#FAFAFA] p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Search */}
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Search</label>
+            <div className="relative">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <input value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                placeholder="Name, policy, practice..."
+                className="w-full rounded-lg border border-secondary bg-white pl-7 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+            </div>
+          </div>
+
+          {/* Date range */}
+          <div>
+            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Date range</label>
+            <div className="relative">
+              <select value={filters.dateRange} onChange={e => setFilters(f => ({ ...f, dateRange: e.target.value as any }))}
+                className="w-full rounded-lg border border-secondary bg-white px-2.5 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
+                <option value="all">All time</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+            </div>
+          </div>
+
+          {/* App status */}
+          <div>
+            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">App status</label>
+            <div className="flex flex-col gap-0.5">
+              {(["new","active","overdue","complete"] as const).map(s => (
+                <label key={s} className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={filters.appStatus.includes(s)}
+                    onChange={e => setFilters(f => ({ ...f, appStatus: e.target.checked ? [...f.appStatus, s] : f.appStatus.filter(x => x !== s) }))}
+                    className="rounded border-secondary size-3 accent-[#D34108]" />
+                  <span className="text-[10px] text-secondary capitalize">{s}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Task priority */}
+          <div>
+            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Priority</label>
+            <div className="flex flex-col gap-0.5">
+              {([["critical","Overdue"],["high","Amber"],["normal","Fresh"]] as const).map(([v, l]) => (
+                <label key={v} className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={filters.taskPriority.includes(v)}
+                    onChange={e => setFilters(f => ({ ...f, taskPriority: e.target.checked ? [...f.taskPriority, v] : f.taskPriority.filter(x => x !== v) }))}
+                    className="rounded border-secondary size-3 accent-[#D34108]" />
+                  <span className="text-[10px] text-secondary">{l}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Practice */}
+          <div>
+            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Practice</label>
+            <div className="relative">
+              <select value={filters.practice} onChange={e => setFilters(f => ({ ...f, practice: e.target.value }))}
+                className="w-full rounded-lg border border-secondary bg-white px-2.5 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
+                <option value="">All practices</option>
+                {practices.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Table ── */}
+      <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-secondary">
+        {sorted.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <svg className="size-8 text-fg-quaternary" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            <p className="text-sm font-semibold text-secondary">No records match</p>
+            <p className="text-xs text-quaternary">Try adjusting your filters</p>
+            <button onClick={clearFilters} className="text-xs font-medium text-[#D34108] hover:underline">Clear all filters</button>
+          </div>
+        ) : (
+          <table className="w-full border-collapse text-xs">
+            <thead className="sticky top-0 z-10 bg-[#F8F9FB] border-b border-secondary">
+              <tr>
+                <SortTh k="name"       label="Client"      className="pl-4" />
+                <SortTh k="policyType" label="Policy" />
+                <SortTh k="practice"   label="Practice" />
+                <SortTh k="appStatus"  label="Status" />
+                <SortTh k="step"       label="Current task" />
+                <SortTh k="priority"   label="Priority" />
+                <SortTh k="age"        label="Age" />
+                <SortTh k="progress"   label="Progress"    className="pr-4" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary bg-white">
+              {sorted.map(row => {
+                const { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress } = row;
+                const ageStr = ageMinutes < 1 ? "Just now" : ageMinutes < 60 ? `${Math.round(ageMinutes)}m` : `${Math.floor(ageMinutes / 60)}h ${Math.round(ageMinutes % 60)}m`;
+                const priMeta = PRIORITY_STYLE[priority];
+                return (
+                  <tr key={lead.id}
+                    onClick={() => currentTask ? onSelectTask(currentTask) : onSelectClient(lead.id)}
+                    className="hover:bg-[#FFF8F5] cursor-pointer transition-colors group">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="shrink-0 flex size-7 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary group-hover:bg-brand-secondary group-hover:text-brand-secondary">
+                          {lead.firstName[0]}{lead.lastName[0]}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-primary truncate max-w-[120px]">{lead.firstName} {lead.lastName}</p>
+                          <p className="text-[10px] text-quaternary truncate max-w-[120px]">{lead.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-secondary truncate block max-w-[120px]">{lead.policyType}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-secondary truncate block max-w-[90px]">{lead.practice}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize " + APP_STATUS_STYLE[appStatus]}>
+                        {appStatus}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {currentTask ? (
+                        <div className="min-w-0">
+                          <p className="text-secondary font-medium truncate max-w-[140px]">{currentTask.name}</p>
+                          <p className="text-[10px] text-quaternary">Step {chainStep + 1}/{total}</p>
+                        </div>
+                      ) : (
+                        <span className="text-quaternary italic">Complete</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex items-center gap-1">
+                        <span className={"size-1.5 rounded-full shrink-0 " + priMeta.dot} />
+                        <span className="text-secondary">{priMeta.label}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-secondary tabular-nums">{currentTask ? ageStr : "—"}</td>
+                    <td className="px-3 py-2.5 pr-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
+                          <div className={"h-full rounded-full transition-all " + (progress >= 100 ? "bg-success-solid" : "bg-brand-solid")}
+                            style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className="text-quaternary tabular-nums whitespace-nowrap">{completedCount}/{total}</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* ── Row count ── */}
+      <div className="mt-2 flex items-center justify-between px-1">
+        <p className="text-[10px] text-quaternary">{sorted.length} of {totalCount} record{totalCount !== 1 ? "s" : ""}</p>
+        {hasActiveFilters && (
+          <p className="text-[10px] text-[#D34108] font-medium">{totalCount - sorted.length} filtered out</p>
+        )}
+      </div>
+
+      {/* ── Save preset modal ── */}
+      {saveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={() => setSaveModalOpen(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-secondary bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-secondary px-5 py-4">
+              <h3 className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Save filter preset</h3>
+              <button onClick={() => setSaveModalOpen(false)} className="flex size-7 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary"><X className="size-4" /></button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1.5">Preset name</label>
+                <input value={savePresetName} onChange={e => setSavePresetName(e.target.value)}
+                  autoFocus placeholder="e.g. Overdue this week"
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand" />
+              </div>
+              <p className="text-xs text-quaternary">This will save all current active filters as a one-click preset.</p>
+            </div>
+            <div className="flex gap-2 border-t border-secondary px-5 py-4">
+              <button onClick={() => setSaveModalOpen(false)}
+                className="flex-1 rounded-lg border border-secondary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Cancel</button>
+              <button disabled={!savePresetName.trim()}
+                onClick={() => {
+                  if (!savePresetName.trim()) return;
+                  addPreset({
+                    id: Date.now().toString(),
+                    name: savePresetName.trim(),
+                    filters: { ...filters },
+                    color: PRESET_COLORS[presets.length % PRESET_COLORS.length],
+                  });
+                  setSavePresetName("");
+                  setSaveModalOpen(false);
+                }}
+                className="flex-1 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover disabled:opacity-50 transition-colors">
+                <span className="flex items-center justify-center gap-1.5"><Check className="size-3.5" />Save preset</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
   const w = AVAILABLE_WIDGETS.find(w => w.id === id);
   if (id === "tasks")        return <TasksWidget onSelectTask={onSelectTask} />;
   if (id === "leads")        return <LeadsWidget onSelectClient={onSelectClient} />;
   if (id === "applications") return <ApplicationsWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
   if (id === "priorities")    return <TopPrioritiesWidget onSelectTask={onSelectTask} />;
+  if (id === "crm_table")     return <CRMTableWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
   return <PlaceholderWidget description={w?.description ?? ""} />;
 }
 
@@ -1314,10 +1786,12 @@ const WIDGET_STYLES: Record<string, { header: string; card: string }> = {
   default:      { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
 };
 
+const FULL_WIDTH_WIDGETS = new Set(["crm_table"]);
 const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => {
   const styles = WIDGET_STYLES[id] ?? WIDGET_STYLES.default;
+  const isFull = FULL_WIDTH_WIDGETS.has(id);
   return (
-    <div className={"flex flex-col rounded-2xl p-5 " + styles.card} style={{ minHeight: 480 }}>
+    <div className={"flex flex-col rounded-2xl p-5 " + styles.card + (isFull ? " col-span-full" : "")} style={{ minHeight: isFull ? 600 : 480 }}>
       <div className="flex items-center justify-between mb-4">
         <p className={"text-base font-semibold " + styles.header} style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
         <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
@@ -1571,7 +2045,7 @@ export function HomeScreen() {
   // Init sim store on mount
   useEffect(() => { initSimStore(); }, []);
 
-  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities"] }]);
+  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities", "crm_table"] }]);
   const [activeTabId, setActiveTabId] = useState("default");
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
   const [renameModal, setRenameModal] = useState<{ open: boolean; tabId: string; current: string }>({ open: false, tabId: "", current: "" });
@@ -1701,7 +2175,7 @@ export function HomeScreen() {
                   </button>
                 </div>
               ) : (
-                <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 480px), 1fr))", gridAutoRows: "1fr" }}>
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                   {activeTab.widgets.map(id => (
                     <WidgetCard key={id} id={id} label={getWidget(id).label} onRemove={() => removeWidget(id)} onSelectTask={setActiveTask} onSelectClient={setSelectedClientId} />
                   ))}
