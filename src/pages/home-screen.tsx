@@ -1067,10 +1067,7 @@ function ApplicationsWidget({ onSelectTask, onSelectClient }: {
     return matchesSearch(l) && matchesStatusFilter(l);
   });
   const urgentApp = urgentApps[0] ?? null;
-
   const filtered = leads.slice().reverse().filter(l => matchesSearch(l) && matchesStatusFilter(l));
-
-  // Stats
   const newCount      = leads.filter(l => getAppStatus(l.id) === "new").length;
   const overdueCount  = leads.filter(l => getAppStatus(l.id) === "overdue").length;
   const activeCount   = leads.filter(l => getAppStatus(l.id) === "active").length;
@@ -1088,23 +1085,271 @@ function ApplicationsWidget({ onSelectTask, onSelectClient }: {
     const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv); a.download = "applications.csv"; a.click();
   }
 
-  const STATUS_BADGE: Record<string, string> = {
+  const APP_STATUS_STYLE: Record<string, string> = {
     new:      "bg-success-secondary text-success-primary",
     overdue:  "bg-[#FEE2E2] text-[#B91C1C]",
     active:   "bg-brand-secondary text-brand-secondary",
-    complete: "bg-success-secondary text-success-primary",
+    complete: "bg-[#ECFDF5] text-[#059669]",
   };
-  const STATUS_DOT: Record<string, string> = {
+  const APP_STATUS_DOT: Record<string, string> = {
     new: "bg-success-solid", overdue: "bg-[#EF4444]", active: "bg-brand-solid", complete: "bg-success-solid",
   };
-  const STATUS_LABEL: Record<string, string> = {
+  const APP_STATUS_LABEL: Record<string, string> = {
     new: "New", overdue: "Overdue", active: "Active", complete: "Complete",
   };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      {/* ── Stat tiles ── */}
+      <div className="grid grid-cols-4 gap-2 mb-3">
+        {([
+          { label: "New",      value: newCount,      filterKey: "new"      as const, beacon: "green" as BeaconColor },
+          { label: "Overdue",  value: overdueCount,  filterKey: "overdue"  as const, beacon: "red"   as BeaconColor },
+          { label: "Active",   value: activeCount,   filterKey: "active"   as const, beacon: "amber" as BeaconColor },
+          { label: "Complete", value: completeCount, filterKey: "complete" as const, beacon: undefined },
+        ]).map(({ label, value, filterKey, beacon }) => {
+          const isActive = statusFilter === filterKey;
+          return (
+            <button key={label} onClick={() => setStatusFilter(isActive ? "all" : filterKey)}
+              className={"rounded-xl border px-3 py-2.5 text-left transition-all " +
+                (isActive
+                  ? (filterKey === "overdue" ? "border-[#EF4444] bg-[#FFF5F5]" :
+                     filterKey === "new"     ? "border-success-solid bg-success-secondary" :
+                     filterKey === "active"  ? "border-brand bg-brand-secondary" :
+                                               "border-success-solid bg-success-secondary")
+                  : "border-secondary bg-secondary_alt hover:border-primary")}>
+              <div className="flex items-center gap-1.5 mb-1">
+                {beacon && <Beacon color={beacon} />}
+                <p className="text-[10px] font-medium text-tertiary truncate">{label}</p>
+              </div>
+              <p className={"text-xl font-semibold " +
+                (filterKey === "overdue" ? "text-[#B91C1C]" :
+                 filterKey === "new"     ? "text-success-primary" :
+                 filterKey === "active"  ? "text-brand-secondary" : "text-primary")}>{value}</p>
+            </button>
+          );
+        })}
+      </div>
 
-            {/* ── Preset pills + filter toggle ── */}
+      {/* ── Search + filter + download ── */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="relative flex-1 min-w-0">
+          <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search applications..."
+            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+        </div>
+        <div className="relative">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="rounded-lg border border-secondary bg-primary pl-3 pr-7 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
+            <option value="all">All</option><option value="new">New</option>
+            <option value="overdue">Overdue</option><option value="active">Active</option><option value="complete">Complete</option>
+          </select>
+          <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-fg-quaternary rotate-90 pointer-events-none" />
+        </div>
+        <button onClick={downloadCSV} className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
+          <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+
+      {/* ── URGENT section ── */}
+      {urgentApp && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Urgent</span>
+              <span className="rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">{urgentApps.length}</span>
+            </div>
+            {urgentApps.length > 1 && (
+              <button onClick={() => setShowAllUrgent(v => !v)} className="text-[10px] text-brand-secondary hover:underline font-medium">
+                {showAllUrgent ? "Show less" : `View all ${urgentApps.length}`}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {(showAllUrgent ? urgentApps : [urgentApp]).map((lead) => {
+              const lt = allTasks.filter(t => t.leadId === lead.id);
+              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+              const pct = Math.round((done / total) * 100);
+              const appStatus = getAppStatus(lead.id);
+              const ct = getCurrentTask(lead.id);
+              return (
+                <button key={lead.id} onClick={() => ct ? onSelectTask(ct) : onSelectClient(lead.id)}
+                  className={"group flex flex-col gap-2 rounded-xl border p-3 text-left w-full transition-all hover:shadow-sm " +
+                    (appStatus === "overdue"
+                      ? "border-secondary bg-gradient-to-br from-[#FFF5F5] via-[#FFF8F8] to-white"
+                      : "border-secondary bg-gradient-to-br from-[#F0FDF4] via-[#F6FEF9] to-white")}>
+                  <div className="flex items-center gap-2">
+                    <Beacon color={appStatus === "overdue" ? "red" : "green"} />
+                    <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold " +
+                      (appStatus === "overdue" ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
+                      {lead.firstName[0]}{lead.lastName[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-primary">{lead.firstName} {lead.lastName}</p>
+                      <p className="text-[10px] text-tertiary">{ct?.name ?? "Complete"}</p>
+                    </div>
+                    <span className={"text-[10px] font-semibold rounded-full px-2 py-0.5 " + APP_STATUS_STYLE[appStatus]}>{APP_STATUS_LABEL[appStatus]}</span>
+                  </div>
+                  <div className="flex items-center gap-2 pl-9">
+                    <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full rounded-full bg-brand-solid" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[10px] text-quaternary tabular-nums">{done}/{total}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="h-px bg-secondary mt-3 mb-2" />
+        </div>
+      )}
+
+      {/* ── All applications ── */}
+      <div className="overflow-y-auto flex-1 min-h-0 space-y-2" style={{ maxHeight: 300 }}>
+        {filtered.map(lead => {
+          const lt = allTasks.filter(t => t.leadId === lead.id);
+          const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+          const pct = Math.round((done / total) * 100);
+          const appStatus = getAppStatus(lead.id);
+          const ct = getCurrentTask(lead.id);
+          return (
+            <button key={lead.id} onClick={() => ct ? onSelectTask(ct) : onSelectClient(lead.id)}
+              className="group flex flex-col gap-2 rounded-xl border border-secondary bg-primary p-3 text-left w-full transition-all hover:border-brand hover:shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary">
+                  {lead.firstName[0]}{lead.lastName[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-primary">{lead.firstName} {lead.lastName}</p>
+                  <p className="text-[10px] text-tertiary truncate">{ct ? `Step ${APPLICATION_CHAIN.findIndex(c => c.id === ct.templateTaskId) + 1}: ${ct.name}` : "Complete"}</p>
+                </div>
+                <span className={"text-[10px] font-semibold rounded-full px-2 py-0.5 " + APP_STATUS_STYLE[appStatus]}>
+                  <span className={"inline-block size-1.5 rounded-full mr-1 " + APP_STATUS_DOT[appStatus]} />{APP_STATUS_LABEL[appStatus]}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 pl-9">
+                <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full rounded-full bg-brand-solid" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-[10px] text-quaternary tabular-nums">{done}/{total}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Universal Search widget ──────────────────────────────────────────────────
+function CRMTableWidget({ onSelectTask, onSelectClient, globalTileFilter }: {
+  onSelectTask: (t: SimTask) => void;
+  onSelectClient: (id: string) => void;
+  globalTileFilter: GlobalTile | null;
+}) {
+  const [leads, setLeads] = useState<SimLead[]>([]);
+  const [allTasks, setAllTasks] = useState<SimTask[]>([]);
+  const [filters, setFilters] = useState<CRMFilters>(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("priority");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [savePresetName, setSavePresetName] = useState("");
+  const { presets, add: addPreset, remove: removePreset } = usePresetsStore();
+
+  useEffect(() => {
+    const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
+    refresh();
+    window.addEventListener("axis_sim_update", refresh);
+    return () => window.removeEventListener("axis_sim_update", refresh);
+  }, []);
+
+  const total = APPLICATION_CHAIN.length;
+  const allRows = buildTableRows(leads, allTasks, total);
+
+  const totalCount   = allRows.length;
+  const overdueCount = allRows.filter(r => r.priority === "critical").length;
+  const amberCount   = allRows.filter(r => r.priority === "high").length;
+  const freshCount   = allRows.filter(r => r.priority === "normal" && r.appStatus !== "complete").length;
+
+  const cutoff = (days: number) => Date.now() - days * 24 * 60 * 60 * 1000;
+  const filtered2 = allRows.filter(row => {
+    const { lead, priority, appStatus } = row;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!`${lead.firstName} ${lead.lastName} ${lead.policyType} ${lead.practice}`.toLowerCase().includes(q)) return false;
+    }
+    if (filters.dateRange !== "all") {
+      const days = filters.dateRange === "7d" ? 7 : filters.dateRange === "30d" ? 30 : 90;
+      if (new Date(lead.createdAt).getTime() < cutoff(days)) return false;
+    }
+    if (filters.appStatus.length > 0 && !filters.appStatus.includes(appStatus as any)) return false;
+    if (filters.taskPriority.length > 0 && !filters.taskPriority.includes(priority as any)) return false;
+    if (filters.practice && lead.practice !== filters.practice) return false;
+    if (filters.policyType && !lead.policyType.includes(filters.policyType)) return false;
+    const effectiveTile = globalTileFilter ?? filters.tileFilter;
+    if (effectiveTile === "overdue" && priority !== "critical") return false;
+    if (effectiveTile === "amber"   && priority !== "high")     return false;
+    if (effectiveTile === "fresh"   && priority !== "normal")   return false;
+    return true;
+  });
+
+  const sorted = [...filtered2].sort((a, b) => {
+    let va: any, vb: any;
+    switch (sortKey) {
+      case "name":       va = `${a.lead.firstName} ${a.lead.lastName}`; vb = `${b.lead.firstName} ${b.lead.lastName}`; break;
+      case "policyType": va = a.lead.policyType; vb = b.lead.policyType; break;
+      case "practice":   va = a.lead.practice;   vb = b.lead.practice;   break;
+      case "appStatus":  va = a.appStatus;        vb = b.appStatus;        break;
+      case "step":       va = a.chainStep;        vb = b.chainStep;        break;
+      case "priority": { const p = { critical: 3, high: 2, normal: 1 } as Record<string, number>; va = p[a.priority] ?? 0; vb = p[b.priority] ?? 0; break; }
+      case "age":        va = a.ageMinutes;  vb = b.ageMinutes;  break;
+      case "progress":   va = a.progress;    vb = b.progress;    break;
+    }
+    const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("desc"); }
+  }
+
+  function clearFilters() { setFilters(DEFAULT_FILTERS); }
+  function applyPreset(p: CRMPreset) { setFilters(p.filters); }
+
+  const hasActiveFilters = !!(filters.search || filters.dateRange !== "all" || filters.appStatus.length > 0 ||
+    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter || globalTileFilter);
+
+  const practices = [...new Set(leads.map(l => l.practice))];
+
+  const APP_STATUS_STYLE: Record<string, string> = {
+    new: "bg-success-secondary text-success-primary", active: "bg-brand-secondary text-brand-secondary",
+    overdue: "bg-[#FEE2E2] text-[#B91C1C]", complete: "bg-[#ECFDF5] text-[#059669]",
+  };
+  const PRIORITY_STYLE: Record<string, { label: string; dot: string }> = {
+    critical: { label: "Overdue", dot: "bg-[#EF4444]" },
+    high:     { label: "Amber",   dot: "bg-[#F59E0B]" },
+    normal:   { label: "Fresh",   dot: "bg-[#22C55E]" },
+  };
+
+  const SortTh = ({ k, label, className = "" }: { k: SortKey; label: string; className?: string }) => (
+    <th onClick={() => toggleSort(k)}
+      className={"cursor-pointer select-none px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-quaternary hover:text-tertiary whitespace-nowrap " + className}>
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {sortKey === k ? (
+          <svg className="size-2.5" viewBox="0 0 10 10" fill="currentColor">
+            {sortDir === "asc" ? <path d="M5 2l4 6H1z" /> : <path d="M5 8L1 2h8z" />}
+          </svg>
+        ) : <svg className="size-2.5 opacity-30" viewBox="0 0 10 10" fill="currentColor"><path d="M5 2l4 6H1z" opacity="0.5"/><path d="M5 8L1 2h8z" opacity="0.5"/></svg>}
+      </span>
+    </th>
+  );
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-0">
+      {/* ── Preset pills + filter toggle ── */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0 pb-0.5">
           {presets.length === 0 && (
