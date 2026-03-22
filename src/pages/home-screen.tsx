@@ -404,71 +404,141 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
   const normalTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
 
-  // 3 beacons — no labels
-  const legend = (
-    <div className="flex items-center gap-2 px-1">
-      <Beacon color="green" />
-      <Beacon color="amber" />
-      <Beacon color="red" />
-    </div>
-  );
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "overdue" | "amber" | "fresh">("all");
+
+  const overdueTasks = tasks.filter(t => getTaskPriority(t) === "critical");
+  const amberTasks   = tasks.filter(t => getTaskPriority(t) === "high");
+  const freshTasks   = tasks.filter(t => getTaskPriority(t) === "normal");
+
+  function downloadCSV() {
+    const rows = [["Task", "Client", "Role", "Status", "Age (min)"]];
+    tasks.forEach(t => {
+      const l = getLead(t.leadId);
+      rows.push([t.name, l ? `${l.firstName} ${l.lastName}` : "Unknown", t.assigneeRole, t.status, String(Math.round(getTaskAge(t)))]);
+    });
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv); a.download = "tasks.csv"; a.click();
+  }
+
+  const filtered = tasks.filter(t => {
+    if (filter === "overdue" && getTaskPriority(t) !== "critical") return false;
+    if (filter === "amber"   && getTaskPriority(t) !== "high")     return false;
+    if (filter === "fresh"   && getTaskPriority(t) !== "normal")   return false;
+    if (search && !t.name.toLowerCase().includes(search.toLowerCase())) {
+      const l = getLead(t.leadId);
+      if (!l || !`${l.firstName} ${l.lastName}`.toLowerCase().includes(search.toLowerCase())) return false;
+    }
+    return true;
+  });
 
   return (
-    <div className="flex flex-col gap-0 overflow-hidden flex-1">
+    <div className="flex flex-col gap-0 flex-1 min-h-0">
 
-      {/* ── Priority section (~30%) ── */}
-      <div className="shrink-0" style={{ minHeight: priorityTasks.length > 0 ? undefined : "30%" }}>
-        <div className="flex items-center justify-between px-1 mb-1.5">
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Priority</span>
-          {priorityTasks.length > 0 && (
+      {/* ── Stat tiles ── */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          { label: "Open tasks",  value: tasks.length,       color: "text-primary" },
+          { label: "Overdue",     value: overdueTasks.length, color: "text-[#B91C1C]", beacon: "red"   as BeaconColor },
+          { label: "Fresh",       value: freshTasks.length,   color: "text-success-primary", beacon: "green" as BeaconColor },
+        ].map(({ label, value, color, beacon }) => (
+          <div key={label} className="rounded-xl border border-secondary bg-secondary_alt px-3 py-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              {beacon && <Beacon color={beacon} />}
+              <p className="text-[10px] font-medium text-tertiary truncate">{label}</p>
+            </div>
+            <p className={"text-xl font-semibold " + color}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Priority section ── */}
+      {priorityTasks.length > 0 && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Priority</span>
             <span className={"text-[10px] font-semibold rounded-full px-1.5 py-0.5 " +
-              (priorityTasks.some(t => getTaskPriority(t) === "critical") ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-[#FEF3C7] text-[#92400E]")}>
+              (overdueTasks.length > 0 ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-[#FEF3C7] text-[#92400E]")}>
               {priorityTasks.length} urgent
             </span>
-          )}
-        </div>
-
-        {priorityTasks.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-xl border border-secondary bg-secondary_alt px-3 py-2.5">
-            <Beacon color="green" />
-            <p className="text-xs text-tertiary">All tasks on target</p>
           </div>
-        ) : (
           <div className="flex flex-col gap-1.5">
-            {priorityTasks.map(task => (
+            {priorityTasks.slice(0, 3).map(task => (
               <TaskRow key={task.id} task={task} lead={getLead(task.leadId)} onSelectTask={onSelectTask} compact />
             ))}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* ── Search + filter + download ── */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="relative flex-1 min-w-0">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks or clients..."
+            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+        </div>
+        <div className="flex items-center gap-1">
+          {(["all","overdue","amber","fresh"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={"px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors capitalize " +
+                (filter === f ? "bg-brand-solid text-white" : "bg-secondary text-tertiary hover:bg-secondary hover:text-secondary")}>
+              {f === "all" ? "All" : f === "overdue" ? "🔴 Overdue" : f === "amber" ? "🟡 Near" : "🟢 Fresh"}
+            </button>
+          ))}
+        </div>
+        <button onClick={downloadCSV} title="Download CSV"
+          className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
+          <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
       </div>
 
-      {/* ── Divider ── */}
-      <div className="flex items-center gap-2 my-3">
-        <div className="flex-1 h-px bg-secondary" />
-        <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">All tasks</span>
-        <div className="flex-1 h-px bg-secondary" />
-      </div>
-
-      {/* ── Legend ── */}
-      {legend}
-
-      {/* ── All tasks (~70%) ── */}
-      <div className="flex flex-col gap-1.5 overflow-y-auto mt-2" style={{ maxHeight: 260 }}>
-        {tasks.map(task => (
-          <TaskRow key={task.id} task={task} lead={getLead(task.leadId)} onSelectTask={onSelectTask} />
-        ))}
-        {normalTasks.length === 0 && priorityTasks.length > 0 && (
-          <p className="text-xs text-tertiary text-center py-2">No other tasks</p>
-        )}
+      {/* ── Table ── */}
+      <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
+        <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-0 px-3 py-2 bg-secondary_alt border-b border-secondary">
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider w-6" />
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Task</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider px-3 hidden sm:block">Client</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider px-3 hidden sm:block">Role</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider w-6" />
+        </div>
+        <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
+          {filtered.length === 0 ? (
+            <div className="flex items-center justify-center py-10 text-xs text-tertiary">No tasks match this filter</div>
+          ) : filtered.map((task, idx) => {
+            const l = getLead(task.leadId);
+            const p = getTaskPriority(task);
+            const bc = getPriorityBeacon(p);
+            const isSubtask = !!task.parentTaskId;
+            return (
+              <button key={task.id} onClick={() => onSelectTask(task)}
+                className={"grid grid-cols-[auto_1fr_auto_auto_auto] gap-0 items-center px-3 py-2.5 w-full text-left transition-colors group " +
+                  (idx < filtered.length - 1 ? "border-b border-secondary " : "") +
+                  (p === "critical" ? "bg-[#FFF5F5] hover:bg-[#FEE2E2]" : p === "high" ? "bg-[#FFFBEB] hover:bg-[#FEF3C7]" : "bg-primary hover:bg-secondary_alt")}>
+                <span className="flex items-center w-6"><Beacon color={bc} /></span>
+                <span className="min-w-0">
+                  <p className={"text-xs font-medium truncate " + (p === "critical" ? "text-[#B91C1C]" : "text-primary")}>{task.name}</p>
+                  {isSubtask && <p className="text-[10px] text-warning-primary">subtask</p>}
+                </span>
+                <span className="text-xs text-tertiary px-3 truncate hidden sm:block max-w-[100px]">{l ? `${l.firstName} ${l.lastName}` : "—"}</span>
+                <span className="text-[10px] text-quaternary px-3 hidden sm:block">{task.assigneeRole}</span>
+                <ChevronRight className={"size-3.5 text-fg-quaternary group-hover:text-brand-secondary shrink-0 " + (p === "critical" ? "text-[#EF4444]" : "")} />
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Leads widget ─────────────────────────────────────────────────────────────
+// ─── Leads (Clients) widget ───────────────────────────────────────────────────
 function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void }) {
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "complete">("all");
 
   useEffect(() => {
     const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
@@ -486,35 +556,120 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     );
   }
 
+  const total = APPLICATION_CHAIN.length;
+  const activeLeads   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open"));
+  const completeLeads = leads.filter(l => allTasks.filter(t => t.leadId === l.id && t.status === "completed" && !t.parentTaskId).length === total);
+  const totalOpenTasks = allTasks.filter(t => t.status === "open").length;
+
+  function downloadCSV() {
+    const rows = [["Name","Policy","Practice","Open Tasks","Progress"]];
+    leads.forEach(l => {
+      const lt = allTasks.filter(t => t.leadId === l.id);
+      const open = lt.filter(t => t.status === "open").length;
+      const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+      rows.push([`${l.firstName} ${l.lastName}`, l.policyType, l.practice, String(open), `${done}/${total}`]);
+    });
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv); a.download = "clients.csv"; a.click();
+  }
+
+  const filtered = leads.slice().reverse().filter(l => {
+    const lt = allTasks.filter(t => t.leadId === l.id);
+    const open = lt.filter(t => t.status === "open").length;
+    const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+    if (filter === "active"   && open === 0) return false;
+    if (filter === "complete" && done < total) return false;
+    if (search && !`${l.firstName} ${l.lastName}`.toLowerCase().includes(search.toLowerCase()) && !l.policyType.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
   return (
-    <div className="flex flex-col gap-2 overflow-y-auto max-h-80">
-      {leads.slice().reverse().map(lead => {
-        const leadTasks = allTasks.filter(t => t.leadId === lead.id);
-        const openCount = leadTasks.filter(t => t.status === "open").length;
-        const completedCount = leadTasks.filter(t => t.status === "completed" && !t.parentTaskId).length;
-        const total = APPLICATION_CHAIN.length;
-        const pct = Math.round((completedCount / total) * 100);
-        return (
-          <button key={lead.id} onClick={() => onSelectClient(lead.id)} className="flex items-center gap-3 rounded-xl border border-secondary bg-primary px-3 py-3 w-full text-left hover:border-brand hover:bg-brand-secondary transition-colors group">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-xs font-semibold text-brand-secondary">
-              {lead.firstName[0]}{lead.lastName[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-primary">{lead.firstName} {lead.lastName}</p>
-              <p className="text-xs text-tertiary">{lead.policyType} · {lead.practice}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="flex-1 h-1 rounded-full bg-tertiary overflow-hidden">
-                  <div className="h-full rounded-full bg-brand-solid transition-all" style={{ width: pct + "%" }} />
+    <div className="flex flex-col gap-0 flex-1 min-h-0">
+
+      {/* ── Stat tiles ── */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          { label: "Total clients", value: leads.length,          color: "text-primary" },
+          { label: "Active",        value: activeLeads.length,    color: "text-brand-secondary" },
+          { label: "Open tasks",    value: totalOpenTasks,        color: "text-warning-primary" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-xl border border-secondary bg-secondary_alt px-3 py-3">
+            <p className="text-[10px] font-medium text-tertiary mb-1 truncate">{label}</p>
+            <p className={"text-xl font-semibold " + color}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Search + filter + download ── */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="relative flex-1 min-w-0">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..."
+            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+        </div>
+        <div className="flex items-center gap-1">
+          {(["all","active","complete"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={"px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors capitalize " +
+                (filter === f ? "bg-brand-solid text-white" : "bg-secondary text-tertiary hover:text-secondary")}>
+              {f === "all" ? "All" : f === "active" ? "Active" : "Complete"}
+            </button>
+          ))}
+        </div>
+        <button onClick={downloadCSV} title="Download CSV"
+          className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
+          <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+
+      {/* ── Table ── */}
+      <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
+        <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-0 px-3 py-2 bg-secondary_alt border-b border-secondary">
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Client</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider hidden sm:block">Policy</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider hidden sm:block">Progress</span>
+          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider w-10 text-right">Tasks</span>
+        </div>
+        <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
+          {filtered.length === 0 ? (
+            <div className="flex items-center justify-center py-10 text-xs text-tertiary">No clients match</div>
+          ) : filtered.map((lead, idx) => {
+            const lt = allTasks.filter(t => t.leadId === lead.id);
+            const openCount = lt.filter(t => t.status === "open").length;
+            const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+            const pct = Math.round((done / total) * 100);
+            return (
+              <button key={lead.id} onClick={() => onSelectClient(lead.id)}
+                className={"grid grid-cols-[2fr_1fr_1fr_auto] gap-0 items-center px-3 py-2.5 w-full text-left hover:bg-secondary_alt transition-colors group " +
+                  (idx < filtered.length - 1 ? "border-b border-secondary" : "")}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-[10px] font-bold text-brand-secondary">
+                    {lead.firstName[0]}{lead.lastName[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-primary truncate">{lead.firstName} {lead.lastName}</p>
+                    <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
+                  </div>
                 </div>
-                <span className="text-[10px] text-quaternary shrink-0">{completedCount}/{total}</span>
-              </div>
-            </div>
-            {openCount > 0 && (
-              <span className="shrink-0 rounded-full bg-brand-solid px-2 py-0.5 text-[10px] font-semibold text-white">{openCount}</span>
-            )}
-          </button>
-        );
-      })}
+                <span className="text-[10px] text-tertiary truncate pr-2 hidden sm:block">{lead.policyType}</span>
+                <div className="hidden sm:flex items-center gap-1.5 pr-2">
+                  <div className="flex-1 h-1 rounded-full bg-tertiary overflow-hidden">
+                    <div className="h-full rounded-full bg-brand-solid transition-all" style={{ width: pct + "%" }} />
+                  </div>
+                  <span className="text-[10px] text-quaternary shrink-0 w-8">{done}/{total}</span>
+                </div>
+                <div className="flex items-center justify-end w-10">
+                  {openCount > 0
+                    ? <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-semibold text-white">{openCount}</span>
+                    : <span className="text-[10px] text-quaternary">—</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -535,9 +690,9 @@ function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSel
 
 // ─── Widget card ──────────────────────────────────────────────────────────────
 const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => (
-  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs min-h-64">
+  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs col-span-1 lg:col-span-2 xl:col-span-1" style={{ minHeight: 480 }}>
     <div className="flex items-center justify-between mb-4">
-      <p className="text-sm font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
+      <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
       <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition">Remove</button>
     </div>
     <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
