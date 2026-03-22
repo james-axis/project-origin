@@ -339,39 +339,6 @@ function getPriorityBeacon(p: "critical" | "high" | "normal"): BeaconColor {
 
 
 // ─── Task row (shared) ────────────────────────────────────────────────────────
-function TaskRow({ task, lead, onSelectTask, compact = false }: {
-  task: SimTask;
-  lead: ReturnType<typeof Array.prototype.find>;
-  onSelectTask: (t: SimTask) => void;
-  compact?: boolean;
-}) {
-  const isSubtask = !!task.parentTaskId;
-  const priority = getTaskPriority(task);
-  const beacon = getPriorityBeacon(priority);
-  const l = lead as SimLead | undefined;
-  return (
-    <button onClick={() => onSelectTask(task)}
-      className={"flex items-center gap-2.5 rounded-xl border px-3 text-left transition-colors group w-full " +
-        (priority === "critical" ? "border-[#FEE2E2] bg-[#FFF5F5] hover:border-[#FECACA]" :
-         priority === "high"     ? "border-[#FEF3C7] bg-[#FFFBEB] hover:border-[#FDE68A]" :
-                                   "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary") +
-        (compact ? " py-2" : " py-3")}>
-      <Beacon color={beacon} />
-      <div className={"flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold " + (ROLE_COLORS[task.assigneeRole] ?? "bg-secondary text-secondary")}>
-        {isSubtask ? "↳" : APPLICATION_CHAIN.findIndex(t => t.id === task.templateTaskId) + 1}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={"font-medium truncate " + (compact ? "text-xs" : "text-sm") + (priority === "critical" ? " text-[#B91C1C]" : " text-primary")}>{task.name}</p>
-        <p className="text-[10px] text-tertiary truncate">
-          {l ? `${l.firstName} ${l.lastName}` : "Unknown"} · {task.assigneeRole}
-          {isSubtask && <span className="text-warning-primary"> · subtask</span>}
-        </p>
-      </div>
-      <ChevronRight className={"size-3.5 shrink-0 " + (priority === "critical" ? "text-[#EF4444]" : priority === "high" ? "text-[#F59E0B]" : "text-fg-quaternary group-hover:text-brand-secondary")} />
-    </button>
-  );
-}
-
 // ─── Tasks widget ─────────────────────────────────────────────────────────────
 function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }) {
   const [tasks, setTasks] = useState<SimTask[]>([]);
@@ -395,8 +362,6 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
   const getLead = (id: string) => leads.find(l => l.id === id);
 
   // Split into priority (critical/high) and normal
-  const priorityTasks = tasks.filter(t => getTaskPriority(t) !== "normal");
-
   if (tasks.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-secondary_alt py-8 text-center gap-2">
