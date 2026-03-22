@@ -213,7 +213,7 @@ export function ClientsPage() {
   function toggleCol(key: string) { updateCols({ ...colState, visible: { ...colState.visible, [key]: !colState.visible[key] } }); }
   function reorderCols(order: string[]) { updateCols({ ...colState, order }); }
 
-  const visibleCols = colState.order.map(k => CLIENT_COLS.find(d => d.key === k)).filter((d): d is ColDef => !!d && colState.visible[d.key]);
+  const visibleCols = colState.order.map((k: string) => CLIENT_COLS.find((d: ColDef) => d.key === k)).filter((d): d is ColDef => !!d && colState.visible[d.key]);
 
   // Tab filtering
   const tabStatuses = TABS.find(t => t.key === activeTab)?.statuses ?? null;
@@ -252,8 +252,8 @@ export function ClientsPage() {
 
   function downloadCSV() {
     const csv = [
-      visibleCols.map(c => c.label).join(","),
-      ...filtered.map(r => visibleCols.map(c => `"${String((r as any)[c.key] ?? "").replace(/"/g,'""')}"`).join(","))
+      visibleCols.map((c: ColDef) => c.label).join(","),
+      ...filtered.map(r => visibleCols.map((c: ColDef) => `"${String((r as any)[c.key] ?? "").replace(/"/g,'""')}"`).join(","))
     ].join("\n");
     const a = document.createElement("a");
     a.href = "data:text/csv," + encodeURIComponent(csv);
@@ -476,7 +476,7 @@ export function ClientsPage() {
                       onChange={toggleAll}
                       className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                   </th>
-                  {visibleCols.map(col => <Th key={col.key} col={col} />)}
+                  {visibleCols.map((col: ColDef) => <Th key={col.key} col={col} />)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary bg-primary">
@@ -489,7 +489,7 @@ export function ClientsPage() {
                       <input type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleRow(row.id)}
                         className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                     </td>
-                    {visibleCols.map(col => (
+                    {visibleCols.map((col: ColDef) => (
                       <td key={col.key} className="px-3 py-2.5">{renderCell(row, col.key)}</td>
                     ))}
                   </tr>
