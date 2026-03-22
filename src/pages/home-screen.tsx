@@ -17,16 +17,16 @@ import {
 
 // ─── Seed names for "Simulate client" button ───────────────────────────────────
 const NEW_LEAD_POOL: Omit<SimLead, "id" | "createdAt">[] = [
-  { firstName: "Tom",      lastName: "Patterson",  dob: "1983-06-12", email: "tom.patterson@email.com",    phone: "0411 222 333", policyType: "Life + TPD", practice: "LIP" },
-  { firstName: "Natalie",  lastName: "Brooks",     dob: "1990-02-27", email: "natalie.brooks@email.com",   phone: "0422 333 444", policyType: "Life + Income Protection", practice: "Surehaven" },
-  { firstName: "Marcus",   lastName: "Chen",       dob: "1977-10-08", email: "marcus.chen@email.com",      phone: "0433 444 555", policyType: "Life + Trauma", practice: "Tony Insurance" },
-  { firstName: "Priya",    lastName: "Mehta",      dob: "1994-04-15", email: "priya.mehta@email.com",      phone: "0444 555 666", policyType: "Life only", practice: "Living Rich" },
-  { firstName: "Daniel",   lastName: "Okafor",     dob: "1986-08-03", email: "daniel.okafor@email.com",    phone: "0455 666 777", policyType: "Life + TPD + Income Protection", practice: "LIP" },
-  { firstName: "Sophie",   lastName: "Hartley",    dob: "1988-11-22", email: "sophie.hartley@email.com",   phone: "0466 777 888", policyType: "Life + Trauma (Claim)", practice: "Surehaven" },
-  { firstName: "Ryan",     lastName: "Castellano", dob: "1975-03-09", email: "ryan.castellano@email.com",  phone: "0477 888 999", policyType: "Income Protection (Claim)", practice: "LIP" },
-  { firstName: "Mei",      lastName: "Zhang",      dob: "1992-07-14", email: "mei.zhang@email.com",        phone: "0488 999 000", policyType: "Life + TPD (Dishonour)", practice: "Tony Insurance" },
-  { firstName: "James",    lastName: "O'Sullivan", dob: "1980-05-30", email: "james.osullivan@email.com",  phone: "0499 000 111", policyType: "Life + Income Protection (Renewal)", practice: "Living Rich" },
-  { firstName: "Aisha",    lastName: "Patel",      dob: "1997-01-18", email: "aisha.patel@email.com",      phone: "0400 111 222", policyType: "Life + TPD + Trauma", practice: "Surehaven" },
+  { firstName: "Tom",      lastName: "Patterson",  dob: "1983-06-12", email: "tom.patterson@email.com",    phone: "0411 222 333", policyType: "Life + TPD", practice: "UFinancial" },
+  { firstName: "Natalie",  lastName: "Brooks",     dob: "1990-02-27", email: "natalie.brooks@email.com",   phone: "0422 333 444", policyType: "Life + Income Protection", practice: "Surety" },
+  { firstName: "Marcus",   lastName: "Chen",       dob: "1977-10-08", email: "marcus.chen@email.com",      phone: "0433 444 555", policyType: "Life + Trauma", practice: "Vital" },
+  { firstName: "Priya",    lastName: "Mehta",      dob: "1994-04-15", email: "priya.mehta@email.com",      phone: "0444 555 666", policyType: "Life only", practice: "Hunter Galloway" },
+  { firstName: "Daniel",   lastName: "Okafor",     dob: "1986-08-03", email: "daniel.okafor@email.com",    phone: "0455 666 777", policyType: "Life + TPD + Income Protection", practice: "UFinancial" },
+  { firstName: "Sophie",   lastName: "Hartley",    dob: "1988-11-22", email: "sophie.hartley@email.com",   phone: "0466 777 888", policyType: "Life + Trauma (Claim)", practice: "Surety" },
+  { firstName: "Ryan",     lastName: "Castellano", dob: "1975-03-09", email: "ryan.castellano@email.com",  phone: "0477 888 999", policyType: "Income Protection (Claim)", practice: "UFinancial" },
+  { firstName: "Mei",      lastName: "Zhang",      dob: "1992-07-14", email: "mei.zhang@email.com",        phone: "0488 999 000", policyType: "Life + TPD (Dishonour)", practice: "Vital" },
+  { firstName: "James",    lastName: "O'Sullivan", dob: "1980-05-30", email: "james.osullivan@email.com",  phone: "0499 000 111", policyType: "Life + Income Protection (Renewal)", practice: "Hunter Galloway" },
+  { firstName: "Aisha",    lastName: "Patel",      dob: "1997-01-18", email: "aisha.patel@email.com",      phone: "0400 111 222", policyType: "Life + TPD + Trauma", practice: "Surety" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -1644,7 +1644,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
                 <SortTh k="name"       label="Client"      className="pl-4" />
                 <SortTh k="module"     label="Module" />
                 <SortTh k="policyType" label="Policy" />
-                <SortTh k="practice"   label="Practice" />
+                <SortTh k="practice"   label="Referral Partner" />
                 <SortTh k="appStatus"  label="Status" />
                 <SortTh k="step"       label="Current task" />
                 <SortTh k="priority"   label="Priority" />
@@ -1680,7 +1680,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
                       <span className="text-secondary truncate block max-w-[120px]">{lead.policyType}</span>
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="text-secondary truncate block max-w-[90px]">{lead.practice}</span>
+                      <span className="text-secondary truncate block max-w-[90px]">{lead.practice.replace("LIP","UFinancial").replace("Surehaven","Surety").replace("Tony Insurance","Vital").replace("Living Rich","Hunter Galloway")}</span>
                     </td>
                     <td className="px-3 py-2.5">
                       <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize " + APP_STATUS_STYLE[appStatus]}>
@@ -1963,67 +1963,61 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
              :                      { label: "New",       icon: "🌱", color: "#22C55E" };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-      {/* Outer wrapper: rounded card, clips overflow */}
-      <div className="rounded-2xl overflow-hidden border border-secondary flex flex-col lg:flex-row" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)" }}>
-
-        {/* ── LEFT: gradient dark panel ── */}
-        <div className="relative flex items-center gap-4 px-5 py-5 min-w-0 lg:flex-1"
-          style={{ background: "linear-gradient(90deg, #E8ECF0 0%, #F2F4F7 40%, #FFFFFF 75%)" }}>
-          {/* Subtle inner glow */}
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(234,105,33,0.18), transparent 60%)" }} />
-          <div className="shrink-0 relative flex size-12 items-center justify-center rounded-xl"
-            style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
-            <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="relative min-w-0">
-            <p className="text-xs font-medium mb-0.5 text-tertiary">{greeting} 👋</p>
-            <p className="text-lg font-bold text-primary leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-              {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
-            </p>
-            <p className="text-[11px] mt-0.5 text-tertiary">
-              {leads.length} clients · {activeCount} active
-              {overdueCount > 0 && <span className="text-[#B91C1C] font-medium"> · {overdueCount} overdue</span>}
-            </p>
-          </div>
-        </div>
-
-        {/* ── RIGHT: clean white panel — achievement tiles ── */}
-        <div className="flex items-center gap-0 bg-white border-t lg:border-t-0 lg:border-l border-secondary divide-x divide-secondary">
-          {/* Completion donut */}
-          <div className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 sm:px-5">
-            <DonutChart pct={completionPct} color="#D34108" size={48} />
-            <p className="text-[9px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Done</p>
-          </div>
-
-          {/* Adviser tier */}
-          <div className="flex flex-col items-center justify-center gap-0 px-4 py-3 sm:px-5">
-            <span className="text-xl leading-none">{tier.icon}</span>
-            <p className="text-[10px] font-bold mt-1 uppercase tracking-wider" style={{ color: tier.color }}>{tier.label}</p>
-            <p className="text-[9px] text-quaternary leading-tight">Adviser Tier</p>
-          </div>
-
-          {/* Inforce target */}
-          <div className="flex flex-col items-center justify-center gap-0 px-4 py-3 sm:px-5">
-            <p className="text-xl font-bold tabular-nums leading-none" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
-            <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Inforce</p>
-            <div className="w-12 h-1 rounded-full mt-1.5 bg-orange-100 overflow-hidden">
-              <div className="h-full rounded-full bg-[#D34108]" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
-            </div>
-            <p className="text-[9px] text-quaternary mt-0.5">{inforceCount}/10</p>
-          </div>
-
-          {/* Clients */}
-          <div className="flex flex-col items-center justify-center gap-0 px-4 py-3 sm:px-5">
-            <p className="text-xl font-bold tabular-nums leading-none text-[#1A2535]" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
-            <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider mt-0.5">Clients</p>
-            <p className="text-[9px] text-quaternary">{activeCount} active</p>
+    <>
+      {/* ── Settings-style page header ── */}
+      <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
+        <div className="flex items-end justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
+            <p className="text-sm text-tertiary mt-0.5">{greeting} — {leads.length} clients · {activeCount} active{overdueCount > 0 ? ` · ${overdueCount} overdue` : ""}</p>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* ── Achievement tiles ── */}
+      <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex items-center gap-3 overflow-x-auto">
+          {/* Completion donut */}
+          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
+            <DonutChart pct={completionPct} color="#D34108" size={36} />
+            <div>
+              <p className="text-xs font-bold text-primary tabular-nums">{completionPct}%</p>
+              <p className="text-[9px] text-quaternary uppercase tracking-wider">Done</p>
+            </div>
+          </div>
+
+          {/* Adviser tier */}
+          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
+            <span className="text-lg leading-none">{tier.icon}</span>
+            <div>
+              <p className="text-xs font-bold" style={{ color: tier.color }}>{tier.label}</p>
+              <p className="text-[9px] text-quaternary uppercase tracking-wider">Adviser Tier</p>
+            </div>
+          </div>
+
+          {/* Inforce target */}
+          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
+            <p className="text-lg font-bold tabular-nums" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
+            <div>
+              <p className="text-[9px] text-quaternary uppercase tracking-wider">Inforce</p>
+              <div className="w-14 h-1 rounded-full mt-0.5 bg-orange-100 overflow-hidden">
+                <div className="h-full rounded-full bg-[#D34108]" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
+              </div>
+              <p className="text-[9px] text-quaternary">{inforceCount}/10</p>
+            </div>
+          </div>
+
+          {/* Clients */}
+          <div className="flex items-center gap-2 shrink-0 rounded-xl border border-secondary bg-primary px-3 py-2">
+            <p className="text-lg font-bold tabular-nums text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
+            <div>
+              <p className="text-[9px] text-quaternary uppercase tracking-wider">Clients</p>
+              <p className="text-[9px] text-quaternary">{activeCount} active</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
