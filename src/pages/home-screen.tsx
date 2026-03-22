@@ -1,7 +1,7 @@
 import { Plus, X, Check, Settings01, Users01, List, RefreshCcw01, ChevronRight, Zap } from "@untitledui/icons";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router";
 import { Settings } from "@/pages/settings";
 import { useToast } from "@/components/toast";
@@ -294,7 +294,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
 // ─── Widget definitions ───────────────────────────────────────────────────────
 const AVAILABLE_WIDGETS = [
   { id: "priorities",   label: "Next Best Action", description: "Next best actions to drive revenue" },
-  { id: "crm_table",    label: "CRM Table",      description: "Mega filter table — every client, task and status" },
+  { id: "universal_search",    label: "Universal Search",      description: "Filterable table across every client, task and status in the CRM" },
   { id: "tasks",        label: "Tasks",        description: "Open tasks across all clients" },
   { id: "leads",        label: "Clients",      description: "All active clients" },
   { id: "applications", label: "Applications", description: "In-progress applications by status" },
@@ -1104,421 +1104,7 @@ function ApplicationsWidget({ onSelectTask, onSelectClient }: {
   return (
     <div className="flex flex-col flex-1 min-h-0">
 
-      {/* ── Stat tiles ── */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
-        {([
-          { label: "New",      value: newCount,      filterKey: "new"      as const, beacon: "green" as BeaconColor },
-          { label: "Overdue",  value: overdueCount,  filterKey: "overdue"  as const, beacon: "red"   as BeaconColor },
-          { label: "Active",   value: activeCount,   filterKey: "active"   as const, beacon: "amber" as BeaconColor },
-          { label: "Complete", value: completeCount, filterKey: "complete" as const, beacon: undefined },
-        ]).map(({ label, value, filterKey, beacon }) => {
-          const isActive = statusFilter === filterKey;
-          return (
-            <button key={label} onClick={() => setStatusFilter(isActive ? "all" : filterKey)}
-              className={"rounded-xl border px-3 py-3 text-left transition-all " +
-                (isActive
-                  ? (filterKey === "overdue" ? "border-[#EF4444] bg-[#FFF5F5]" :
-                     filterKey === "new"     ? "border-success-solid bg-success-secondary" :
-                     filterKey === "active"  ? "border-brand bg-brand-secondary" :
-                                               "border-success-solid bg-success-secondary")
-                  : "border-secondary bg-secondary_alt hover:border-primary")}>
-              <div className="flex items-center gap-1.5 mb-1">
-                {beacon && <Beacon color={beacon} />}
-                <p className="text-[10px] font-medium text-tertiary truncate">{label}</p>
-              </div>
-              <p className={"text-xl font-semibold " +
-                (filterKey === "overdue" ? "text-[#B91C1C]" :
-                 filterKey === "new"     ? "text-success-primary" :
-                 filterKey === "active"  ? "text-brand-secondary" : "text-primary")}>{value}</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Search + filter + download ── */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative flex-1 min-w-0">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          </span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search applications..."
-            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
-        </div>
-        <div className="relative">
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-secondary bg-primary pl-3 pr-7 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
-            <option value="all">All</option>
-            <option value="new">New</option>
-            <option value="overdue">Overdue</option>
-            <option value="active">Active</option>
-            <option value="complete">Complete</option>
-          </select>
-          <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-fg-quaternary rotate-90 pointer-events-none" />
-        </div>
-        <button onClick={downloadCSV}
-          className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
-          <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
-      </div>
-
-      {/* ── URGENT section ── */}
-      {urgentApp && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Urgent</span>
-              <span className="rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">{urgentApps.length}</span>
-            </div>
-            {urgentApps.length > 1 && (
-              <button onClick={() => setShowAllUrgent(v => !v)}
-                className="text-[10px] text-brand-secondary hover:underline font-medium">
-                {showAllUrgent ? "Show less" : `View all ${urgentApps.length}`}
-              </button>
-            )}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {(showAllUrgent ? urgentApps : [urgentApp]).map((lead, i, arr) => {
-              const lt = allTasks.filter(t => t.leadId === lead.id);
-              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-              const pct = Math.round((done / total) * 100);
-              const appStatus = getAppStatus(lead.id);
-              const isNew = isNewApp(lead);
-              const ct = getCurrentTask(lead.id);
-              return (
-                <div key={lead.id}>
-                  <button onClick={() => { ct ? onSelectTask(ct) : onSelectClient(lead.id); }}
-                    className={"group flex flex-col gap-2 rounded-xl border p-3 text-left w-full transition-all hover:shadow-sm " +
-                      (appStatus === "overdue"
-                        ? "border-secondary bg-gradient-to-br from-[#FFF5F5] via-[#FFF8F8] to-white"
-                        : "border-secondary bg-gradient-to-br from-[#F0FDF4] via-[#F6FEF9] to-white")}>
-                    <div className="flex items-center gap-2">
-                      <Beacon color={appStatus === "overdue" ? "red" : "green"} />
-                      <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold " +
-                        (appStatus === "overdue" ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
-                        {lead.firstName[0]}{lead.lastName[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
-                          <span className={"rounded-full text-[10px] font-semibold px-1.5 py-0.5 " + STATUS_BADGE[appStatus]}>{STATUS_LABEL[appStatus]}</span>
-                          {isNew && appStatus !== "overdue" && <Countdown createdAt={lead.createdAt} />}
-                        </div>
-                        <p className="text-[10px] text-tertiary truncate">{lead.policyType} · {ct ? ct.name : "No open task"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                        <div className={"h-full rounded-full " + (appStatus === "overdue" ? "bg-[#EF4444]" : "bg-success-solid")} style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-[10px] text-quaternary shrink-0">{done}/{total}</span>
-                    </div>
-                  </button>
-                  {i < arr.length - 1 && <div className="h-px bg-secondary mt-1.5" />}
-                </div>
-              );
-            })}
-        </div>
-      </div>
-      )}
-
-      {/* ── Divider ── */}
-      {urgentApp && filtered.length > 0 && (
-        <div className="flex items-center gap-2 my-3">
-          <div className="flex-1 h-px bg-secondary" />
-          <span className="text-[10px] text-quaternary uppercase tracking-wider shrink-0">All applications</span>
-          <div className="flex-1 h-px bg-secondary" />
-        </div>
-      )}
-
-      {/* ── Application tiles ── */}
-      <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-xl border border-dashed border-secondary">
-            <List className="size-5 text-fg-quaternary" />
-            <p className="text-xs text-tertiary">No applications match</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-2">
-            {filtered.map(lead => {
-              const lt = allTasks.filter(t => t.leadId === lead.id);
-              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-              const pct = Math.round((done / total) * 100);
-              const appStatus = getAppStatus(lead.id);
-              const ct = getCurrentTask(lead.id);
-              return (
-                <button key={lead.id}
-                  onClick={() => { ct ? onSelectTask(ct) : onSelectClient(lead.id); }}
-                  className="group flex flex-col gap-2 rounded-xl border border-secondary bg-primary p-3 text-left transition-all hover:border-brand hover:shadow-sm">
-                  {/* Header */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-secondary text-xs font-bold text-brand-secondary">
-                      {lead.firstName[0]}{lead.lastName[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
-                      <p className="text-[10px] text-tertiary truncate">{lead.policyType} · {lead.practice}</p>
-                    </div>
-                    <span className={"inline-flex items-center gap-1 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] font-medium " + STATUS_BADGE[appStatus]}>
-                      <span className={"size-1.5 rounded-full inline-block shrink-0 " + STATUS_DOT[appStatus]} />
-                      {STATUS_LABEL[appStatus]}
-                    </span>
-                  </div>
-                  {/* Current task */}
-                  {ct && (
-                    <div className="flex items-center gap-1.5 rounded-lg bg-secondary_alt px-2.5 py-1.5">
-                      <Beacon color={getTaskPriority(ct) === "critical" ? "red" : getTaskPriority(ct) === "high" ? "amber" : "green"} />
-                      <p className="text-[10px] text-secondary truncate flex-1">
-                        Step {APPLICATION_CHAIN.findIndex(c => c.id === ct.templateTaskId) + 1}: {ct.name}
-                      </p>
-                      <span className="text-[10px] text-quaternary shrink-0">{ct.assigneeRole}</span>
-                    </div>
-                  )}
-                  {/* Progress */}
-                  <div className="space-y-0.5">
-                    <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                      <div className={"h-full rounded-full transition-all " + (appStatus === "complete" ? "bg-success-solid" : appStatus === "overdue" ? "bg-[#EF4444]" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
-                    </div>
-                    <p className="text-[10px] text-quaternary">{done}/{total} tasks complete · {pct}%</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Generic placeholder widget ───────────────────────────────────────────────
-const PlaceholderWidget = ({ description }: { description: string }) => (
-  <div className="flex flex-1 items-center justify-center rounded-lg bg-secondary_alt">
-    <p className="text-xs text-quaternary">{description}</p>
-  </div>
-);
-
-
-// ─── CRM Table widget ─────────────────────────────────────────────────────────
-// Mega filter table: every lead × task dimension, saveable presets, tile shortcuts.
-
-interface CRMFilters {
-  search: string;
-  dateRange: "7d" | "30d" | "90d" | "all";
-  appStatus: ("new" | "active" | "overdue" | "complete")[];
-  taskPriority: ("critical" | "high" | "normal")[];
-  practice: string;
-  policyType: string;
-  tileFilter: "total" | "overdue" | "amber" | "fresh" | null;
-}
-
-interface CRMPreset {
-  id: string;
-  name: string;
-  filters: CRMFilters;
-  color: string;
-}
-
-const PRESET_COLORS = ["#D34108", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B", "#EC4899"];
-const PRESET_KEY = "axis_crm_presets_v1";
-
-const DEFAULT_FILTERS: CRMFilters = {
-  search: "",
-  dateRange: "all",
-  appStatus: [],
-  taskPriority: [],
-  practice: "",
-  policyType: "",
-  tileFilter: null,
-};
-
-function loadPresets(): CRMPreset[] {
-  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? "[]"); } catch { return []; }
-}
-function savePresets(ps: CRMPreset[]) {
-  localStorage.setItem(PRESET_KEY, JSON.stringify(ps));
-}
-
-function usePresetsStore() {
-  const [presets, setPresets] = useState<CRMPreset[]>(loadPresets);
-  const add = useCallback((p: CRMPreset) => {
-    setPresets(prev => { const next = [...prev, p]; savePresets(next); return next; });
-  }, []);
-  const remove = useCallback((id: string) => {
-    setPresets(prev => { const next = prev.filter(p => p.id !== id); savePresets(next); return next; });
-  }, []);
-  return { presets, add, remove };
-}
-
-type SortKey = "name" | "policyType" | "practice" | "appStatus" | "step" | "priority" | "age" | "progress";
-type SortDir = "asc" | "desc";
-
-// Derive per-lead row data
-function buildTableRows(leads: SimLead[], allTasks: SimTask[], total: number) {
-  return leads.map(lead => {
-    const lt = allTasks.filter(t => t.leadId === lead.id);
-    const openTasks = lt.filter(t => t.status === "open" && !t.parentTaskId).sort((a, b) => a.sortOrder - b.sortOrder);
-    const completedCount = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-    const currentTask = openTasks[0] ?? null;
-    const chainStep = currentTask ? APPLICATION_CHAIN.findIndex(c => c.id === currentTask.templateTaskId) : completedCount - 1;
-    const ageMinutes = currentTask ? (Date.now() - new Date(currentTask.createdAt).getTime()) / 60000 : 0;
-    const priority = currentTask ? getTaskPriority(currentTask) : "normal";
-    const appStatus = (() => {
-      if (completedCount >= total) return "complete";
-      if (priority === "critical") return "overdue";
-      const isNew = (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
-      if (isNew && chainStep === 0) return "new";
-      return "active";
-    })();
-    const progress = Math.round((completedCount / total) * 100);
-    return { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress };
-  });
-}
-
-type TableRow = ReturnType<typeof buildTableRows>[number];
-
-function CRMTableWidget({ onSelectTask, onSelectClient }: { onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
-  const [leads, setLeads] = useState<SimLead[]>([]);
-  const [allTasks, setAllTasks] = useState<SimTask[]>([]);
-  const [filters, setFilters] = useState<CRMFilters>(DEFAULT_FILTERS);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>("priority");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [savePresetName, setSavePresetName] = useState("");
-  const { presets, add: addPreset, remove: removePreset } = usePresetsStore();
-
-  useEffect(() => {
-    const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
-    refresh();
-    window.addEventListener("axis_sim_update", refresh);
-    return () => window.removeEventListener("axis_sim_update", refresh);
-  }, []);
-
-  const total = APPLICATION_CHAIN.length;
-  const allRows = buildTableRows(leads, allTasks, total);
-
-  // ── Stats for tiles ──
-  const totalCount    = allRows.length;
-  const overdueCount  = allRows.filter(r => r.priority === "critical").length;
-  const amberCount    = allRows.filter(r => r.priority === "high").length;
-  const freshCount    = allRows.filter(r => r.priority === "normal" && r.appStatus !== "complete").length;
-
-  // ── Apply all filters ──
-  const cutoff = (days: number) => Date.now() - days * 24 * 60 * 60 * 1000;
-  const filtered = allRows.filter(row => {
-    const { lead, priority, appStatus } = row;
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      if (!`${lead.firstName} ${lead.lastName} ${lead.policyType} ${lead.practice}`.toLowerCase().includes(q)) return false;
-    }
-    if (filters.dateRange !== "all") {
-      const days = filters.dateRange === "7d" ? 7 : filters.dateRange === "30d" ? 30 : 90;
-      if (new Date(lead.createdAt).getTime() < cutoff(days)) return false;
-    }
-    if (filters.appStatus.length > 0 && !filters.appStatus.includes(appStatus as any)) return false;
-    if (filters.taskPriority.length > 0 && !filters.taskPriority.includes(priority as any)) return false;
-    if (filters.practice && lead.practice !== filters.practice) return false;
-    if (filters.policyType && !lead.policyType.includes(filters.policyType)) return false;
-    if (filters.tileFilter === "overdue" && priority !== "critical") return false;
-    if (filters.tileFilter === "amber"   && priority !== "high")     return false;
-    if (filters.tileFilter === "fresh"   && priority !== "normal")   return false;
-    return true;
-  });
-
-  // ── Sort ──
-  const sorted = [...filtered].sort((a, b) => {
-    let va: any, vb: any;
-    switch (sortKey) {
-      case "name":       va = `${a.lead.firstName} ${a.lead.lastName}`; vb = `${b.lead.firstName} ${b.lead.lastName}`; break;
-      case "policyType": va = a.lead.policyType; vb = b.lead.policyType; break;
-      case "practice":   va = a.lead.practice;   vb = b.lead.practice;   break;
-      case "appStatus":  va = a.appStatus;        vb = b.appStatus;        break;
-      case "step":       va = a.chainStep;        vb = b.chainStep;        break;
-      case "priority": {
-        const p = { critical: 3, high: 2, normal: 1 } as Record<string, number>;
-        va = p[a.priority] ?? 0; vb = p[b.priority] ?? 0; break;
-      }
-      case "age":        va = a.ageMinutes;  vb = b.ageMinutes;  break;
-      case "progress":   va = a.progress;    vb = b.progress;    break;
-    }
-    const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
-    return sortDir === "asc" ? cmp : -cmp;
-  });
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("desc"); }
-  }
-
-  function setTile(tile: typeof filters.tileFilter) {
-    setFilters(f => ({ ...f, tileFilter: f.tileFilter === tile ? null : tile }));
-  }
-
-  function applyPreset(p: CRMPreset) { setFilters(p.filters); }
-
-  function clearFilters() { setFilters(DEFAULT_FILTERS); }
-
-  const hasActiveFilters = filters.search || filters.dateRange !== "all" || filters.appStatus.length > 0 ||
-    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter;
-
-  // Unique practice/policy options
-  const practices = [...new Set(leads.map(l => l.practice))];
-  const policyTypes = [...new Set(leads.map(l => l.policyType.split(" + ")[0]))];
-
-  // ── Column header helper ──
-  const SortTh = ({ k, label, className = "" }: { k: SortKey; label: string; className?: string }) => (
-    <th onClick={() => toggleSort(k)}
-      className={"cursor-pointer select-none px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-quaternary hover:text-tertiary whitespace-nowrap " + className}>
-      <span className="inline-flex items-center gap-1">
-        {label}
-        {sortKey === k ? (
-          <svg className="size-2.5" viewBox="0 0 10 10" fill="currentColor">
-            {sortDir === "asc" ? <path d="M5 2l4 6H1z" /> : <path d="M5 8L1 2h8z" />}
-          </svg>
-        ) : (
-          <svg className="size-2.5 opacity-30" viewBox="0 0 10 10" fill="currentColor"><path d="M5 2l4 6H1zM5 8L1 2h8z" opacity="0.5"/></svg>
-        )}
-      </span>
-    </th>
-  );
-
-  const APP_STATUS_STYLE: Record<string, string> = {
-    new:      "bg-success-secondary text-success-primary",
-    active:   "bg-brand-secondary text-brand-secondary",
-    overdue:  "bg-[#FEE2E2] text-[#B91C1C]",
-    complete: "bg-[#ECFDF5] text-[#059669]",
-  };
-  const PRIORITY_STYLE: Record<string, { label: string; dot: string }> = {
-    critical: { label: "Overdue", dot: "bg-[#EF4444]" },
-    high:     { label: "Amber",   dot: "bg-[#F59E0B]" },
-    normal:   { label: "Fresh",   dot: "bg-[#22C55E]" },
-  };
-
-  return (
-    <div className="flex flex-col flex-1 min-h-0 gap-0">
-
-      {/* ── Stat tiles ── */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
-        {[
-          { key: null as typeof filters.tileFilter,       label: "Total",   value: totalCount,   color: "text-primary",     activeColor: "border-[#D34108] bg-[#FFF4F0]" },
-          { key: "overdue" as typeof filters.tileFilter,  label: "Overdue", value: overdueCount, color: "text-[#B91C1C]",   activeColor: "border-[#EF4444] bg-[#FFF5F5]" },
-          { key: "amber"   as typeof filters.tileFilter,  label: "Amber",   value: amberCount,   color: "text-[#92400E]",   activeColor: "border-[#F59E0B] bg-[#FFFBEB]" },
-          { key: "fresh"   as typeof filters.tileFilter,  label: "New",     value: freshCount,   color: "text-success-primary", activeColor: "border-success-solid bg-success-secondary" },
-        ].map(({ key, label, value, color, activeColor }) => {
-          const isActive = key === null ? filters.tileFilter === null && !hasActiveFilters : filters.tileFilter === key;
-          return (
-            <button key={label}
-              onClick={() => key === null ? clearFilters() : setTile(key)}
-              className={"rounded-xl border px-4 py-3 text-left transition-all hover:shadow-sm " +
-                (isActive ? activeColor : "border-secondary bg-white hover:border-primary")}>
-              <p className={"text-2xl font-bold tabular-nums " + color} style={{ fontFamily: "'Metrophobic', sans-serif" }}>{value}</p>
-              <p className="text-[10px] font-medium text-quaternary mt-0.5 uppercase tracking-wide">{label}</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Preset pills + filter toggle ── */}
+            {/* ── Preset pills + filter toggle ── */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0 pb-0.5">
           {presets.length === 0 && (
@@ -1767,20 +1353,20 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: { onSelectTask: (t: Si
   );
 }
 
-function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
+function WidgetContent({ id, onSelectTask, onSelectClient, globalTileFilter }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void; globalTileFilter?: GlobalTile | null }) {
   const w = AVAILABLE_WIDGETS.find(w => w.id === id);
   if (id === "tasks")        return <TasksWidget onSelectTask={onSelectTask} />;
   if (id === "leads")        return <LeadsWidget onSelectClient={onSelectClient} />;
   if (id === "applications") return <ApplicationsWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
   if (id === "priorities")    return <TopPrioritiesWidget onSelectTask={onSelectTask} />;
-  if (id === "crm_table")     return <CRMTableWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
+  if (id === "universal_search")     return <CRMTableWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} globalTileFilter={globalTileFilter ?? null} />;
   return <PlaceholderWidget description={w?.description ?? ""} />;
 }
 
 // ─── Widget card ──────────────────────────────────────────────────────────────
 const WIDGET_STYLES: Record<string, { header: string; card: string }> = {
   priorities:   { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
-  crm_table:    { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+  universal_search: { card: "bg-primary border border-secondary shadow-sm",    header: "text-primary" },
   tasks:        { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
   leads:        { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
   applications: { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
@@ -1936,10 +1522,8 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
         {/* Hero banner */}
         <div className="relative rounded-2xl overflow-hidden min-h-[96px]"
-          style={{ background: "linear-gradient(90deg, #1C2B3A 0%, #243347 30%, #2D3F55 60%, #4A3028 85%, #6B2D12 100%)" }}>
-          <div className="absolute inset-y-0 right-0 w-1/3 pointer-events-none" style={{ background: "linear-gradient(90deg, transparent, rgba(211,65,8,0.18))" }} />
-          <div className="absolute -top-4 right-16 size-28 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(234,105,33,0.30), transparent 70%)" }} />
-          <div className="absolute bottom-0 right-1/3 size-16 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(211,65,8,0.15), transparent 70%)" }} />
+          style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 20%, #6B2D0E 55%, #D34108 78%, #FF8C52 92%, #FFF0E8 100%)" }}>
+          <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 100%)" }} />
           <div className="relative z-10 flex items-center gap-4 px-5 py-4">
             <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
               style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
@@ -2032,6 +1616,220 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
   );
 }
 
+
+// ─── Global tile bar ─────────────────────────────────────────────────────────
+// These stat tiles sit below the hero and wire directly into Universal Search.
+type GlobalTile = "total" | "overdue" | "amber" | "fresh";
+
+interface GlobalTileBarProps {
+  leads: SimLead[];
+  allTasks: SimTask[];
+  active: GlobalTile | null;
+  onToggle: (t: GlobalTile) => void;
+}
+
+function GlobalTileBar({ leads, allTasks, active, onToggle }: GlobalTileBarProps) {
+  const total       = APPLICATION_CHAIN.length;
+  const totalClients  = leads.length;
+  const overdueCount  = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open" && getTaskPriority(t) === "critical")).length;
+  const amberCount    = leads.filter(l => {
+    const open = allTasks.filter(t => t.leadId === l.id && t.status === "open");
+    return open.length > 0 && open.every(t => getTaskPriority(t) !== "critical") && open.some(t => getTaskPriority(t) === "high");
+  }).length;
+  const freshCount    = leads.filter(l => {
+    const done = allTasks.filter(t => t.leadId === l.id && t.status === "completed" && !t.parentTaskId).length;
+    if (done >= total) return false;
+    const open = allTasks.filter(t => t.leadId === l.id && t.status === "open");
+    return open.length > 0 && open.every(t => getTaskPriority(t) === "normal");
+  }).length;
+
+  const tiles: { key: GlobalTile | null; label: string; value: number | string; accent: string; bg: string; activeBg: string; activeBorder: string }[] = [
+    { key: null,       label: "Total tasks",  value: totalClients, accent: "text-[#1A2535]",       bg: "bg-white",            activeBg: "bg-[#1A2535]",     activeBorder: "border-[#1A2535]" },
+    { key: "overdue",  label: "Overdue",      value: overdueCount, accent: "text-[#B91C1C]",       bg: "bg-white",            activeBg: "bg-[#FEF2F2]",     activeBorder: "border-[#EF4444]" },
+    { key: "amber",    label: "Amber",        value: amberCount,   accent: "text-[#92400E]",       bg: "bg-white",            activeBg: "bg-[#FFFBEB]",     activeBorder: "border-[#F59E0B]" },
+    { key: "fresh",    label: "New",          value: freshCount,   accent: "text-[#065F46]",       bg: "bg-white",            activeBg: "bg-[#F0FDF4]",     activeBorder: "border-[#22C55E]" },
+  ];
+
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 pb-4 pt-2">
+      <div className="grid grid-cols-4 gap-3">
+        {tiles.map(({ key, label, value, accent, bg, activeBg, activeBorder }) => {
+          const isActive = key === null ? active === null : active === key;
+          return (
+            <button key={label}
+              onClick={() => key === null ? onToggle(null as any) : onToggle(key)}
+              className={"group rounded-xl border px-4 py-3 text-left transition-all hover:shadow-md " +
+                (isActive
+                  ? activeBg + " " + activeBorder + " shadow-sm"
+                  : bg + " border-secondary hover:border-primary")}>
+              <div className="flex items-center justify-between mb-1">
+                <p className={"text-2xl font-bold tabular-nums transition-colors " + (isActive ? accent : "text-primary")}
+                  style={{ fontFamily: "'Metrophobic', sans-serif" }}>{value}</p>
+                {key === "overdue" && <span className="size-2 rounded-full bg-[#EF4444] animate-pulse" />}
+                {key === "amber"   && <span className="size-2 rounded-full bg-[#F59E0B]" />}
+                {key === "fresh"   && <span className="size-2 rounded-full bg-[#22C55E]" />}
+              </div>
+              <p className={"text-[10px] font-semibold uppercase tracking-wider transition-colors " + (isActive ? accent : "text-quaternary")}>{label}</p>
+              {isActive && (
+                <p className="text-[9px] text-quaternary mt-0.5">Click to clear filter</p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Resizable widget row ─────────────────────────────────────────────────────
+// Drag the divider handle left/right to resize adjacent widgets.
+
+function ResizableWorkbench({
+  widgets, onRemove, onSelectTask, onSelectClient, tabId, globalTileFilter, onAddWidget
+}: {
+  widgets: string[];
+  onRemove: (id: string) => void;
+  onSelectTask: (t: SimTask) => void;
+  onSelectClient: (id: string) => void;
+  tabId: string;
+  globalTileFilter: GlobalTile | null;
+  onAddWidget: () => void;
+}) {
+  const STORAGE_KEY = "axis_widget_widths_v1";
+  function loadWidths(): Record<string, number[]> {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"); } catch { return {}; }
+  }
+  function saveWidths(w: Record<string, number[]>) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(w));
+  }
+
+  const [allWidths, setAllWidths] = useState<Record<string, number[]>>(loadWidths);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ idx: number; startX: number; startWidths: number[] } | null>(null);
+
+  // Get or initialise widths for current tab+widgets
+  function getWidths(): number[] {
+    const stored = allWidths[tabId];
+    if (stored && stored.length === widgets.length) return stored;
+    return widgets.map(() => 100 / widgets.length);
+  }
+
+  const widths = getWidths();
+
+  function setWidths(next: number[]) {
+    setAllWidths(prev => {
+      const updated = { ...prev, [tabId]: next };
+      saveWidths(updated);
+      return updated;
+    });
+  }
+
+  // Reset widths when widget count changes
+  useEffect(() => {
+    const stored = allWidths[tabId];
+    if (!stored || stored.length !== widgets.length) {
+      setWidths(widgets.map(() => 100 / widgets.length));
+    }
+  }, [widgets.length, tabId]);
+
+  function onDragStart(e: React.MouseEvent, idx: number) {
+    e.preventDefault();
+    dragRef.current = { idx, startX: e.clientX, startWidths: [...widths] };
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current || !containerRef.current) return;
+      const containerW = containerRef.current.getBoundingClientRect().width;
+      const deltaX = ev.clientX - dragRef.current.startX;
+      const deltaPct = (deltaX / containerW) * 100;
+      const next = [...dragRef.current.startWidths];
+      const i = dragRef.current.idx;
+      next[i]     = Math.max(20, Math.min(80, dragRef.current.startWidths[i]     + deltaPct));
+      next[i + 1] = Math.max(20, Math.min(80, dragRef.current.startWidths[i + 1] - deltaPct));
+      // Clamp so they sum to original pair total
+      const pairTotal = dragRef.current.startWidths[i] + dragRef.current.startWidths[i + 1];
+      next[i + 1] = pairTotal - next[i];
+      if (next[i + 1] < 20) { next[i] = pairTotal - 20; next[i + 1] = 20; }
+      setWidths(next);
+    };
+
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  const getWidget = (id: string) => AVAILABLE_WIDGETS.find(w => w.id === id) ?? { label: id, description: "" };
+
+  if (widgets.length === 0) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center">
+        <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-secondary bg-primary shadow-xs">
+          <Plus className="size-7 text-fg-quaternary" />
+        </div>
+        <div>
+          <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Tab is empty</p>
+          <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="flex gap-0 w-full select-none" style={{ minHeight: 520 }}>
+      {widgets.map((id, i) => (
+        <React.Fragment key={id}>
+          {/* Widget */}
+          <div className="flex flex-col" style={{ width: `${widths[i] ?? 50}%`, minWidth: 0 }}>
+            <div className="flex flex-col rounded-2xl border border-secondary bg-white h-full"
+              style={{ margin: "0 6px", minHeight: 480, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+              {/* Widget header */}
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-secondary shrink-0">
+                <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+                  {getWidget(id).label}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-quaternary hidden sm:block">{Math.round(widths[i] ?? 50)}%</span>
+                  <button onClick={() => onRemove(id)}
+                    className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
+                </div>
+              </div>
+              {/* Widget content */}
+              <div className="flex flex-col flex-1 min-h-0 p-5 overflow-hidden">
+                <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} globalTileFilter={globalTileFilter} />
+              </div>
+            </div>
+          </div>
+
+          {/* Drag handle between adjacent widgets */}
+          {i < widgets.length - 1 && (
+            <div
+              className="group relative flex items-center justify-center shrink-0 cursor-col-resize z-10"
+              style={{ width: 12 }}
+              onMouseDown={e => onDragStart(e, i)}>
+              <div className="w-0.5 h-12 rounded-full bg-secondary group-hover:bg-brand-solid group-hover:h-20 transition-all duration-150" />
+              <div className="absolute inset-y-0 -left-1 -right-1" /> {/* wider hit target */}
+            </div>
+          )}
+        </React.Fragment>
+      ))}
+
+      {/* Empty slot */}
+      <div className="flex flex-col" style={{ width: 180, minWidth: 180 }}>
+        <button onClick={onAddWidget}
+          className="group mx-1.5 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-secondary bg-transparent p-6 text-center transition hover:border-brand hover:bg-brand-secondary cursor-pointer h-full"
+          style={{ minHeight: 100 }}>
+          <Plus className="size-5 text-fg-quaternary group-hover:text-brand-secondary" />
+          <p className="text-xs font-medium text-quaternary group-hover:text-brand-secondary">Add widget</p>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Workbench tab type ───────────────────────────────────────────────────────
 interface WorkbenchTab { id: string; label: string; widgets: string[]; }
 
@@ -2045,7 +1843,7 @@ export function HomeScreen() {
   // Init sim store on mount
   useEffect(() => { initSimStore(); }, []);
 
-  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities", "crm_table"] }]);
+  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities", "universal_search"] }]);
   const [activeTabId, setActiveTabId] = useState("default");
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
   const [renameModal, setRenameModal] = useState<{ open: boolean; tabId: string; current: string }>({ open: false, tabId: "", current: "" });
@@ -2054,6 +1852,7 @@ export function HomeScreen() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [heroTasks, setHeroTasks] = useState<SimTask[]>([]);
+  const [globalTileFilter, setGlobalTileFilter] = useState<GlobalTile | null>(null);
 
   useEffect(() => {
     const refresh = () => { setLeads(getLeads()); setHeroTasks(getTasks()); };
@@ -2109,6 +1908,9 @@ export function HomeScreen() {
             {/* Workbench Hero */}
             <WorkbenchHero leads={leads} allTasks={heroTasks} />
 
+            {/* Global stat tiles */}
+            <GlobalTileBar leads={leads} allTasks={heroTasks} active={globalTileFilter} onToggle={t => setGlobalTileFilter(prev => prev === t ? null : t)} />
+
             {/* Tab bar + action buttons */}
             <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between">
@@ -2159,29 +1961,16 @@ export function HomeScreen() {
             </div>
 
             {/* Tab content */}
-            <div className="p-4 pt-6 lg:p-8 lg:pt-6">
-              {activeTab.widgets.length === 0 ? (
-                <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center">
-                  <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-secondary bg-primary shadow-xs">
-                    <Plus className="size-7 text-fg-quaternary" />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{activeTab.label} is empty</p>
-                    <p className="text-sm text-tertiary mt-1.5 max-w-sm">Add widgets to surface the data that matters most.</p>
-                  </div>
-                  <button onClick={() => setWidgetModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">
-                    <Plus className="size-4" /> Add your first widget
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                  {activeTab.widgets.map(id => (
-                    <WidgetCard key={id} id={id} label={getWidget(id).label} onRemove={() => removeWidget(id)} onSelectTask={setActiveTask} onSelectClient={setSelectedClientId} />
-                  ))}
-                  <EmptySlot onAdd={() => setWidgetModalOpen(true)} />
-                </div>
-              )}
+            <div className="px-4 sm:px-6 lg:px-8 pb-8 pt-4 overflow-x-auto">
+              <ResizableWorkbench
+                widgets={activeTab.widgets}
+                onRemove={removeWidget}
+                onSelectTask={setActiveTask}
+                onSelectClient={setSelectedClientId}
+                tabId={activeTabId}
+                globalTileFilter={globalTileFilter}
+                onAddWidget={() => setWidgetModalOpen(true)}
+              />
             </div>
           </div>
         )}
