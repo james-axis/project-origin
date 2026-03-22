@@ -31,12 +31,13 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 // ─── Task action modal ────────────────────────────────────────────────────────
-function TaskActionModal({ task, lead, onClose, onAction, onToast }: {
+function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask }: {
   task: SimTask;
   lead: SimLead | undefined;
   onClose: () => void;
   onAction: () => void;
   onToast: (opts: import("@/components/toast").ToastOptions) => void;
+  onOpenTask: (t: SimTask) => void;
 }) {
   const [notes, setNotes] = useState("");
   const [acting, setActing] = useState(false);
@@ -61,7 +62,7 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast }: {
         description: `Next up: ${next.name} → ${next.assigneeRole}`,
         variant: "success",
         actions: [
-          { label: "Complete now", onClick: () => { completeTask(next.id); onAction(); } },
+          { label: "Complete now", onClick: () => { onOpenTask(next); } },
           { label: "Dismiss", variant: "ghost", onClick: () => {} },
         ],
       });
@@ -81,8 +82,8 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast }: {
         description: `Subtask created: ${next.name}`,
         variant: "warning",
         actions: [
-          { label: "Complete now", onClick: () => { completeTask(next.id); onAction(); } },
-          { label: "Undo", variant: "ghost", onClick: () => {} },
+          { label: "Complete now", onClick: () => { onOpenTask(next); } },
+          { label: "Undo", variant: "ghost", onClick: () => { onOpenTask(task); } },
         ],
       });
     } else {
@@ -160,21 +161,26 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast }: {
               </div>
             )}
 
-            {/* Task chain progress */}
+            {/* Task chain progress — always shows all 14 steps */}
             <div className="mx-5 mt-4 space-y-1">
               <p className="text-xs font-semibold text-quaternary uppercase tracking-wider mb-2">Task chain progress</p>
-              <div className="flex gap-1 flex-wrap">
-                {allTasks.filter(t => !t.parentTaskId).map(t => (
-                  <div key={t.id} title={t.name}
-                    className={"h-1.5 flex-1 min-w-[8px] rounded-full " + (
-                      t.status === "completed" ? "bg-success-solid" :
-                      t.status === "attempted" ? "bg-warning-solid" :
-                      t.id === task.id ? "bg-brand-solid" : "bg-tertiary"
-                    )} />
-                ))}
+              <div className="flex gap-1">
+                {APPLICATION_CHAIN.map((chainTask) => {
+                  const instance = allTasks.find(t => t.templateTaskId === chainTask.id && !t.parentTaskId);
+                  const isCurrent = instance?.id === task.id || (!instance && chainTask.id === task.templateTaskId);
+                  const status = instance?.status;
+                  return (
+                    <div key={chainTask.id} title={`${chainTask.sortOrder + 1}. ${chainTask.name}`}
+                      className={"h-1.5 flex-1 rounded-full " + (
+                        status === "completed" ? "bg-success-solid" :
+                        status === "attempted" ? "bg-warning-solid" :
+                        isCurrent ? "bg-brand-solid" : "bg-tertiary opacity-30"
+                      )} />
+                  );
+                })}
               </div>
               <p className="text-xs text-tertiary mt-1">
-                {allTasks.filter(t => !t.parentTaskId && t.status === "completed").length} of {allTasks.filter(t => !t.parentTaskId).length} tasks completed
+                {allTasks.filter(t => !t.parentTaskId && t.status === "completed").length} of {APPLICATION_CHAIN.length} tasks completed
               </p>
             </div>
 
@@ -637,7 +643,7 @@ export function HomeScreen() {
       <AddWidgetModal open={widgetModalOpen} onClose={() => setWidgetModalOpen(false)} onAdd={addWidget} existingWidgets={activeTab.widgets} />
       <RenameTabModal open={renameModal.open} current={renameModal.current} onSave={label => renameTab(renameModal.tabId, label)} onClose={() => setRenameModal({ open: false, tabId: "", current: "" })} />
       <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} onToast={toast} />
-      {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} onToast={toast} />}
+      {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} onToast={toast} onOpenTask={(t) => { setActiveTask(null); setTimeout(() => setActiveTask(t), 50); }} />}
     </div>
   );
 }
