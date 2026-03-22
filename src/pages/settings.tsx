@@ -521,7 +521,7 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-tertiary">{isFirst ? "Fires on object created" : "Fires when previous is completed"}</span>
             {task.condition && <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary font-mono">if {task.condition}</span>}
-            {task.subtasks && task.subtasks.length > 0 && <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-tertiary">{task.subtasks.length} subtask{task.subtasks.length !== 1 ? "s" : ""}</span>}
+            {task.subtasks && task.subtasks.length > 0 && <span className="rounded-md bg-warning-secondary px-1.5 py-0.5 text-[11px] text-warning-primary">if attempted: {task.subtasks.length} subtask{task.subtasks.length !== 1 ? "s" : ""}</span>}
           </div>
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-2">
@@ -576,13 +576,18 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
             <input value={form.condition ?? ""} onChange={e => setForm({ ...form, condition: e.target.value || undefined })} className="w-full rounded-lg border border-primary bg-primary px-3 py-2.5 text-sm text-primary font-mono outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="e.g. meeting_type = face_to_face" />
           </div>
 
-          {/* Subtasks */}
+          {/* Attempted subtasks */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-secondary">Subtasks <span className="font-normal text-tertiary">(optional)</span></label>
+              <label className="block text-sm font-medium text-secondary">Attempted subtasks <span className="font-normal text-tertiary">(optional)</span></label>
               {(form.subtasks ?? []).length > 0 && <span className="text-xs text-quaternary">{form.subtasks?.length} item{form.subtasks?.length !== 1 ? "s" : ""}</span>}
             </div>
-            <p className="text-xs text-tertiary">Checklist items the assignee must complete within this task</p>
+            <div className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2.5">
+              <p className="text-xs text-tertiary leading-relaxed">
+                When this task is marked <strong className="text-secondary font-medium">Attempted</strong>, these subtasks auto-create and are assigned to the same role.
+                The next task in the chain only fires once this task is marked <strong className="text-secondary font-medium">Complete</strong>.
+              </p>
+            </div>
             {(form.subtasks ?? []).length > 0 && (
               <div className="rounded-xl border border-secondary overflow-hidden">
                 {(form.subtasks ?? []).map((sub, i) => (
