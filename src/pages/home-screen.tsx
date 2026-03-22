@@ -1905,74 +1905,6 @@ const RenameTabModal = ({ open, current, onSave, onClose }: { open: boolean; cur
 };
 
 
-// ─── Mini SVG bar chart ──────────────────────────────────────────────────────
-function BarChart({ values, color = "#D34108", height = 36 }: { values: number[]; color?: string; height?: number }) {
-  const max = Math.max(...values, 1);
-  const w = 80; const barW = Math.floor(w / values.length) - 2;
-  return (
-    <svg viewBox={`0 0 ${w} ${height}`} style={{ width: w, height }} className="overflow-visible">
-      {values.map((v, i) => {
-        const bh = Math.max(2, (v / max) * (height - 4));
-        const x = i * (barW + 2);
-        const isLast = i === values.length - 1;
-        return (
-          <rect key={i} x={x} y={height - bh} width={barW} height={bh} rx="2"
-            fill={isLast ? color : color + "55"} />
-        );
-      })}
-    </svg>
-  );
-}
-
-// ─── Donut chart ─────────────────────────────────────────────────────────────
-function DonutChart({ pct, color = "#D34108", size = 56 }: { pct: number; color?: string; size?: number }) {
-  const r = 22; const c = 2 * Math.PI * r;
-  const dash = (pct / 100) * c;
-  return (
-    <svg width={size} height={size} viewBox="0 0 56 56">
-      <circle cx="28" cy="28" r={r} fill="none" stroke="#F5F5F5" strokeWidth="6" />
-      <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="6"
-        strokeDasharray={`${dash} ${c}`} strokeDashoffset={c * 0.25}
-        strokeLinecap="round" style={{ transition: "stroke-dasharray 0.8s ease" }} />
-      <text x="28" y="33" textAnchor="middle" fill={color} fontSize="11" fontWeight="700" fontFamily="Metrophobic, sans-serif">{pct}%</text>
-    </svg>
-  );
-}
-
-// ─── Workbench Hero ───────────────────────────────────────────────────────────
-function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTask[] }) {
-  const total = APPLICATION_CHAIN.length;
-  const inforceCount  = leads.filter(l => allTasks.filter(t => t.leadId === l.id && t.status === "completed" && !t.parentTaskId).length >= total).length;
-  const activeCount   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open")).length;
-  const overdueCount  = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open" && getTaskPriority(t) === "critical")).length;
-  const completedTasks = allTasks.filter(t => t.status === "completed" && !t.parentTaskId).length;
-  const totalTasks     = allTasks.filter(t => !t.parentTaskId).length;
-  const completionPct  = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
-  // Simulated 7-day bars — seeded from actual data so they update as sim progresses
-  const taskBars = [2, 4, 3, 6, 5, 3, Math.max(1, completedTasks)];
-  const clientBars = [1, 2, 1, 3, 2, 4, Math.max(1, leads.length)];
-
-  // Achievement tier
-  const tier = inforceCount >= 10 ? { label: "Platinum", icon: "💎", color: "#8B5CF6" }
-             : inforceCount >= 5  ? { label: "Gold",     icon: "🥇", color: "#F59E0B" }
-             : inforceCount >= 2  ? { label: "Silver",   icon: "🥈", color: "#94A3B8" }
-             : inforceCount >= 1  ? { label: "Bronze",   icon: "🥉", color: "#D34108" }
-             :                      { label: "New",       icon: "🌱", color: "#22C55E" };
-
-  return (
-    <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
-      <div className="flex items-end justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
-          <p className="text-sm text-tertiary mt-0.5">Your personalised CRM dashboard</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 // ─── Global tile bar ─────────────────────────────────────────────────────────
@@ -2257,10 +2189,9 @@ export function HomeScreen() {
   const [activeTask, setActiveTask] = useState<SimTask | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [leads, setLeads] = useState<SimLead[]>([]);
-  const [heroTasks, setHeroTasks] = useState<SimTask[]>([]);
 
   useEffect(() => {
-    const refresh = () => { setLeads(getLeads()); setHeroTasks(getTasks()); };
+    const refresh = () => { setLeads(getLeads()); };
     refresh();
     window.addEventListener("axis_sim_update", refresh);
     return () => window.removeEventListener("axis_sim_update", refresh);
