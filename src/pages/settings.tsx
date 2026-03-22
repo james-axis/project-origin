@@ -202,9 +202,7 @@ function Wizard({ domains, startStep, prefillDomainId, prefillTemplateId, onComp
   }, []);
 
   const activeDomain = domains.find(d => d.id === s.selectedDomainId) ?? null;
-  const activeTemplate = null; // wizard always creates new templates now
   const taskLibrary = buildTaskLibrary(domains);
-  const colors = ["bg-brand-solid", "bg-success-solid", "bg-warning-solid", "bg-error-solid", "bg-secondary"];
 
   function togglePractice(p: string) {
     if (p === "All Practices") { setS(prev => ({ ...prev, newTemplatePractices: ["All Practices"] })); return; }
