@@ -498,6 +498,7 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "complete">("all");
+  const [showAllUrgent, setShowAllUrgent] = useState(false);
 
   useEffect(() => {
     const refresh = () => { setLeads(getLeads()); setAllTasks(getTasks()); };
@@ -551,7 +552,6 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
   });
 
   const urgentLead = attentionLeads[0] ?? null;
-  const [showAllUrgent, setShowAllUrgent] = useState(false);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
