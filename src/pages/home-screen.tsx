@@ -1306,15 +1306,26 @@ function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSel
 }
 
 // ─── Widget card ──────────────────────────────────────────────────────────────
-const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => (
-  <div className="flex flex-col rounded-xl border border-secondary bg-primary p-5 shadow-xs" style={{ minHeight: 480 }}>
-    <div className="flex items-center justify-between mb-4">
-      <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
-      <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition">Remove</button>
+const WIDGET_STYLES: Record<string, { header: string; card: string }> = {
+  priorities:   { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+  tasks:        { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+  leads:        { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+  applications: { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+  default:      { card: "bg-primary border border-secondary shadow-sm",        header: "text-primary" },
+};
+
+const WidgetCard = ({ id, label, onRemove, onSelectTask, onSelectClient }: { id: string; label: string; onRemove: () => void; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) => {
+  const styles = WIDGET_STYLES[id] ?? WIDGET_STYLES.default;
+  return (
+    <div className={"flex flex-col rounded-2xl p-5 " + styles.card} style={{ minHeight: 480 }}>
+      <div className="flex items-center justify-between mb-4">
+        <p className={"text-base font-semibold " + styles.header} style={{ fontFamily: "'Metrophobic', sans-serif" }}>{label}</p>
+        <button onClick={onRemove} className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
+      </div>
+      <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
     </div>
-    <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
-  </div>
-);
+  );
+};
 
 const EmptySlot = ({ onAdd }: { onAdd: () => void }) => (
   <button onClick={onAdd} className="group flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-secondary bg-primary p-8 text-center transition hover:border-brand hover:bg-brand-secondary cursor-pointer min-h-64">
@@ -1386,6 +1397,167 @@ const RenameTabModal = ({ open, current, onSave, onClose }: { open: boolean; cur
   );
 };
 
+
+// ─── Mini SVG bar chart ──────────────────────────────────────────────────────
+function BarChart({ values, color = "#D34108", height = 36 }: { values: number[]; color?: string; height?: number }) {
+  const max = Math.max(...values, 1);
+  const w = 80; const barW = Math.floor(w / values.length) - 2;
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} style={{ width: w, height }} className="overflow-visible">
+      {values.map((v, i) => {
+        const bh = Math.max(2, (v / max) * (height - 4));
+        const x = i * (barW + 2);
+        const isLast = i === values.length - 1;
+        return (
+          <rect key={i} x={x} y={height - bh} width={barW} height={bh} rx="2"
+            fill={isLast ? color : color + "55"} />
+        );
+      })}
+    </svg>
+  );
+}
+
+// ─── Donut chart ─────────────────────────────────────────────────────────────
+function DonutChart({ pct, color = "#D34108", size = 56 }: { pct: number; color?: string; size?: number }) {
+  const r = 22; const c = 2 * Math.PI * r;
+  const dash = (pct / 100) * c;
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56">
+      <circle cx="28" cy="28" r={r} fill="none" stroke="#F5F5F5" strokeWidth="6" />
+      <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="6"
+        strokeDasharray={`${dash} ${c}`} strokeDashoffset={c * 0.25}
+        strokeLinecap="round" style={{ transition: "stroke-dasharray 0.8s ease" }} />
+      <text x="28" y="33" textAnchor="middle" fill={color} fontSize="11" fontWeight="700" fontFamily="Metrophobic, sans-serif">{pct}%</text>
+    </svg>
+  );
+}
+
+// ─── Workbench Hero ───────────────────────────────────────────────────────────
+function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTask[] }) {
+  const total = APPLICATION_CHAIN.length;
+  const inforceCount  = leads.filter(l => allTasks.filter(t => t.leadId === l.id && t.status === "completed" && !t.parentTaskId).length >= total).length;
+  const activeCount   = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open")).length;
+  const overdueCount  = leads.filter(l => allTasks.some(t => t.leadId === l.id && t.status === "open" && getTaskPriority(t) === "critical")).length;
+  const completedTasks = allTasks.filter(t => t.status === "completed" && !t.parentTaskId).length;
+  const totalTasks     = allTasks.filter(t => !t.parentTaskId).length;
+  const completionPct  = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // Simulated 7-day bars — seeded from actual data so they update as sim progresses
+  const taskBars = [2, 4, 3, 6, 5, 3, Math.max(1, completedTasks)];
+  const clientBars = [1, 2, 1, 3, 2, 4, Math.max(1, leads.length)];
+
+  // Achievement tier
+  const tier = inforceCount >= 10 ? { label: "Platinum", icon: "💎", color: "#8B5CF6" }
+             : inforceCount >= 5  ? { label: "Gold",     icon: "🥇", color: "#F59E0B" }
+             : inforceCount >= 2  ? { label: "Silver",   icon: "🥈", color: "#94A3B8" }
+             : inforceCount >= 1  ? { label: "Bronze",   icon: "🥉", color: "#D34108" }
+             :                      { label: "New",       icon: "🌱", color: "#22C55E" };
+
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-2" style={{ background: "linear-gradient(180deg, #F8F9FB 0%, #FFFFFF 100%)" }}>
+
+      {/* ── Row 1: Hero banner + achievement + tier ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 mb-3">
+
+        {/* Hero banner */}
+        <div className="relative rounded-2xl overflow-hidden min-h-[96px]"
+          style={{ background: "linear-gradient(135deg, #1C2B3A 0%, #2D3F55 60%, #3B485B 100%)" }}>
+          <div className="absolute -top-6 -right-6 size-36 rounded-full" style={{ background: "radial-gradient(circle, rgba(211,65,8,0.25), transparent 70%)" }} />
+          <div className="absolute bottom-0 left-1/4 size-20 rounded-full" style={{ background: "radial-gradient(circle, rgba(211,65,8,0.12), transparent 70%)" }} />
+          <div className="relative z-10 flex items-center gap-4 px-5 py-4">
+            <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
+              style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
+              <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting} 👋</p>
+              <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+                {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {leads.length} clients · {activeCount} active
+                {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
+              </p>
+            </div>
+            <div className="shrink-0 text-right hidden sm:block">
+              <DonutChart pct={completionPct} color="#D34108" size={60} />
+            </div>
+          </div>
+        </div>
+
+        {/* Achievement tier card */}
+        <div className="rounded-2xl border border-secondary bg-white px-4 py-3 flex flex-col items-center justify-center gap-1 min-w-[90px]"
+          style={{ boxShadow: `0 0 0 2px ${tier.color}22, inset 0 1px 0 rgba(255,255,255,0.8)` }}>
+          <span className="text-3xl">{tier.icon}</span>
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: tier.color }}>{tier.label}</p>
+          <p className="text-[9px] text-quaternary text-center leading-tight">Adviser Tier</p>
+        </div>
+
+        {/* Inforce target */}
+        <div className="rounded-2xl border border-secondary bg-white px-4 py-3 flex flex-col items-center justify-center gap-1 min-w-[90px]"
+          style={{ background: "linear-gradient(135deg, #FFF7ED, #FFF)" }}>
+          <p className="text-2xl font-bold tabular-nums" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
+          <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Inforce</p>
+          <div className="w-12 h-1 rounded-full bg-orange-100 overflow-hidden">
+            <div className="h-full rounded-full bg-[#D34108]" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
+          </div>
+          <p className="text-[9px] text-quaternary">{inforceCount}/10 target</p>
+        </div>
+      </div>
+
+      {/* ── Row 2: Stats strip ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+        {/* Tasks completed */}
+        <div className="rounded-xl border border-secondary bg-white px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-xl font-bold tabular-nums text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{completedTasks}</p>
+            <p className="text-[10px] font-medium text-tertiary mt-0.5">Tasks done</p>
+            <p className="text-[9px] text-quaternary">{completionPct}% rate</p>
+          </div>
+          <BarChart values={taskBars} color="#D34108" />
+        </div>
+
+        {/* Total clients */}
+        <div className="rounded-xl border border-secondary bg-white px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-xl font-bold tabular-nums text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
+            <p className="text-[10px] font-medium text-tertiary mt-0.5">Clients</p>
+            <p className="text-[9px] text-quaternary">{activeCount} active now</p>
+          </div>
+          <BarChart values={clientBars} color="#3B82F6" />
+        </div>
+
+        {/* Active apps */}
+        <div className="rounded-xl border border-secondary bg-white px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-xl font-bold tabular-nums" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#22C55E" }}>{activeCount}</p>
+            <p className="text-[10px] font-medium text-tertiary mt-0.5">In progress</p>
+            <p className="text-[9px] text-quaternary">applications</p>
+          </div>
+          <BarChart values={[1,2,3,2,4,3, Math.max(1, activeCount)]} color="#22C55E" />
+        </div>
+
+        {/* Overdue / all clear */}
+        <div className={"rounded-xl border px-4 py-3 flex items-center justify-between " +
+          (overdueCount > 0 ? "border-[#FECACA] bg-[#FFF5F5]" : "border-success-solid bg-success-secondary")}>
+          <div>
+            <p className={"text-xl font-bold tabular-nums " + (overdueCount > 0 ? "text-[#B91C1C]" : "text-success-primary")}
+              style={{ fontFamily: "'Metrophobic', sans-serif" }}>{overdueCount > 0 ? overdueCount : "✓"}</p>
+            <p className="text-[10px] font-medium text-tertiary mt-0.5">{overdueCount > 0 ? "Overdue" : "All clear"}</p>
+            <p className="text-[9px] text-quaternary">{overdueCount > 0 ? "need action" : "on track"}</p>
+          </div>
+          <BarChart values={[1,0,2,1,3,2, Math.max(0, overdueCount)]} color={overdueCount > 0 ? "#EF4444" : "#22C55E"} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Workbench tab type ───────────────────────────────────────────────────────
 interface WorkbenchTab { id: string; label: string; widgets: string[]; }
 
@@ -1399,7 +1571,7 @@ export function HomeScreen() {
   // Init sim store on mount
   useEffect(() => { initSimStore(); }, []);
 
-  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities", "tasks", "leads", "applications"] }]);
+  const [tabs, setTabs] = useState<WorkbenchTab[]>([{ id: "default", label: "Default", widgets: ["priorities"] }]);
   const [activeTabId, setActiveTabId] = useState("default");
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
   const [renameModal, setRenameModal] = useState<{ open: boolean; tabId: string; current: string }>({ open: false, tabId: "", current: "" });
@@ -1407,9 +1579,10 @@ export function HomeScreen() {
   const [activeTask, setActiveTask] = useState<SimTask | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [leads, setLeads] = useState<SimLead[]>([]);
+  const [heroTasks, setHeroTasks] = useState<SimTask[]>([]);
 
   useEffect(() => {
-    const refresh = () => setLeads(getLeads());
+    const refresh = () => { setLeads(getLeads()); setHeroTasks(getTasks()); };
     refresh();
     window.addEventListener("axis_sim_update", refresh);
     return () => window.removeEventListener("axis_sim_update", refresh);
@@ -1451,66 +1624,63 @@ export function HomeScreen() {
   }
 
   return (
-    <div className="lg:flex min-h-screen bg-primary">
+    <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
       <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
       <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
-      <main className="min-h-screen bg-primary overflow-x-hidden lg:flex-1">
+      <main className="min-h-screen overflow-x-hidden lg:flex-1">
         {isSettings ? (
           <Settings />
         ) : (
           <div className="flex flex-col h-full">
-            {/* Header — matches Settings exactly */}
-            <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Workbench</h1>
-                  <p className="text-sm text-tertiary mt-0.5">Your personalised CRM dashboard</p>
+            {/* Workbench Hero */}
+            <WorkbenchHero leads={leads} allTasks={heroTasks} />
+
+            {/* Tab bar + action buttons */}
+            <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center overflow-x-auto gap-0 -mb-px">
+                  {tabs.map(tab => {
+                    const isActive = tab.id === activeTabId;
+                    return (
+                      <div key={tab.id} className="group relative flex items-center">
+                        <button onClick={() => setActiveTabId(tab.id)}
+                          onDoubleClick={() => setRenameModal({ open: true, tabId: tab.id, current: tab.label })}
+                          className={"flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
+                          {tab.label}
+                        </button>
+                        <div className="absolute right-0 top-1 hidden group-hover:flex items-center gap-0.5 pr-1">
+                          <button onClick={() => setRenameModal({ open: true, tabId: tab.id, current: tab.label })}
+                            className="flex size-5 items-center justify-center rounded text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors">
+                            <Settings01 className="size-3" />
+                          </button>
+                          {tabs.length > 1 && (
+                            <button onClick={() => removeTab(tab.id)}
+                              className="flex size-5 items-center justify-center rounded text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors">
+                              <X className="size-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <button onClick={addTab} className="flex size-9 items-center justify-center text-fg-quaternary hover:text-secondary hover:bg-secondary_alt rounded transition-colors ml-1 mb-px">
+                    <Plus className="size-4" />
+                  </button>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap justify-end">
+                <div className="flex items-center gap-2 py-2 shrink-0">
                   <button onClick={handleReset} title="Reset"
-                    className="flex size-8 items-center justify-center rounded-lg border border-secondary bg-primary text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors shrink-0">
-                    <RefreshCcw01 className="size-3.5" aria-hidden />
+                    className="flex size-8 items-center justify-center rounded-lg border border-secondary bg-primary text-fg-quaternary hover:bg-secondary transition-colors">
+                    <RefreshCcw01 className="size-3.5" />
                   </button>
                   <button onClick={() => setSimModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-3 py-2 text-sm font-medium text-brand-secondary hover:bg-brand-primary_alt transition-colors whitespace-nowrap">
-                    <Zap className="size-3.5" aria-hidden /><span className="hidden sm:inline">Simulate </span>client
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-3 py-1.5 text-xs font-medium text-brand-secondary hover:bg-brand-primary_alt transition-colors whitespace-nowrap">
+                    <Zap className="size-3" /><span className="hidden sm:inline">Simulate </span>client
                   </button>
                   <button onClick={() => setWidgetModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
-                    <Plus className="size-3.5" aria-hidden /><span className="hidden sm:inline">Add </span>widget
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
+                    <Plus className="size-3" /><span className="hidden sm:inline">Add </span>widget
                   </button>
                 </div>
-              </div>
-
-              {/* Tab bar */}
-              <div className="flex items-center overflow-x-auto gap-0 -mb-px">
-                {tabs.map(tab => {
-                  const isActive = tab.id === activeTabId;
-                  return (
-                    <div key={tab.id} className="group relative flex items-center">
-                      <button onClick={() => setActiveTabId(tab.id)}
-                        onDoubleClick={() => setRenameModal({ open: true, tabId: tab.id, current: tab.label })}
-                        className={"flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
-                        {tab.label}
-                      </button>
-                      <div className="absolute right-0 top-1 hidden group-hover:flex items-center gap-0.5 pr-1">
-                        <button onClick={() => setRenameModal({ open: true, tabId: tab.id, current: tab.label })}
-                          className="flex size-5 items-center justify-center rounded text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors">
-                          <Settings01 className="size-3" />
-                        </button>
-                        {tabs.length > 1 && (
-                          <button onClick={() => removeTab(tab.id)}
-                            className="flex size-5 items-center justify-center rounded text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors">
-                            <X className="size-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                <button onClick={addTab} className="flex size-9 items-center justify-center text-fg-quaternary hover:text-secondary hover:bg-secondary_alt rounded transition-colors ml-1 mb-px">
-                  <Plus className="size-4" />
-                </button>
               </div>
             </div>
 
