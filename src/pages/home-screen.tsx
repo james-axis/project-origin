@@ -1335,10 +1335,9 @@ function buildTableRows(leads: SimLead[], allTasks: SimTask[], total: number): T
 }
 
 // ─── Universal Search widget ──────────────────────────────────────────────────
-function CRMTableWidget({ onSelectTask, onSelectClient, globalTileFilter }: {
+function CRMTableWidget({ onSelectTask, onSelectClient }: {
   onSelectTask: (t: SimTask) => void;
   onSelectClient: (id: string) => void;
-  globalTileFilter: GlobalTile | null;
 }) {
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [allTasks, setAllTasks] = useState<SimTask[]>([]);
@@ -1380,7 +1379,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient, globalTileFilter }: {
     if (filters.taskPriority.length > 0 && !filters.taskPriority.includes(priority as any)) return false;
     if (filters.practice && lead.practice !== filters.practice) return false;
     if (filters.policyType && !lead.policyType.includes(filters.policyType)) return false;
-    const effectiveTile = globalTileFilter ?? filters.tileFilter;
+    const effectiveTile = filters.tileFilter;
     if (effectiveTile === "overdue" && priority !== "critical") return false;
     if (effectiveTile === "amber"   && priority !== "high")     return false;
     if (effectiveTile === "fresh"   && priority !== "normal")   return false;
@@ -1412,7 +1411,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient, globalTileFilter }: {
   function applyPreset(p: CRMPreset) { setFilters(p.filters); }
 
   const hasActiveFilters = !!(filters.search || filters.dateRange !== "all" || filters.appStatus.length > 0 ||
-    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter || globalTileFilter);
+    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter);
 
   const practices = [...new Set(leads.map(l => l.practice))];
 
@@ -1691,13 +1690,13 @@ function CRMTableWidget({ onSelectTask, onSelectClient, globalTileFilter }: {
   );
 }
 
-function WidgetContent({ id, onSelectTask, onSelectClient, globalTileFilter }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void; globalTileFilter?: GlobalTile | null }) {
+function WidgetContent({ id, onSelectTask, onSelectClient }: { id: string; onSelectTask: (t: SimTask) => void; onSelectClient: (id: string) => void }) {
   const w = AVAILABLE_WIDGETS.find(w => w.id === id);
   if (id === "tasks")        return <TasksWidget onSelectTask={onSelectTask} />;
   if (id === "leads")        return <LeadsWidget onSelectClient={onSelectClient} />;
   if (id === "applications") return <ApplicationsWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
   if (id === "priorities")    return <TopPrioritiesWidget onSelectTask={onSelectTask} />;
-  if (id === "universal_search")     return <CRMTableWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} globalTileFilter={globalTileFilter ?? null} />;
+  if (id === "universal_search")     return <CRMTableWidget onSelectTask={onSelectTask} onSelectClient={onSelectClient} />;
   return <PlaceholderWidget description={w?.description ?? ""} />;
 }
 
@@ -1853,101 +1852,30 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
              :                      { label: "New",       icon: "🌱", color: "#22C55E" };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-2" style={{ background: "linear-gradient(180deg, #F8F9FB 0%, #FFFFFF 100%)" }}>
-
-      {/* ── Row 1: Hero banner + achievement + tier ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 mb-3">
-
-        {/* Hero banner */}
-        <div className="relative rounded-2xl overflow-hidden min-h-[96px]"
-          style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 20%, #6B2D0E 55%, #D34108 78%, #FF8C52 92%, #FFF0E8 100%)" }}>
-          <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 100%)" }} />
-          <div className="relative z-10 flex items-center gap-4 px-5 py-4">
-            <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
-              style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
-              <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting} 👋</p>
-              <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-                {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
-              </p>
-              <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-                {leads.length} clients · {activeCount} active
-                {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
-              </p>
-            </div>
-            <div className="shrink-0 text-right hidden sm:block">
-              <DonutChart pct={completionPct} color="#D34108" size={60} />
-            </div>
+    <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+      <div className="relative rounded-2xl overflow-hidden min-h-[88px]"
+        style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 20%, #6B2D0E 55%, #D34108 78%, #FF8C52 92%, #FFF0E8 100%)" }}>
+        <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 100%)" }} />
+        <div className="relative z-10 flex items-center gap-4 px-5 py-4">
+          <div className="shrink-0 flex size-12 items-center justify-center rounded-xl"
+            style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
+            <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-        </div>
-
-        {/* Achievement tier card */}
-        <div className="rounded-2xl border border-secondary bg-white px-4 py-3 flex flex-col items-center justify-center gap-1 min-w-[90px]"
-          style={{ boxShadow: `0 0 0 2px ${tier.color}22, inset 0 1px 0 rgba(255,255,255,0.8)` }}>
-          <span className="text-3xl">{tier.icon}</span>
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: tier.color }}>{tier.label}</p>
-          <p className="text-[9px] text-quaternary text-center leading-tight">Adviser Tier</p>
-        </div>
-
-        {/* Inforce target */}
-        <div className="rounded-2xl border border-secondary bg-white px-4 py-3 flex flex-col items-center justify-center gap-1 min-w-[90px]"
-          style={{ background: "linear-gradient(135deg, #FFF7ED, #FFF)" }}>
-          <p className="text-2xl font-bold tabular-nums" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#D34108" }}>{inforceCount}</p>
-          <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Inforce</p>
-          <div className="w-12 h-1 rounded-full bg-orange-100 overflow-hidden">
-            <div className="h-full rounded-full bg-[#D34108]" style={{ width: `${Math.min(100, (inforceCount / 10) * 100)}%` }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting} 👋</p>
+            <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+              {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+              {leads.length} clients · {activeCount} active
+              {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
+            </p>
           </div>
-          <p className="text-[9px] text-quaternary">{inforceCount}/10 target</p>
-        </div>
-      </div>
-
-      {/* ── Row 2: Stats strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-        {/* Tasks completed */}
-        <div className="rounded-xl border border-secondary bg-white px-4 py-3 flex items-center justify-between">
-          <div>
-            <p className="text-xl font-bold tabular-nums text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{completedTasks}</p>
-            <p className="text-[10px] font-medium text-tertiary mt-0.5">Tasks done</p>
-            <p className="text-[9px] text-quaternary">{completionPct}% rate</p>
+          <div className="shrink-0 text-right hidden sm:block">
+            <DonutChart pct={completionPct} color="#D34108" size={60} />
           </div>
-          <BarChart values={taskBars} color="#D34108" />
-        </div>
-
-        {/* Total clients */}
-        <div className="rounded-xl border border-secondary bg-white px-4 py-3 flex items-center justify-between">
-          <div>
-            <p className="text-xl font-bold tabular-nums text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{leads.length}</p>
-            <p className="text-[10px] font-medium text-tertiary mt-0.5">Clients</p>
-            <p className="text-[9px] text-quaternary">{activeCount} active now</p>
-          </div>
-          <BarChart values={clientBars} color="#3B82F6" />
-        </div>
-
-        {/* Active apps */}
-        <div className="rounded-xl border border-secondary bg-white px-4 py-3 flex items-center justify-between">
-          <div>
-            <p className="text-xl font-bold tabular-nums" style={{ fontFamily: "'Metrophobic', sans-serif", color: "#22C55E" }}>{activeCount}</p>
-            <p className="text-[10px] font-medium text-tertiary mt-0.5">In progress</p>
-            <p className="text-[9px] text-quaternary">applications</p>
-          </div>
-          <BarChart values={[1,2,3,2,4,3, Math.max(1, activeCount)]} color="#22C55E" />
-        </div>
-
-        {/* Overdue / all clear */}
-        <div className={"rounded-xl border px-4 py-3 flex items-center justify-between " +
-          (overdueCount > 0 ? "border-[#FECACA] bg-[#FFF5F5]" : "border-success-solid bg-success-secondary")}>
-          <div>
-            <p className={"text-xl font-bold tabular-nums " + (overdueCount > 0 ? "text-[#B91C1C]" : "text-success-primary")}
-              style={{ fontFamily: "'Metrophobic', sans-serif" }}>{overdueCount > 0 ? overdueCount : "✓"}</p>
-            <p className="text-[10px] font-medium text-tertiary mt-0.5">{overdueCount > 0 ? "Overdue" : "All clear"}</p>
-            <p className="text-[9px] text-quaternary">{overdueCount > 0 ? "need action" : "on track"}</p>
-          </div>
-          <BarChart values={[1,0,2,1,3,2, Math.max(0, overdueCount)]} color={overdueCount > 0 ? "#EF4444" : "#22C55E"} />
         </div>
       </div>
     </div>
@@ -2137,7 +2065,7 @@ function ResizableWorkbench({
               </div>
               {/* Widget content */}
               <div className="flex flex-col flex-1 min-h-0 p-5 overflow-hidden">
-                <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} globalTileFilter={globalTileFilter} />
+                <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
               </div>
             </div>
           </div>
@@ -2190,7 +2118,6 @@ export function HomeScreen() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [leads, setLeads] = useState<SimLead[]>([]);
   const [heroTasks, setHeroTasks] = useState<SimTask[]>([]);
-  const [globalTileFilter, setGlobalTileFilter] = useState<GlobalTile | null>(null);
 
   useEffect(() => {
     const refresh = () => { setLeads(getLeads()); setHeroTasks(getTasks()); };
@@ -2245,9 +2172,6 @@ export function HomeScreen() {
           <div className="flex flex-col h-full">
             {/* Workbench Hero */}
             <WorkbenchHero leads={leads} allTasks={heroTasks} />
-
-            {/* Global stat tiles */}
-            <GlobalTileBar leads={leads} allTasks={heroTasks} active={globalTileFilter} onToggle={t => setGlobalTileFilter(prev => prev === t ? null : t)} />
 
             {/* Tab bar + action buttons */}
             <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
@@ -2306,7 +2230,7 @@ export function HomeScreen() {
                 onSelectTask={setActiveTask}
                 onSelectClient={setSelectedClientId}
                 tabId={activeTabId}
-                globalTileFilter={globalTileFilter}
+                globalTileFilter={null}
                 onAddWidget={() => setWidgetModalOpen(true)}
               />
             </div>
