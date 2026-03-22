@@ -251,7 +251,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: 
     onClose();
     onToast({
       title: "New application",
-      description: `${lead.firstName} ${lead.lastName} — ${lead.policyType} · Introduction Call ready`,
+      description: `${lead.firstName} ${lead.lastName}`,
       variant: "info",
       duration: 6000,
       actions: [
@@ -1969,23 +1969,23 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
         {/* ── LEFT: gradient dark panel ── */}
         <div className="relative flex items-center gap-4 px-5 py-5 min-w-0 lg:flex-1"
-          style={{ background: "linear-gradient(90deg, #1A2535 0%, #2B3C50 55%, #7A3012 68%, #D34108 76%, #EA6921 82%, #FFF4EE 90%, #FFFFFF 96%)" }}>
+          style={{ background: "linear-gradient(90deg, #E8ECF0 0%, #F2F4F7 40%, #FFFFFF 75%)" }}>
           {/* Subtle inner glow */}
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(234,105,33,0.18), transparent 60%)" }} />
           <div className="shrink-0 relative flex size-12 items-center justify-center rounded-xl"
-            style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
+            style={{ background: "linear-gradient(135deg, #D34108, #EA6921)" }}>
             <svg className="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div className="relative min-w-0">
-            <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting} 👋</p>
-            <p className="text-lg font-bold text-white leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+            <p className="text-xs font-medium mb-0.5 text-tertiary">{greeting} 👋</p>
+            <p className="text-lg font-bold text-primary leading-snug" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
               {inforceCount > 0 ? `${inforceCount} ${inforceCount === 1 ? "life" : "lives"} protected` : "Ready to protect lives"}
             </p>
-            <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <p className="text-[11px] mt-0.5 text-tertiary">
               {leads.length} clients · {activeCount} active
-              {overdueCount > 0 && <span style={{ color: "#FCA5A5" }}> · {overdueCount} overdue</span>}
+              {overdueCount > 0 && <span className="text-[#B91C1C] font-medium"> · {overdueCount} overdue</span>}
             </p>
           </div>
         </div>
@@ -2210,7 +2210,7 @@ function ResizableWorkbench({
               <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{getWidget(id).label}</p>
               <button onClick={() => onRemove(id)} className="text-xs text-quaternary hover:text-secondary px-2 py-1 rounded hover:bg-secondary">Remove</button>
             </div>
-            <div className="flex flex-col flex-1 min-h-0 p-4 overflow-hidden">
+            <div className="flex flex-col flex-1 min-h-0 p-4 overflow-y-auto">
               <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
             </div>
           </div>
@@ -2243,7 +2243,7 @@ function ResizableWorkbench({
                     className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
                 </div>
               </div>
-              <div className="flex flex-col flex-1 min-h-0 p-5 overflow-hidden">
+              <div className="flex flex-col flex-1 min-h-0 p-5 overflow-y-auto">
                 <WidgetContent id={id} onSelectTask={onSelectTask} onSelectClient={onSelectClient} />
               </div>
             </div>
@@ -2362,7 +2362,7 @@ export function HomeScreen() {
         title: moduleHint === "claim" ? "New claim lodged" :
                moduleHint === "dishonour" ? "Dishonour received" :
                moduleHint === "renewal" ? "Renewal due" : "New application",
-        description: `${lead.firstName} ${lead.lastName} — ${lead.policyType}`,
+        description: `${lead.firstName} ${lead.lastName}`,
         variant: moduleHint === "dishonour" ? "warning" :
                  moduleHint === "claim" ? "error" : "info",
         duration: 6000,
