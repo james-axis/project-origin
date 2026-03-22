@@ -1969,7 +1969,7 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
         {/* ── LEFT: gradient dark panel ── */}
         <div className="relative flex items-center gap-4 px-5 py-5 min-w-0 lg:flex-1"
-          style={{ background: "linear-gradient(90deg, #1A2535 0%, #1F2D3D 20%, #6B2D0E 42%, #D34108 58%, #EA6921 68%, #FFF0E8 80%, #FFFFFF 88%)" }}>
+          style={{ background: "linear-gradient(90deg, #1A2535 0%, #2B3C50 55%, #7A3012 68%, #D34108 76%, #EA6921 82%, #FFF4EE 90%, #FFFFFF 96%)" }}>
           {/* Subtle inner glow */}
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(234,105,33,0.18), transparent 60%)" }} />
           <div className="shrink-0 relative flex size-12 items-center justify-center rounded-xl"
@@ -2205,7 +2205,7 @@ function ResizableWorkbench({
       <div className="flex flex-col gap-4 w-full">
         {widgets.map(id => (
           <div key={id} className="flex flex-col rounded-2xl border border-secondary bg-white"
-            style={{ height: "62vh", minHeight: 480, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+            style={{ height: "82vh", minHeight: 640, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-secondary shrink-0">
               <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>{getWidget(id).label}</p>
               <button onClick={() => onRemove(id)} className="text-xs text-quaternary hover:text-secondary px-2 py-1 rounded hover:bg-secondary">Remove</button>
@@ -2232,7 +2232,7 @@ function ResizableWorkbench({
           {/* Widget */}
           <div className="flex flex-col" style={{ width: `${widths[i] ?? 50}%`, minWidth: 0 }}>
             <div className="flex flex-col rounded-2xl border border-secondary bg-white"
-              style={{ margin: "0 6px", height: "50vh", minHeight: 400, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
+              style={{ margin: "0 6px", height: "82vh", minHeight: 640, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-secondary shrink-0">
                 <p className="text-base font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
                   {getWidget(id).label}
