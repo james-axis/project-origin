@@ -979,7 +979,7 @@ function TopPrioritiesWidget({ onSelectTask }: { onSelectTask: (t: SimTask) => v
       )}
 
       {/* ── Queue ── */}
-      <div className="overflow-y-auto flex-1 min-h-0 space-y-2" style={{ maxHeight: 280 }}>
+      <div className="overflow-y-auto flex-1 min-h-0 space-y-2">
         {rest.map((item, i) => (
           <PriorityCard key={item.task.id} item={item} onSelectTask={onSelectTask} rank={i + 2} isHero={false} />
         ))}
@@ -1259,6 +1259,8 @@ interface CRMFilters {
   practice: string;
   policyType: string;
   tileFilter: "total" | "overdue" | "amber" | "fresh" | null;
+  module: ("application" | "claim" | "policy" | "dishonour" | "renewal" | "complaint")[];
+  clientStatus: ("new_arrival" | "stalled" | "next_step" | "birthday_soon" | "lapse_risk")[];
 }
 
 interface CRMPreset {
@@ -1279,9 +1281,11 @@ const DEFAULT_FILTERS: CRMFilters = {
   practice: "",
   policyType: "",
   tileFilter: null,
+  module: [],
+  clientStatus: [],
 };
 
-type SortKey = "name" | "policyType" | "practice" | "appStatus" | "step" | "priority" | "age" | "progress";
+type SortKey = "name" | "policyType" | "practice" | "appStatus" | "step" | "priority" | "age" | "progress" | "module";
 type SortDir = "asc" | "desc";
 
 function loadPresets(): CRMPreset[] {
@@ -1311,6 +1315,8 @@ type TableRow = {
   appStatus: string;
   completedCount: number;
   progress: number;
+  module: string;
+  clientStatus: string;
 };
 
 function buildTableRows(leads: SimLead[], allTasks: SimTask[], total: number): TableRow[] {
@@ -1330,7 +1336,27 @@ function buildTableRows(leads: SimLead[], allTasks: SimTask[], total: number): T
       return "active";
     })();
     const progress = Math.round((completedCount / total) * 100);
-    return { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress };
+    // Derive module from task name keywords (sim-only heuristic)
+    const module = (() => {
+      if (!currentTask) return "application";
+      const n = currentTask.name.toLowerCase();
+      if (n.includes("claim")) return "claim";
+      if (n.includes("dishonour")) return "dishonour";
+      if (n.includes("renewal")) return "renewal";
+      if (n.includes("complaint")) return "complaint";
+      if (n.includes("policy") || n.includes("inforce")) return "policy";
+      return "application";
+    })();
+    // Derive clientStatus
+    const clientStatus = (() => {
+      const isNew = (Date.now() - new Date(lead.createdAt).getTime()) < 20 * 60 * 1000;
+      if (isNew) return "new_arrival";
+      if (priority === "critical" && chainStep >= 9) return "lapse_risk";
+      if (ageMinutes > 120) return "stalled";
+      // Birthday soon: sim — use DOB field if available (not in SimLead, so skip)
+      return "next_step";
+    })();
+    return { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress, module, clientStatus };
   });
 }
 
@@ -1383,6 +1409,8 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
     if (effectiveTile === "overdue" && priority !== "critical") return false;
     if (effectiveTile === "amber"   && priority !== "high")     return false;
     if (effectiveTile === "fresh"   && priority !== "normal")   return false;
+    if (filters.module.length > 0 && !filters.module.includes(row.module as any)) return false;
+    if (filters.clientStatus.length > 0 && !filters.clientStatus.includes(row.clientStatus as any)) return false;
     return true;
   });
 
@@ -1397,6 +1425,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
       case "priority": { const p = { critical: 3, high: 2, normal: 1 } as Record<string, number>; va = p[a.priority] ?? 0; vb = p[b.priority] ?? 0; break; }
       case "age":        va = a.ageMinutes;  vb = b.ageMinutes;  break;
       case "progress":   va = a.progress;    vb = b.progress;    break;
+      case "module":     va = a.module;      vb = b.module;      break;
     }
     const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
     return sortDir === "asc" ? cmp : -cmp;
@@ -1411,7 +1440,8 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
   function applyPreset(p: CRMPreset) { setFilters(p.filters); }
 
   const hasActiveFilters = !!(filters.search || filters.dateRange !== "all" || filters.appStatus.length > 0 ||
-    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter);
+    filters.taskPriority.length > 0 || filters.practice || filters.policyType || filters.tileFilter ||
+    filters.module.length > 0 || filters.clientStatus.length > 0);
 
   const practices = [...new Set(leads.map(l => l.practice))];
 
@@ -1480,23 +1510,21 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
 
       {/* ── Filter panel ── */}
       {filtersOpen && (
-        <div className="mb-3 rounded-xl border border-secondary bg-[#FAFAFA] p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Search */}
-          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Search</label>
-            <div className="relative">
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              <input value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-                placeholder="Name, policy, practice..."
-                className="w-full rounded-lg border border-secondary bg-white pl-7 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+        <div className="mb-3 rounded-xl border border-secondary bg-[#FAFAFA] p-4 space-y-3">
+          {/* Row 1: Search + Date + Practice */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-1">
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Search</label>
+              <div className="relative">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                <input value={filters.search} onChange={e => setFilters((f: CRMFilters) => ({ ...f, search: e.target.value }))}
+                  placeholder="Name, policy, practice..."
+                  className="w-full rounded-lg border border-secondary bg-white pl-7 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
+              </div>
             </div>
-          </div>
-
-          {/* Date range */}
-          <div>
-            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Date range</label>
-            <div className="relative">
-              <select value={filters.dateRange} onChange={e => setFilters(f => ({ ...f, dateRange: e.target.value as any }))}
+            <div>
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Date range</label>
+              <select value={filters.dateRange} onChange={e => setFilters((f: CRMFilters) => ({ ...f, dateRange: e.target.value as CRMFilters["dateRange"] }))}
                 className="w-full rounded-lg border border-secondary bg-white px-2.5 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
                 <option value="all">All time</option>
                 <option value="7d">Last 7 days</option>
@@ -1504,47 +1532,76 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
                 <option value="90d">Last 90 days</option>
               </select>
             </div>
-          </div>
-
-          {/* App status */}
-          <div>
-            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">App status</label>
-            <div className="flex flex-col gap-0.5">
-              {(["new","active","overdue","complete"] as const).map(s => (
-                <label key={s} className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={filters.appStatus.includes(s)}
-                    onChange={e => setFilters(f => ({ ...f, appStatus: e.target.checked ? [...f.appStatus, s] : f.appStatus.filter(x => x !== s) }))}
-                    className="rounded border-secondary size-3 accent-[#D34108]" />
-                  <span className="text-[10px] text-secondary capitalize">{s}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Task priority */}
-          <div>
-            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Priority</label>
-            <div className="flex flex-col gap-0.5">
-              {([["critical","Overdue"],["high","Amber"],["normal","Fresh"]] as const).map(([v, l]) => (
-                <label key={v} className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={filters.taskPriority.includes(v)}
-                    onChange={e => setFilters(f => ({ ...f, taskPriority: e.target.checked ? [...f.taskPriority, v] : f.taskPriority.filter(x => x !== v) }))}
-                    className="rounded border-secondary size-3 accent-[#D34108]" />
-                  <span className="text-[10px] text-secondary">{l}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Practice */}
-          <div>
-            <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Practice</label>
-            <div className="relative">
-              <select value={filters.practice} onChange={e => setFilters(f => ({ ...f, practice: e.target.value }))}
+            <div>
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1">Practice</label>
+              <select value={filters.practice} onChange={e => setFilters((f: CRMFilters) => ({ ...f, practice: e.target.value }))}
                 className="w-full rounded-lg border border-secondary bg-white px-2.5 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
                 <option value="">All practices</option>
                 {practices.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
+            </div>
+          </div>
+
+          {/* Row 2: checkbox groups */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Module */}
+            <div>
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1.5">Module</label>
+              <div className="flex flex-col gap-0.5">
+                {([["application","Application"],["claim","Claim"],["policy","Policy"],["dishonour","Dishonour"],["renewal","Renewal"],["complaint","Complaint"]] as const).map(([v, l]) => (
+                  <label key={v} className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filters.module.includes(v)}
+                      onChange={e => setFilters((f: CRMFilters) => ({ ...f, module: e.target.checked ? [...f.module, v] : f.module.filter((x: string) => x !== v) }))}
+                      className="rounded border-secondary size-3 accent-[#D34108]" />
+                    <span className="text-[10px] text-secondary">{l}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* App status */}
+            <div>
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1.5">App status</label>
+              <div className="flex flex-col gap-0.5">
+                {([["new","New"],["active","Active"],["overdue","Overdue"],["complete","Complete"]] as const).map(([v, l]) => (
+                  <label key={v} className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filters.appStatus.includes(v)}
+                      onChange={e => setFilters((f: CRMFilters) => ({ ...f, appStatus: e.target.checked ? [...f.appStatus, v] : f.appStatus.filter((x: string) => x !== v) }))}
+                      className="rounded border-secondary size-3 accent-[#D34108]" />
+                    <span className="text-[10px] text-secondary">{l}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Client status */}
+            <div>
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1.5">Client status</label>
+              <div className="flex flex-col gap-0.5">
+                {([["new_arrival","New arrival"],["stalled","Stalled"],["next_step","Next step"],["lapse_risk","Lapse risk"],["birthday_soon","Birthday soon"]] as const).map(([v, l]) => (
+                  <label key={v} className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filters.clientStatus.includes(v)}
+                      onChange={e => setFilters((f: CRMFilters) => ({ ...f, clientStatus: e.target.checked ? [...f.clientStatus, v] : f.clientStatus.filter((x: string) => x !== v) }))}
+                      className="rounded border-secondary size-3 accent-[#D34108]" />
+                    <span className="text-[10px] text-secondary">{l}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Priority */}
+            <div>
+              <label className="block text-[10px] font-semibold text-quaternary uppercase tracking-wider mb-1.5">Task priority</label>
+              <div className="flex flex-col gap-0.5">
+                {([["critical","Overdue"],["high","Amber"],["normal","Fresh"]] as const).map(([v, l]) => (
+                  <label key={v} className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filters.taskPriority.includes(v)}
+                      onChange={e => setFilters((f: CRMFilters) => ({ ...f, taskPriority: e.target.checked ? [...f.taskPriority, v] : f.taskPriority.filter((x: string) => x !== v) }))}
+                      className="rounded border-secondary size-3 accent-[#D34108]" />
+                    <span className="text-[10px] text-secondary">{l}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1564,6 +1621,7 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
             <thead className="sticky top-0 z-10 bg-[#F8F9FB] border-b border-secondary">
               <tr>
                 <SortTh k="name"       label="Client"      className="pl-4" />
+                <SortTh k="module"     label="Module" />
                 <SortTh k="policyType" label="Policy" />
                 <SortTh k="practice"   label="Practice" />
                 <SortTh k="appStatus"  label="Status" />
@@ -1575,7 +1633,8 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
             </thead>
             <tbody className="divide-y divide-secondary bg-white">
               {sorted.map(row => {
-                const { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress } = row;
+                const { lead, currentTask, chainStep, ageMinutes, priority, appStatus, completedCount, progress, module: rowModule } = row;
+                    const MODULE_BADGE: Record<string, string> = { application: "bg-blue-100 text-blue-700", claim: "bg-purple-100 text-purple-700", policy: "bg-orange-100 text-orange-700", dishonour: "bg-red-100 text-red-700", renewal: "bg-green-100 text-green-700", complaint: "bg-yellow-100 text-yellow-700" };
                 const ageStr = ageMinutes < 1 ? "Just now" : ageMinutes < 60 ? `${Math.round(ageMinutes)}m` : `${Math.floor(ageMinutes / 60)}h ${Math.round(ageMinutes % 60)}m`;
                 const priMeta = PRIORITY_STYLE[priority];
                 return (
@@ -1592,6 +1651,9 @@ function CRMTableWidget({ onSelectTask, onSelectClient }: {
                           <p className="text-[10px] text-quaternary truncate max-w-[120px]">{lead.email}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize " + (MODULE_BADGE[rowModule] ?? "bg-secondary text-secondary")}>{rowModule}</span>
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="text-secondary truncate block max-w-[120px]">{lead.policyType}</span>
@@ -1858,7 +1920,7 @@ function WorkbenchHero({ leads, allTasks }: { leads: SimLead[]; allTasks: SimTas
 
         {/* ── LEFT: gradient dark panel ── */}
         <div className="relative flex items-center gap-4 px-5 py-5 min-w-0 lg:flex-1"
-          style={{ background: "linear-gradient(105deg, #1A2535 0%, #1F2D3D 30%, #6B2D0E 62%, #D34108 82%, #EA6921 100%)" }}>
+          style={{ background: "linear-gradient(105deg, #1A2535 0%, #1F2D3D 30%, #6B2D0E 58%, #D34108 76%, #EA6921 88%, #FFFFFF 100%)" }}>
           {/* Subtle inner glow */}
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(234,105,33,0.18), transparent 60%)" }} />
           <div className="shrink-0 relative flex size-12 items-center justify-center rounded-xl"
@@ -2127,7 +2189,7 @@ function ResizableWorkbench({
                   {getWidget(id).label}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-quaternary">{Math.round(widths[i] ?? 50)}%</span>
+                  <span className="text-[10px] text-quaternary" title="Widget width — drag the divider to resize">{Math.round(widths[i] ?? 50)}% width</span>
                   <button onClick={() => onRemove(id)}
                     className="text-xs text-quaternary hover:text-secondary transition-colors px-2 py-1 rounded hover:bg-secondary">Remove</button>
                 </div>

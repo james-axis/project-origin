@@ -74,10 +74,10 @@ export function useToast() {
 
 // ─── Individual toast ─────────────────────────────────────────────────────────
 const VARIANT_STYLES: Record<ToastVariant, { bar: string; icon: string; iconBg: string }> = {
-  default: { bar: "bg-brand-solid",    icon: "text-brand-secondary",  iconBg: "bg-brand-secondary" },
-  success: { bar: "bg-success-solid",  icon: "text-success-primary",  iconBg: "bg-success-secondary" },
-  warning: { bar: "bg-warning-solid",  icon: "text-warning-primary",  iconBg: "bg-warning-secondary" },
-  error:   { bar: "bg-error-primary",  icon: "text-error-primary",    iconBg: "bg-error-secondary" },
+  default: { bar: "bg-[#D34108]",    icon: "text-white",  iconBg: "bg-[#D34108]" },
+  success: { bar: "bg-[#22C55E]",  icon: "text-white",  iconBg: "bg-[#16A34A]" },
+  warning: { bar: "bg-[#F59E0B]",  icon: "text-white",  iconBg: "bg-[#D97706]" },
+  error:   { bar: "bg-[#EF4444]",  icon: "text-white",    iconBg: "bg-[#DC2626]" },
   info:    { bar: "bg-[#6366F1]",      icon: "text-[#6366F1]",        iconBg: "bg-[#EEF2FF]" },
 };
 
@@ -115,13 +115,13 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
 
   return (
     <div className={
-      "relative w-full max-w-sm overflow-hidden rounded-2xl border border-secondary bg-primary shadow-lg " +
+      "relative w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl " +
       "transition-all duration-300 ease-out " +
-      (item.exiting ? "opacity-0 translate-x-full" : "opacity-100 translate-x-0")
-    }>
+      (item.exiting ? "opacity-0 translate-x-full scale-95" : "opacity-100 translate-x-0 scale-100")
+    } style={{ background: "#1A2535", border: "1px solid rgba(255,255,255,0.1)" }}>
       {/* Progress bar */}
       {duration > 0 && (
-        <div className="absolute bottom-0 left-0 h-0.5 bg-secondary w-full">
+        <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: "rgba(255,255,255,0.1)" }}>
           <div className={"h-full transition-none " + styles.bar} style={{ width: progress + "%" }} />
         </div>
       )}
@@ -136,9 +136,9 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
 
         {/* Content */}
         <div className="flex-1 min-w-0 pt-0.5">
-          <p className="text-sm font-semibold text-primary leading-snug">{item.title}</p>
+          <p className="text-sm font-semibold leading-snug" style={{ color: "#FFFFFF" }}>{item.title}</p>
           {item.description && (
-            <p className="text-sm text-tertiary mt-0.5 leading-snug">{item.description}</p>
+            <p className="text-sm mt-0.5 leading-snug" style={{ color: "rgba(255,255,255,0.6)" }}>{item.description}</p>
           )}
 
           {/* Actions */}
@@ -149,8 +149,9 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
                   className={
                     "text-sm font-semibold transition-colors " +
                     (action.variant === "ghost"
-                      ? "text-tertiary hover:text-secondary"
-                      : "text-brand-secondary hover:text-brand-primary")
+                      ? "hover:opacity-70"
+                      : "font-semibold")
+                  } style={{ color: action.variant === "ghost" ? "rgba(255,255,255,0.5)" : "#FF8C52" }}
                   }>
                   {action.label}
                 </button>
@@ -161,7 +162,7 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) =
 
         {/* Dismiss */}
         <button onClick={() => onDismiss(item.id)}
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors mt-0.5">
+          className="flex size-6 shrink-0 items-center justify-center rounded-md transition-colors mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
           <X className="size-3.5" aria-hidden />
         </button>
       </div>
