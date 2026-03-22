@@ -336,13 +336,7 @@ function getPriorityBeacon(p: "critical" | "high" | "normal"): BeaconColor {
   if (p === "high") return "amber";
   return "green";
 }
-function getPriorityLabel(p: "critical" | "high" | "normal", task: SimTask): string {
-  const age = getTaskAge(task);
-  if (p === "critical" && task.status === "attempted") return "Attempted — awaiting subtask";
-  if (p === "critical") return `Overdue — ${Math.round(age / 60)}h ${Math.round(age % 60)}m`;
-  if (p === "high") return `${Math.round(age)}m elapsed`;
-  return "On target";
-}
+
 
 // ─── Task row (shared) ────────────────────────────────────────────────────────
 function TaskRow({ task, lead, onSelectTask, compact = false }: {
