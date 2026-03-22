@@ -542,7 +542,19 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     return allTasks.some(t => t.leadId === leadId && t.status === "open" && getTaskPriority(t) === "critical");
   }
 
-  const attentionLeads = leads.filter(l => isNewLead(l) || hasOverdueTasks(l.id));
+  const attentionLeads = leads.filter(l => {
+    if (!(isNewLead(l) || hasOverdueTasks(l.id))) return false;
+    // Apply same search + status filters
+    const lt = allTasks.filter(t => t.leadId === l.id);
+    const open = lt.filter(t => t.status === "open").length;
+    const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+    if (statusFilter === "active"   && open === 0) return false;
+    if (statusFilter === "complete" && done < total) return false;
+    if (search && !`${l.firstName} ${l.lastName}`.toLowerCase().includes(search.toLowerCase()) &&
+        !l.policyType.toLowerCase().includes(search.toLowerCase()) &&
+        !l.practice.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   if (leads.length === 0) {
     return (
