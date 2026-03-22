@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01,
   ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
-  Zap, Toggle01Right, X, Check, InfoCircle, AlertCircle, ArrowLeft,
+  Zap, X, Check, InfoCircle, AlertCircle, ArrowLeft,
 } from "@untitledui/icons";
 
 type TriggerType = "object_created" | "task_completed";
@@ -506,9 +506,9 @@ function NewTaskInline({ onAdd }: { onAdd: (task: Partial<TaskItem>) => void }) 
 }
 
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Task row (for task chain view) ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
-function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
+function TaskRow({ task, index, isFirst, domainColor, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragOver }: {
   task: TaskItem; index: number; isFirst: boolean; domainColor: string;
-  onToggle: (id: number) => void; onEdit: (t: TaskItem) => void; onDelete: (id: number) => void;
+  onEdit: (t: TaskItem) => void; onDelete: (id: number) => void;
   onDragStart: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>, i: number) => void;
@@ -516,7 +516,7 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
 }) {
   return (
     <div draggable onDragStart={e => onDragStart(e, index)} onDragOver={e => onDragOver(e, index)} onDrop={e => onDrop(e, index)}
-      className={"group relative flex items-start sm:items-center gap-3 rounded-xl border px-3 sm:px-4 py-3 transition-all " + (isDragOver ? "border-brand bg-brand-primary_alt shadow-md" : "border-secondary bg-primary hover:border-primary hover:shadow-sm") + (!task.enabled ? " opacity-50" : "")}>
+      className={"group relative flex items-start sm:items-center gap-3 rounded-xl border px-3 sm:px-4 py-3 transition-all " + (isDragOver ? "border-brand bg-brand-primary_alt shadow-md" : "border-secondary bg-primary hover:border-primary hover:shadow-sm")}>
       <div className="hidden sm:block cursor-grab text-fg-quaternary mt-0.5 opacity-0 group-hover:opacity-100"><DotsGrid className="size-4" aria-hidden /></div>
       <div className="flex flex-col items-center w-6 shrink-0 mt-0.5">
         {isFirst ? <div className={"flex size-6 items-center justify-center rounded-full text-white " + domainColor}><Zap className="size-3" aria-hidden /></div>
@@ -537,7 +537,6 @@ function TaskRow({ task, index, isFirst, domainColor, onToggle, onEdit, onDelete
         <div className="flex items-center justify-between sm:justify-end gap-2">
           <span className="shrink-0 rounded-md border border-secondary bg-secondary px-2 py-1 text-xs text-secondary">{task.assigneeRole}</span>
           <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            <button onClick={() => onToggle(task.id)} className={"flex size-8 items-center justify-center rounded-lg transition-colors " + (task.enabled ? "text-success-primary hover:bg-success-secondary" : "text-fg-quaternary hover:bg-secondary")}><Toggle01Right className="size-4" aria-hidden /></button>
             <button onClick={() => onEdit(task)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-secondary transition-colors"><Edit01 className="size-4" aria-hidden /></button>
             <button onClick={() => onDelete(task.id)} className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors"><Trash01 className="size-4" aria-hidden /></button>
           </div>
@@ -889,7 +888,7 @@ function TaskBuilder() {
             <div key={task.id} className="relative">
               {index > 0 && <div className="absolute left-[2.35rem] sm:left-[3.1rem] -top-1 h-2 w-px bg-tertiary opacity-30" />}
               <TaskRow task={task} index={index} isFirst={index === 0} domainColor={activeDomain.color}
-                onToggle={id => updateTemplate(activeTemplate.tasks.map(t => t.id === id ? { ...t, enabled: !t.enabled } : t))}
+                
                 onEdit={setEditingTask}
                 onDelete={id => updateTemplate(activeTemplate.tasks.filter(t => t.id !== id))}
                 onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
