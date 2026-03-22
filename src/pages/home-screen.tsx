@@ -233,24 +233,24 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask, o
 }
 
 // ─── Simulate lead modal ──────────────────────────────────────────────────────
-function SimulateLeadModal({ open, onClose, onSimulated, onToast }: { open: boolean; onClose: () => void; onSimulated: (lead: SimLead) => void; onToast: (opts: import("@/components/toast").ToastOptions) => void }) {
+function SimulateLeadModal({ open, onClose, onSimulated, onToast, onOpenTask }: { open: boolean; onClose: () => void; onSimulated: (lead: SimLead) => void; onToast: (opts: import("@/components/toast").ToastOptions) => void; onOpenTask: (task: SimTask) => void }) {
   const [idx, setIdx] = useState(0);
   if (!open) return null;
   const preview = NEW_LEAD_POOL[idx % NEW_LEAD_POOL.length];
 
   function fire() {
     const lead = addLead(preview);
-    fireFirstTask(lead);
+    const firstTask = fireFirstTask(lead);
     setIdx(i => i + 1);
     onSimulated(lead);
     onClose();
     onToast({
       title: "New lead arrived",
-      description: `${lead.firstName} ${lead.lastName} — Introduction Call assigned to Consultant`,
+      description: `${lead.firstName} ${lead.lastName} — Introduction Call assigned to you`,
       variant: "info",
       duration: 6000,
       actions: [
-        { label: "View task", onClick: () => {} },
+        { label: "View task", onClick: () => onOpenTask(firstTask) },
         { label: "Dismiss", variant: "ghost", onClick: () => {} },
       ],
     });
@@ -277,7 +277,7 @@ function SimulateLeadModal({ open, onClose, onSimulated, onToast }: { open: bool
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-brand-secondary border border-brand px-3 py-2.5">
             <Zap className="size-4 text-brand-secondary shrink-0" />
-            <p className="text-xs text-brand-secondary">Will fire: <strong>Introduction Call</strong> → assigned to Consultant</p>
+            <p className="text-xs text-brand-secondary">Will fire: <strong>Introduction Call</strong> → assigned to you</p>
           </div>
         </div>
         <div className="flex gap-2 border-t border-secondary px-5 py-4">
@@ -435,11 +435,12 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
 
       {/* ── Stat tiles — clickable to filter ── */}
       <div className="grid grid-cols-4 gap-2 mb-4">
-        {/* Total — non-clickable summary tile */}
-        <div className="rounded-xl border border-secondary bg-secondary_alt px-3 py-3">
+        {/* Total — clickable, sets filter to "all" */}
+        <button onClick={() => setFilter("all")}
+          className={"rounded-xl border px-3 py-3 text-left transition-all " + (filter === "all" ? "border-brand bg-brand-secondary ring-1 ring-inset border-brand" : "border-secondary bg-secondary_alt hover:border-brand")}>
           <p className="text-[10px] font-medium text-tertiary mb-1 truncate">Total</p>
           <p className="text-xl font-semibold text-primary">{tasks.length}</p>
-        </div>
+        </button>
         {([
           { label: "Overdue", value: overdueTasks.length,                              filterKey: "overdue" as const, beacon: "red"   as BeaconColor, active: "border-[#EF4444] bg-[#FFF5F5]", inactive: "border-secondary bg-secondary_alt hover:border-[#FECACA]" },
           { label: "Near",    value: tasks.filter(t => getTaskPriority(t) === "high").length, filterKey: "amber"   as const, beacon: "amber" as BeaconColor, active: "border-[#F59E0B] bg-[#FFFBEB]", inactive: "border-secondary bg-secondary_alt hover:border-[#FDE68A]"  },
@@ -965,7 +966,7 @@ export function HomeScreen() {
       />
       <AddWidgetModal open={widgetModalOpen} onClose={() => setWidgetModalOpen(false)} onAdd={addWidget} existingWidgets={activeTab.widgets} />
       <RenameTabModal open={renameModal.open} current={renameModal.current} onSave={label => renameTab(renameModal.tabId, label)} onClose={() => setRenameModal({ open: false, tabId: "", current: "" })} />
-      <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} onToast={toast} />
+      <SimulateLeadModal open={simModalOpen} onClose={() => setSimModalOpen(false)} onSimulated={handleSimulated} onToast={toast} onOpenTask={(task) => { setTimeout(() => setActiveTask(task), 50); }} />
       {activeTask && <TaskActionModal task={activeTask} lead={activeLead} onClose={() => setActiveTask(null)} onAction={handleTaskAction} onToast={toast} onOpenTask={(t) => { setActiveTask(null); setTimeout(() => setActiveTask(t), 50); }} onViewProfile={(id) => { setActiveTask(null); setTimeout(() => setSelectedClientId(id), 50); }} />}
     </div>
   );
