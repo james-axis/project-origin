@@ -5,8 +5,7 @@
 // profile), and calls onReady(data) when the user is done — enabling Complete.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState } from "react";
-import { Check, Calendar, Mail01, Upload01, FileCheck01, CurrencyDollar, Phone, User01, Plus, X } from "@untitledui/icons";
+import { Check, Calendar, Mail01, Upload01, FileCheck01, CurrencyDollar, Phone, User01 } from "@untitledui/icons";
 import type { SimLead } from "@/store/sim-store";
 
 export interface TaskPanelData {
@@ -222,7 +221,7 @@ export function FollowUpPanel({ label, savedData, onChange }: { label?: string }
 }
 
 // ─── 6. Book Insurance Review — Appointment ───────────────────────────────────
-export function BookReviewPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
+export function BookReviewPanel({ lead, savedData, onChange }: TaskPanelProps) {
   return <IntroductionCallPanel lead={lead} savedData={savedData} onChange={onChange} />;
 }
 
@@ -262,7 +261,7 @@ export function AddPolicyNumberPanel({ lead: _lead, savedData, onChange }: TaskP
 }
 
 // ─── 8. Send application submitted email ──────────────────────────────────────
-export function SendEmailPanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
+export function SendEmailPanel({ lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const defaultBody = lead
     ? `Hi ${lead.firstName},\n\nGreat news — your ${lead.policyType} application has been submitted to the insurer.\n\nWe'll be in touch once we receive confirmation. In the meantime, please don't hesitate to reach out if you have any questions.\n\nKind regards`
@@ -470,7 +469,7 @@ export function InputAmountsPanel({ lead: _lead, savedData, onChange }: TaskPane
 }
 
 // ─── 14. Inforce call & email ─────────────────────────────────────────────────
-export function InforcePanel({ lead: _lead, savedData, onChange }: TaskPanelProps) {
+export function InforcePanel({ lead, savedData, onChange }: TaskPanelProps) {
   const d = savedData ?? {};
   const defaultEmail = lead
     ? `Hi ${lead.firstName},\n\nFantastic news — your ${lead.policyType} policy is now inforce!\n\nYour cover is active and protecting you and your family from today. We'll be in touch annually to review your cover.\n\nThank you for trusting us with this important decision.\n\nKind regards`
@@ -513,7 +512,7 @@ export function TaskPanel({ templateTaskId, lead, savedData, onChange }: {
   savedData?: TaskPanelData;
   onChange: (data: TaskPanelData) => void;
 }) {
-  const props = { lead: _lead, savedData, onChange };
+  const props = { lead, savedData, onChange };
   switch (templateTaskId) {
     case 166: return <IntroductionCallPanel {...props} />;
     case 207: return <InitialLifeDiscussionPanel {...props} />;
