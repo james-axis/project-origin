@@ -11,7 +11,7 @@ type TaskBuilderView = "workflows" | "templates" | "tasks";
 type WizardStep = 1 | 2 | 3;
 
 const PRACTICES = ["All Practices", "LIP", "Tony Insurance", "Surehaven", "Averse to Risk", "Living Rich"];
-const ASSIGNEE_ROLES = ["Consultant", "Admin", "Services", "Compliance", "Manager"];
+const ASSIGNEE_ROLES = ["Consultant", "Admin", "Services", "Compliance", "Manager", "Task Master"];
 
 const settingsTabs = [
   { id: "task-builder", label: "Task Builder", icon: List },
