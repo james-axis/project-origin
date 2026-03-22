@@ -729,6 +729,20 @@ function TaskBuilder() {
     setTimeout(() => setActiveTemplateId(template.id), 0);
   }
 
+  function deleteFlow(domainId: string, templateId: string) {
+    setDomains(prev => prev.map(d => {
+      if (d.id !== domainId) return d;
+      const remaining = d.templates.filter(t => t.id !== templateId);
+      return { ...d, templates: remaining };
+    }).filter(d => d.templates.length > 0));
+    // If we just deleted the active flow, go back to the list
+    if (activeDomainId === domainId && activeTemplateId === templateId) {
+      setActiveDomainId(null);
+      setActiveTemplateId(null);
+      setView("templates");
+    }
+  }
+
   function updateTemplate(tasks: TaskItem[]) {
     if (!activeDomainId || !activeTemplateId) return;
     setDomains(prev => prev.map(d => d.id !== activeDomainId ? d : {
@@ -832,8 +846,11 @@ function TaskBuilder() {
               </div>
               <span className="text-sm text-tertiary truncate">{template.practices.join(", ")}</span>
               <div><StatusBadge status={template.status} /></div>
-              <span className="text-sm text-secondary">{template.tasks.filter(x => x.enabled).length} active</span>
-              <ChevronRight className="size-4 text-fg-quaternary" aria-hidden />
+              <span className="text-sm text-secondary">{template.tasks.length} task{template.tasks.length !== 1 ? "s" : ""}</span>
+              <button onClick={e => { e.stopPropagation(); deleteFlow(domainId, template.id); }}
+                className="flex size-8 items-center justify-center rounded-lg text-fg-quaternary hover:bg-error-secondary hover:text-error-primary transition-colors">
+                <Trash01 className="size-4" aria-hidden />
+              </button>
             </div>
           ))}
         </div>
@@ -857,9 +874,6 @@ function TaskBuilder() {
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={activeTemplate.status} />
-            <button onClick={() => openWizard(3)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-              <Edit01 className="size-3.5" aria-hidden />Edit
-            </button>
             {activeTemplate.status !== "published"
               ? <button onClick={() => setConfirmPublish(true)} className="rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">Publish</button>
               : <button onClick={() => setConfirmUnpublish(true)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Unpublish</button>
