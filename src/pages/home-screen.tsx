@@ -460,24 +460,6 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
         })}
       </div>
 
-      {/* ── Priority section ── */}
-      {priorityTasks.length > 0 && filter === "all" && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Priority</span>
-            <span className={"text-[10px] font-semibold rounded-full px-1.5 py-0.5 " +
-              (overdueTasks.length > 0 ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-[#FEF3C7] text-[#92400E]")}>
-              {priorityTasks.length} urgent
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {priorityTasks.slice(0, 3).map(task => (
-              <TaskRow key={task.id} task={task} lead={getLead(task.leadId)} onSelectTask={onSelectTask} compact />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Search + download ── */}
       <div className="flex items-center gap-2 mb-3">
         <div className="relative flex-1 min-w-0">
@@ -512,10 +494,7 @@ function TasksWidget({ onSelectTask }: { onSelectTask: (task: SimTask) => void }
               const chainStep = APPLICATION_CHAIN.findIndex(t => t.id === task.templateTaskId);
               return (
                 <button key={task.id} onClick={() => onSelectTask(task)}
-                  className={"group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all hover:shadow-md " +
-                    (p === "critical" ? "border-[#FECACA] bg-[#FFF5F5] hover:border-[#EF4444]" :
-                     p === "high"     ? "border-[#FDE68A] bg-[#FFFBEB] hover:border-[#F59E0B]" :
-                                        "border-secondary bg-primary hover:border-brand hover:bg-brand-secondary")}>
+                  className="group flex flex-col gap-2 rounded-xl border border-secondary bg-primary p-3 text-left transition-all hover:border-brand hover:shadow-sm">
                   {/* Tile header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -608,143 +587,141 @@ function LeadsWidget({ onSelectClient }: { onSelectClient: (id: string) => void 
     return true;
   });
 
+  const urgentLead = attentionLeads[0] ?? null;
+  const [showAllUrgent, setShowAllUrgent] = useState(false);
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
 
-      {/* ── Toolbar: search + filters + download ── */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <div className="relative flex-1 min-w-[140px]">
+      {/* ── Search + download ── */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="relative flex-1 min-w-0">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg className="size-3.5 text-fg-quaternary" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
           </span>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..."
-            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-2 text-xs text-primary outline-none focus:border-brand" />
+            className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand" />
         </div>
-        {/* Status filter dropdown */}
         <div className="relative">
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-secondary bg-primary pl-3 pr-7 py-2 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
-            <option value="all">All clients</option>
+            className="rounded-lg border border-secondary bg-primary pl-3 pr-7 py-1.5 text-xs text-primary outline-none focus:border-brand appearance-none cursor-pointer">
+            <option value="all">All</option>
             <option value="active">Active</option>
             <option value="complete">Complete</option>
           </select>
           <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-fg-quaternary rotate-90 pointer-events-none" />
         </div>
-        {(search || statusFilter !== "all") && (
-          <button onClick={() => { setSearch(""); setStatusFilter("all"); }}
-            className="rounded-lg border border-secondary bg-primary px-2.5 py-2 text-xs text-secondary hover:bg-secondary transition-colors whitespace-nowrap">
-            Clear all
-          </button>
-        )}
-        <button onClick={downloadCSV} title="Download all"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs font-medium text-secondary hover:bg-secondary transition-colors whitespace-nowrap">
+        <button onClick={downloadCSV}
+          className="flex size-7 items-center justify-center rounded-lg border border-secondary text-fg-quaternary hover:bg-secondary transition-colors shrink-0">
           <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v8M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          <span className="hidden sm:inline">Download all</span>
         </button>
       </div>
 
-      {/* ── Attention section ── */}
-      {attentionLeads.length > 0 && (
-        <div className="mb-3 space-y-1.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Attention</span>
-            <span className="rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">{attentionLeads.length}</span>
+      {/* ── URGENT section — one record at a time ── */}
+      {urgentLead && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Urgent</span>
+              <span className="rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">{attentionLeads.length}</span>
+            </div>
+            {attentionLeads.length > 1 && (
+              <button onClick={() => setShowAllUrgent(v => !v)}
+                className="text-[10px] text-brand-secondary hover:underline font-medium transition-colors">
+                {showAllUrgent ? "Show less" : `View all ${attentionLeads.length}`}
+              </button>
+            )}
           </div>
-          {attentionLeads.map(lead => {
-            const lt = allTasks.filter(t => t.leadId === lead.id);
-            const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-            const pct = Math.round((done / total) * 100);
-            const isNew = isNewLead(lead);
-            const overdue = hasOverdueTasks(lead.id);
-            // Beacon border animation via box-shadow on the card
-            const beaconColor = overdue ? "rgb(180,35,24)" : "rgb(18,183,106)";
-            return (
-              <button key={lead.id} onClick={() => onSelectClient(lead.id)}
-                className={"relative flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-left transition-all overflow-hidden " +
-                  (overdue ? "bg-gradient-to-r from-[#FFF5F5] to-[#FFF0F0]" : "bg-gradient-to-r from-[#F0FDF4] to-[#ECFDF5]")}
-                style={{ boxShadow: `0 0 0 1.5px ${beaconColor}` }}>
-                {/* Beacon border pulse — absolutely positioned ring */}
-                <span className={"absolute inset-0 rounded-xl pointer-events-none " + (overdue ? "beacon-red" : "beacon-green")}
-                  style={{ boxShadow: `0 0 0 1.5px ${beaconColor}` }} />
-                <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
-                  (overdue ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
-                  {lead.firstName[0]}{lead.lastName[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
-                    {isNew && !overdue && <span className="shrink-0 rounded-full bg-success-secondary text-success-primary text-[10px] font-semibold px-1.5 py-0.5">New</span>}
-                    {overdue && <span className="shrink-0 rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">Overdue</span>}
+          <div className="flex flex-col gap-1.5">
+            {(showAllUrgent ? attentionLeads : [urgentLead]).map(lead => {
+              const lt = allTasks.filter(t => t.leadId === lead.id);
+              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+              const pct = Math.round((done / total) * 100);
+              const isNew = isNewLead(lead);
+              const overdue = hasOverdueTasks(lead.id);
+              return (
+                <button key={lead.id} onClick={() => onSelectClient(lead.id)}
+                  className={"group flex flex-col gap-2 rounded-xl border p-3 text-left transition-all hover:shadow-sm " +
+                    (overdue
+                      ? "border-secondary bg-gradient-to-br from-[#FFF5F5] via-[#FFF8F8] to-white"
+                      : "border-secondary bg-gradient-to-br from-[#F0FDF4] via-[#F6FEF9] to-white")}>
+                  <div className="flex items-center gap-2">
+                    <Beacon color={overdue ? "red" : "green"} />
+                    <div className={"flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold " +
+                      (overdue ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-success-secondary text-success-primary")}>
+                      {lead.firstName[0]}{lead.lastName[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-semibold text-primary truncate">{lead.firstName} {lead.lastName}</p>
+                        {overdue && <span className="shrink-0 rounded-full bg-[#FEE2E2] text-[#B91C1C] text-[10px] font-semibold px-1.5 py-0.5">Overdue</span>}
+                        {isNew && !overdue && <span className="shrink-0 rounded-full bg-success-secondary text-success-primary text-[10px] font-semibold px-1.5 py-0.5">New</span>}
+                      </div>
+                      <p className="text-[10px] text-tertiary">{lead.policyType} · {lead.practice}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
                       <div className={"h-full rounded-full " + (overdue ? "bg-[#EF4444]" : "bg-success-solid")} style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-[10px] text-quaternary shrink-0">{done}/{total}</span>
                   </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* ── Table ── */}
-      <div className="rounded-xl border border-secondary overflow-hidden flex-1 min-h-0">
-        {/* Header — no Tasks column */}
-        <div className="grid grid-cols-[2fr_1.5fr_2fr] bg-secondary_alt border-b border-secondary px-4 py-2.5">
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Client</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Status</span>
-          <span className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Progress</span>
-        </div>
-        {/* Body */}
-        <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <Users01 className="size-6 text-fg-quaternary" />
-              <p className="text-xs text-tertiary">No clients match your filters</p>
-            </div>
-          ) : filtered.map((lead, idx) => {
-            const lt = allTasks.filter(t => t.leadId === lead.id);
-            const openCount = lt.filter(t => t.status === "open").length;
-            const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
-            const pct = Math.round((done / total) * 100);
-            const isComplete = done === total;
-            return (
-              <button key={lead.id} onClick={() => onSelectClient(lead.id)}
-                className={"grid grid-cols-[2fr_1.5fr_2fr] items-center px-4 py-3 w-full text-left hover:bg-secondary_alt transition-colors group " +
-                  (idx < filtered.length - 1 ? "border-b border-secondary" : "")}>
-                {/* Client */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
-                    (isComplete ? "bg-success-secondary text-success-primary" : "bg-brand-secondary text-brand-secondary")}>
-                    {lead.firstName[0]}{lead.lastName[0]}
+      {/* ── Client tiles ── */}
+      <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 300 }}>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-xl border border-dashed border-secondary">
+            <Users01 className="size-5 text-fg-quaternary" />
+            <p className="text-xs text-tertiary">No clients match</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2">
+            {filtered.map(lead => {
+              const lt = allTasks.filter(t => t.leadId === lead.id);
+              const openCount = lt.filter(t => t.status === "open").length;
+              const done = lt.filter(t => t.status === "completed" && !t.parentTaskId).length;
+              const pct = Math.round((done / total) * 100);
+              const isComplete = done === total;
+              return (
+                <button key={lead.id} onClick={() => onSelectClient(lead.id)}
+                  className="group flex flex-col gap-2 rounded-xl border border-secondary bg-primary p-3 text-left transition-all hover:border-brand hover:shadow-sm">
+                  {/* Header row */}
+                  <div className="flex items-center gap-2">
+                    <div className={"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " +
+                      (isComplete ? "bg-success-secondary text-success-primary" : "bg-brand-secondary text-brand-secondary")}>
+                      {lead.firstName[0]}{lead.lastName[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
+                      <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
+                    </div>
+                    <span className={"inline-flex items-center gap-1 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] font-medium " +
+                      (isComplete ? "text-success-primary" : openCount > 0 ? "text-brand-secondary" : "text-tertiary")}>
+                      {isComplete
+                        ? <><span className="size-1.5 rounded-full bg-success-solid inline-block shrink-0" />Complete</>
+                        : openCount > 0
+                          ? <><span className="size-1.5 rounded-full bg-brand-solid inline-block shrink-0" />Active</>
+                          : <><span className="size-1.5 rounded-full bg-tertiary inline-block shrink-0" />Pending</>}
+                    </span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-primary truncate group-hover:text-brand-secondary transition-colors">{lead.firstName} {lead.lastName}</p>
-                    <p className="text-[10px] text-tertiary truncate">{lead.practice}</p>
+                  {/* Progress bar */}
+                  <div className="space-y-0.5">
+                    <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                      <div className={"h-full rounded-full transition-all " + (isComplete ? "bg-success-solid" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-[10px] text-quaternary">{done}/{total} tasks · {pct}%</p>
                   </div>
-                </div>
-                {/* Status */}
-                <span className="inline-flex items-center gap-1 rounded-md border border-secondary bg-primary px-2 py-0.5 text-[11px] font-medium text-secondary self-center">
-                  {isComplete
-                    ? <span className="size-1.5 rounded-full bg-success-solid shrink-0 inline-block" />
-                    : openCount > 0
-                      ? <span className="size-1.5 rounded-full bg-brand-solid shrink-0 inline-block" />
-                      : <span className="size-1.5 rounded-full bg-tertiary shrink-0 inline-block" />}
-                  {isComplete ? "Complete" : openCount > 0 ? "Active" : "Pending"}
-                </span>
-                {/* Progress */}
-                <div className="space-y-1 pl-2">
-                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                    <div className={"h-full rounded-full transition-all " + (isComplete ? "bg-success-solid" : "bg-brand-solid")} style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-[10px] text-quaternary">{done}/{total} · {pct}%</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
