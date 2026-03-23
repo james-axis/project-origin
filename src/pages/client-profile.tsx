@@ -2,7 +2,7 @@ import { useState } from "react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
-  ChevronDown, ChevronRight, Plus, X, Edit01, Phone, Mail,
+  ChevronDown, ChevronRight, Plus, X, Edit01, Phone01 as Phone, Mail01 as Mail,
   Download01, Check, AlertCircle, File01, User01, Users01,
   Calendar, Clock, Tag01,
 } from "@untitledui/icons";
