@@ -699,46 +699,97 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Task Builder ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 
 // ─── Flow Chart View ─────────────────────────────────────────────────────────
-// Drag-and-drop visual flowchart for task chains.
-// Nodes are positioned vertically; branches (conditional outcomes) fan out horizontally.
 
-interface FlowNode {
-  task: TaskItem;
-  index: number;
-  x: number; // grid col (0 = centre, ±1 = branches)
-  y: number; // row
-  parentIndex: number | null;
-  branchLabel?: string; // e.g. "Pass", "Remediation Required"
+// Node types available in the palette
+type FlowNodeType =
+  | "task"         // Standard task (existing)
+  | "trigger"      // Trigger / start event
+  | "send_email"   // Send email
+  | "send_sms"     // Send SMS
+  | "notification" // Push / in-app notification
+  | "call"         // Phone call
+  | "change_status"// Change object status
+  | "assign_to"    // Assign to adviser/user
+  | "create_task"  // Create a new task
+  | "split"        // Conditional split / branch
+  | "integration"  // External integration
+  | "upload_docs"  // Upload / request documents
+  | "wait"         // Wait / delay
+  | "note"         // Comment / note
+  | "end";         // End of flow
+
+interface FlowCanvasNode {
+  uid: string;            // unique id on canvas
+  type: FlowNodeType;
+  label: string;
+  subtitle?: string;
+  taskItem?: TaskItem;    // only for "task" nodes wired to real tasks
+  x: number;
+  y: number;
+  enabled: boolean;
+  config?: Record<string, string>;
 }
 
-function buildFlowNodes(tasks: TaskItem[]): FlowNode[] {
-  const nodes: FlowNode[] = [];
-  let row = 0;
+interface FlowEdge {
+  fromUid: string;
+  toUid: string;
+  label?: string;
+}
+
+const NODE_TYPE_META: Record<FlowNodeType, { label: string; color: string; bg: string; icon: string; shape: "rect"|"diamond"|"pill"|"circle"; category: string }> = {
+  trigger:      { label:"Trigger",         color:"#D34108", bg:"#FFF4F0", icon:"⚡", shape:"pill",    category:"Flow" },
+  task:         { label:"Task",            color:"#3B82F6", bg:"#EFF6FF", icon:"✓",  shape:"rect",    category:"Actions" },
+  send_email:   { label:"Send Email",      color:"#8B5CF6", bg:"#F5F3FF", icon:"✉",  shape:"rect",    category:"Communications" },
+  send_sms:     { label:"Send SMS",        color:"#EC4899", bg:"#FDF2F8", icon:"💬", shape:"rect",    category:"Communications" },
+  notification: { label:"Notification",   color:"#F59E0B", bg:"#FFFBEB", icon:"🔔", shape:"rect",    category:"Communications" },
+  call:         { label:"Call",            color:"#10B981", bg:"#F0FDF4", icon:"📞", shape:"rect",    category:"Communications" },
+  change_status:{ label:"Change Status",  color:"#6366F1", bg:"#EEF2FF", icon:"🔄", shape:"rect",    category:"Actions" },
+  assign_to:    { label:"Assign To",      color:"#0EA5E9", bg:"#F0F9FF", icon:"👤", shape:"rect",    category:"Actions" },
+  create_task:  { label:"Create Task",    color:"#3B82F6", bg:"#EFF6FF", icon:"📋", shape:"rect",    category:"Actions" },
+  split:        { label:"Split / Branch", color:"#7C3AED", bg:"#EDE9FE", icon:"⑂",  shape:"diamond", category:"Flow" },
+  integration:  { label:"Integration",   color:"#64748B", bg:"#F8FAFC", icon:"🔌", shape:"rect",    category:"Integrations" },
+  upload_docs:  { label:"Upload Docs",   color:"#0891B2", bg:"#ECFEFF", icon:"📁", shape:"rect",    category:"Actions" },
+  wait:         { label:"Wait / Delay",  color:"#9CA3AF", bg:"#F9FAFB", icon:"⏱",  shape:"rect",    category:"Flow" },
+  note:         { label:"Note",          color:"#D97706", bg:"#FFFBEB", icon:"📝", shape:"rect",    category:"Flow" },
+  end:          { label:"End",           color:"#EF4444", bg:"#FFF5F5", icon:"⏹",  shape:"circle",  category:"Flow" },
+};
+
+const PALETTE_CATEGORIES = ["Flow", "Actions", "Communications", "Integrations"];
+
+const NODE_W = 220;
+const NODE_H = 84;
+const ROW_GAP = 52;
+
+// Build initial canvas from TaskItem array (linear chain)
+function buildInitialCanvas(tasks: TaskItem[]): { nodes: FlowCanvasNode[]; edges: FlowEdge[] } {
+  const nodes: FlowCanvasNode[] = [];
+  const edges: FlowEdge[] = [];
+  let y = 0;
+
+  // Start trigger node
+  const triggerUid = "trigger_0";
+  nodes.push({ uid: triggerUid, type:"trigger", label:"Flow Start", subtitle:"Object created", x:0, y, enabled:true });
+  y += NODE_H + ROW_GAP;
+
+  let prevUid = triggerUid;
   for (let i = 0; i < tasks.length; i++) {
-    const task = tasks[i];
-    const prev = tasks[i - 1];
-    // If previous task had completion options, fan them out
-    const options = prev?.completionOptions;
-    if (options && options.length > 1 && i === nodes.find(n => n.task.id === prev.id)!.index + 1) {
-      // first branch goes left
-    }
-    nodes.push({ task, index: i, x: 0, y: row, parentIndex: i > 0 ? i - 1 : null });
-    row++;
+    const t = tasks[i];
+    const uid = `task_${t.id}`;
+    nodes.push({ uid, type:"task", label:t.name, subtitle:t.assigneeRole, taskItem:t, x:0, y, enabled:t.enabled });
+    edges.push({ fromUid: prevUid, toUid: uid, label: i === 0 ? "" : "done" });
+    prevUid = uid;
+    y += NODE_H + ROW_GAP;
   }
-  return nodes;
+
+  // End node
+  const endUid = "end_0";
+  nodes.push({ uid: endUid, type:"end", label:"Flow End", x:0, y, enabled:true });
+  edges.push({ fromUid: prevUid, toUid: endUid, label: "done" });
+
+  return { nodes, edges };
 }
 
-function getNodeColor(role: string): string {
-  const map: Record<string, string> = {
-    Consultant:  "#D34108",
-    Admin:       "#3B82F6",
-    Services:    "#8B5CF6",
-    Compliance:  "#F59E0B",
-    Manager:     "#EC4899",
-    "Task Master":"#10B981",
-  };
-  return map[role] ?? "#6B7280";
-}
+function uid() { return `node_${Date.now()}_${Math.random().toString(36).slice(2,7)}`; }
 
 function FlowChartView({
   tasks, domainColor, onEditTask, onDeleteTask, onReorder, onAddTask,
@@ -750,34 +801,28 @@ function FlowChartView({
   onReorder: (tasks: TaskItem[]) => void;
   onAddTask: () => void;
 }) {
-  const [dragIdx, setDragIdx] = React.useState<number | null>(null);
-  const [dragOver, setDragOver] = React.useState<number | null>(null);
-  const [zoom, setZoom] = React.useState(100);
-  const [selectedId, setSelectedId] = React.useState<number | null>(null);
+  const initial = React.useMemo(() => buildInitialCanvas(tasks), [tasks.length]);
+  const [nodes, setNodes] = React.useState<FlowCanvasNode[]>(initial.nodes);
+  const [edges, setEdges] = React.useState<FlowEdge[]>(initial.edges);
+  const [zoom, setZoom] = React.useState(85);
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const [selectedUid, setSelectedUid] = React.useState<string | null>(null);
+  const [draggingUid, setDraggingUid] = React.useState<string | null>(null);
+  const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
+  const [paletteType, setPaletteType] = React.useState<FlowNodeType | null>(null);
+  const [addMenuAt, setAddMenuAt] = React.useState<{ x: number; y: number; afterUid: string } | null>(null);
   const panRef = React.useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const NODE_W = 220;
-  const NODE_H = 80;
-  const COL_GAP = 260;
-  const ROW_GAP = 44; // gap between nodes (connector height)
+  const brandColor = domainColor === "bg-brand-solid" ? "#D34108" : domainColor === "bg-warning-solid" ? "#F59E0B" : domainColor === "bg-success-solid" ? "#22C55E" : "#D34108";
 
-  // Build layout: most tasks are linear; tasks with completionOptions branch
-  interface LayoutNode { task: TaskItem; index: number; col: number; row: number; }
+  // Canvas dimensions
+  const canvasW = 700;
+  const maxY = nodes.length > 0 ? Math.max(...nodes.map(n => n.y)) + NODE_H + 100 : 400;
 
-  const layoutNodes: LayoutNode[] = [];
-  let row = 0;
-  for (let i = 0; i < tasks.length; i++) {
-    layoutNodes.push({ task: tasks[i], index: i, col: 0, row });
-    row += NODE_H + ROW_GAP;
-  }
-
-  const totalHeight = row + 60; // for the + button
-
-  // Handle canvas pan
+  // ── Pan canvas ──
   function onCanvasMouseDown(e: React.MouseEvent) {
-    if ((e.target as HTMLElement).closest("[data-node]")) return;
+    if ((e.target as HTMLElement).closest("[data-interactive]")) return;
     panRef.current = { startX: e.clientX, startY: e.clientY, startPanX: pan.x, startPanY: pan.y };
     const onMove = (ev: MouseEvent) => {
       if (!panRef.current) return;
@@ -786,175 +831,308 @@ function FlowChartView({
     const onUp = () => { panRef.current = null; window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
+    setSelectedUid(null);
+    setAddMenuAt(null);
   }
 
-  function onNodeDragStart(e: React.DragEvent, idx: number) {
-    setDragIdx(idx);
-    e.dataTransfer.effectAllowed = "move";
-  }
-  function onNodeDrop(idx: number) {
-    if (dragIdx === null || dragIdx === idx) return;
-    const next = [...tasks];
-    const [moved] = next.splice(dragIdx, 1);
-    next.splice(idx, 0, moved);
-    onReorder(next);
-    setDragIdx(null); setDragOver(null);
+  // ── Drag node on canvas ──
+  function startNodeDrag(e: React.MouseEvent, nodeUid: string) {
+    e.stopPropagation();
+    const node = nodes.find(n => n.uid === nodeUid);
+    if (!node) return;
+    // Compute offset from node top-left in canvas coords
+    const container = containerRef.current!.getBoundingClientRect();
+    const scale = zoom / 100;
+    const cx = (e.clientX - container.left - pan.x - canvasW / 2 * scale) / scale;
+    const cy = (e.clientY - container.top - pan.y) / scale;
+    setDraggingUid(nodeUid);
+    setDragOffset({ x: cx - node.x, y: cy - node.y });
+    const onMove = (ev: MouseEvent) => {
+      const cx2 = (ev.clientX - container.left - pan.x - canvasW / 2 * scale) / scale;
+      const cy2 = (ev.clientY - container.top - pan.y) / scale;
+      setNodes(prev => prev.map(n => n.uid === nodeUid ? { ...n, x: cx2 - dragOffset.x, y: cy2 - dragOffset.y } : n));
+    };
+    const onUp = () => { setDraggingUid(null); window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }
 
-  const brandColor = domainColor === "bg-brand-solid" ? "#D34108" :
-    domainColor === "bg-warning-solid" ? "#F59E0B" :
-    domainColor === "bg-success-solid" ? "#22C55E" :
-    domainColor === "bg-purple-500"    ? "#8B5CF6" : "#D34108";
+  // ── Add node from palette or menu ──
+  function addNodeAfter(afterUid: string, type: FlowNodeType) {
+    const meta = NODE_TYPE_META[type];
+    const afterNode = nodes.find(n => n.uid === afterUid);
+    if (!afterNode) return;
+    const newUid = uid();
+    const newY = afterNode.y + NODE_H + ROW_GAP;
+    // Shift all nodes below down
+    const shiftedNodes = nodes.map(n => n.uid !== afterUid && n.y >= newY ? { ...n, y: n.y + NODE_H + ROW_GAP } : n);
+    const newNode: FlowCanvasNode = { uid: newUid, type, label: meta.label, subtitle: "", x: 0, y: newY, enabled: true };
+    // Rewire edges: afterUid -> old-next becomes afterUid -> new -> old-next
+    const outEdge = edges.find(e => e.fromUid === afterUid);
+    const newEdges = edges.filter(e => e.fromUid !== afterUid);
+    newEdges.push({ fromUid: afterUid, toUid: newUid, label: "done" });
+    if (outEdge) newEdges.push({ fromUid: newUid, toUid: outEdge.toUid, label: "done" });
+    setNodes([...shiftedNodes, newNode]);
+    setEdges(newEdges);
+    setAddMenuAt(null);
+    setSelectedUid(newUid);
+  }
 
-  const svgHeight = Math.max(200, totalHeight);
-  const svgWidth = Math.max(400, NODE_W + 120);
+  // ── Delete node from canvas ──
+  function deleteNode(nodeUid: string) {
+    const inEdge = edges.find(e => e.toUid === nodeUid);
+    const outEdge = edges.find(e => e.fromUid === nodeUid);
+    const newEdges = edges.filter(e => e.fromUid !== nodeUid && e.toUid !== nodeUid);
+    if (inEdge && outEdge) newEdges.push({ fromUid: inEdge.fromUid, toUid: outEdge.toUid, label: "done" });
+    setNodes(prev => prev.filter(n => n.uid !== nodeUid));
+    setEdges(newEdges);
+    setSelectedUid(null);
+  }
+
+  // ── Node renderer ──
+  function renderNode(node: FlowCanvasNode, i: number) {
+    const meta = NODE_TYPE_META[node.type];
+    const isSelected = selectedUid === node.uid;
+    const isDragging = draggingUid === node.uid;
+    const cx = canvasW / 2 + node.x - NODE_W / 2;
+
+    const isSpecial = node.type === "end" || node.type === "trigger";
+    const specialW = 140;
+    const specialCx = canvasW / 2 + node.x - specialW / 2;
+
+    if (node.type === "end" || node.type === "trigger") {
+      return (
+        <div key={node.uid} data-interactive="1"
+          onClick={e => { e.stopPropagation(); setSelectedUid(node.uid === selectedUid ? null : node.uid); setAddMenuAt(null); }}
+          onMouseDown={e => startNodeDrag(e, node.uid)}
+          style={{ position:"absolute", left: specialCx, top: node.y, width: specialW, cursor: isDragging ? "grabbing" : "grab", zIndex: isDragging ? 50 : isSelected ? 10 : 1 }}>
+          <div className={"flex items-center justify-center gap-2 rounded-full px-4 py-2.5 border-2 select-none transition-all " +
+            (isSelected ? "shadow-lg" : "hover:shadow-md")}
+            style={{ borderColor: isSelected ? meta.color : "#E2E8F0", background: meta.bg }}>
+            <span className="text-base">{meta.icon}</span>
+            <span className="text-xs font-semibold" style={{ color: meta.color }}>{node.label}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (node.type === "split") {
+      return (
+        <div key={node.uid} data-interactive="1"
+          onClick={e => { e.stopPropagation(); setSelectedUid(node.uid === selectedUid ? null : node.uid); setAddMenuAt(null); }}
+          onMouseDown={e => startNodeDrag(e, node.uid)}
+          style={{ position:"absolute", left: cx, top: node.y, width: NODE_W, cursor: isDragging ? "grabbing" : "grab", zIndex: isDragging ? 50 : isSelected ? 10 : 1 }}>
+          <div className={"border-2 select-none transition-all bg-white " + (isSelected ? "shadow-lg" : "hover:shadow-md")}
+            style={{ borderColor: isSelected ? meta.color : "#E2E8F0", transform:"rotate(0deg)", borderRadius:12 }}>
+            <div className="px-3 py-2.5 flex items-center gap-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-xl text-white text-sm" style={{ background: meta.color }}>⑂</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-primary">{node.label}</p>
+                <p className="text-[10px] text-quaternary">{node.subtitle || "Add condition"}</p>
+              </div>
+              <div className="flex gap-1">
+                <span className="rounded-full text-[10px] px-2 py-0.5 font-medium" style={{ background: meta.bg, color: meta.color }}>Branch</span>
+              </div>
+            </div>
+          </div>
+          {isSelected && (
+            <div data-interactive="1" className="absolute -right-9 top-2 flex flex-col gap-1">
+              <button onClick={e => { e.stopPropagation(); deleteNode(node.uid); }}
+                className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-error-primary hover:text-error-primary text-quaternary">
+                <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div key={node.uid} data-interactive="1"
+        onClick={e => { e.stopPropagation(); setSelectedUid(node.uid === selectedUid ? null : node.uid); setAddMenuAt(null); }}
+        onMouseDown={e => startNodeDrag(e, node.uid)}
+        style={{ position:"absolute", left: cx, top: node.y, width: NODE_W, cursor: isDragging ? "grabbing" : "grab", zIndex: isDragging ? 50 : isSelected ? 10 : 1 }}>
+        <div className={"rounded-2xl border-2 bg-white select-none transition-all " + (isSelected ? "shadow-lg" : "shadow-sm hover:shadow-md hover:border-gray-300")}
+          style={{ borderColor: isSelected ? meta.color : "#E2E8F0" }}>
+          <div className="flex items-center gap-2.5 px-3 pt-3 pb-1.5">
+            <div className="flex shrink-0 size-8 items-center justify-center rounded-xl text-white text-sm" style={{ background: meta.color }}>
+              {meta.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-primary truncate">{node.label}</p>
+              <p className="text-[10px] text-quaternary truncate">{node.subtitle || meta.label}</p>
+            </div>
+            <div className={"shrink-0 size-2 rounded-full " + (node.enabled ? "bg-green-400" : "bg-gray-300")} />
+          </div>
+          <div className="flex items-center gap-1.5 px-3 pb-2.5 flex-wrap">
+            <span className="rounded-full text-[10px] px-2 py-0.5 font-medium" style={{ background: meta.bg, color: meta.color }}>{meta.label}</span>
+            {node.config?.assignee && <span className="rounded-full bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5">{node.config.assignee}</span>}
+            {node.config?.status  && <span className="rounded-full bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5">{node.config.status}</span>}
+          </div>
+        </div>
+        {isSelected && (
+          <div data-interactive="1" className="absolute -right-9 top-2 flex flex-col gap-1">
+            {node.type === "task" && node.taskItem && (
+              <button onClick={e => { e.stopPropagation(); onEditTask(node.taskItem!); }}
+                className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-brand hover:text-brand-secondary text-secondary">
+                <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5a2.121 2.121 0 013 3L5 15H1v-4L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+              </button>
+            )}
+            <button onClick={e => { e.stopPropagation(); deleteNode(node.uid); }}
+              className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-error-primary hover:text-error-primary text-quaternary">
+              <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-secondary bg-primary shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-quaternary">Drag nodes to reorder · click to edit</span>
+    <div className="flex h-full min-h-0">
+
+      {/* ── Left palette ── */}
+      <div className="w-52 shrink-0 border-r border-secondary bg-primary overflow-y-auto flex flex-col">
+        <div className="px-3 pt-3 pb-2 border-b border-secondary">
+          <p className="text-[10px] font-semibold text-quaternary uppercase tracking-wider">Node Palette</p>
+          <p className="text-[10px] text-quaternary mt-0.5">Drag onto canvas or use + buttons</p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={() => setZoom(z => Math.max(40, z - 10))}
-            className="flex size-7 items-center justify-center rounded border border-secondary text-secondary hover:bg-secondary text-sm font-medium transition-colors">−</button>
-          <span className="text-xs text-quaternary w-10 text-center tabular-nums">{zoom}%</span>
-          <button onClick={() => setZoom(z => Math.min(150, z + 10))}
-            className="flex size-7 items-center justify-center rounded border border-secondary text-secondary hover:bg-secondary text-sm font-medium transition-colors">+</button>
-          <button onClick={() => { setZoom(100); setPan({ x: 0, y: 0 }); }}
-            className="ml-1 rounded border border-secondary px-2 py-1 text-xs text-secondary hover:bg-secondary transition-colors">Reset</button>
-        </div>
-      </div>
-
-      {/* Canvas */}
-      <div ref={containerRef}
-        className="flex-1 overflow-hidden bg-[#F8F9FB] relative cursor-grab active:cursor-grabbing"
-        onMouseDown={onCanvasMouseDown}
-        style={{ backgroundImage: "radial-gradient(circle, #CBD5E1 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
-        <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`, transformOrigin: "50% 20px", transition: "none", position: "absolute", left: "50%", top: 0, marginLeft: -svgWidth / 2 }}>
-
-          {/* SVG connector lines */}
-          <svg style={{ position: "absolute", top: 0, left: 0, width: svgWidth, height: svgHeight, pointerEvents: "none" }}>
-            {layoutNodes.map((node, i) => {
-              if (i === 0) return null;
-              const prev = layoutNodes[i - 1];
-              const x1 = svgWidth / 2;
-              const y1 = prev.row + NODE_H;
-              const x2 = svgWidth / 2;
-              const y2 = node.row;
-              const midY = (y1 + y2) / 2;
-              return (
-                <g key={node.task.id}>
-                  <path d={`M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`}
-                    stroke={brandColor} strokeWidth="2" fill="none" opacity="0.5" />
-                  {/* Arrow head */}
-                  <polygon points={`${x2},${y2} ${x2-5},${y2-8} ${x2+5},${y2-8}`} fill={brandColor} opacity="0.6" />
-                  {/* Step connector label */}
-                  <rect x={x2 - 20} y={midY - 9} width="40" height="18" rx="9" fill="white" stroke={brandColor} strokeWidth="1" opacity="0.8" />
-                  <text x={x2} y={midY + 4} textAnchor="middle" fontSize="8" fill={brandColor} fontFamily="Metrophobic, sans-serif" fontWeight="700">
-                    done
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* Nodes */}
-          {layoutNodes.map((node, i) => {
-            const { task } = node;
-            const nodeX = svgWidth / 2 - NODE_W / 2;
-            const nodeColor = getNodeColor(task.assigneeRole);
-            const isSelected = selectedId === task.id;
-            const isDragOver = dragOver === i;
-            const isFirst = i === 0;
-
-            return (
-              <div key={task.id}
-                data-node="1"
-                draggable
-                onDragStart={e => onNodeDragStart(e, i)}
-                onDragOver={e => { e.preventDefault(); setDragOver(i); }}
-                onDragEnter={() => setDragOver(i)}
-                onDrop={() => onNodeDrop(i)}
-                onDragEnd={() => { setDragIdx(null); setDragOver(null); }}
-                onClick={() => setSelectedId(id => id === task.id ? null : task.id)}
-                style={{
-                  position: "absolute",
-                  left: nodeX,
-                  top: node.row,
-                  width: NODE_W,
-                  cursor: "grab",
-                  transition: "box-shadow 0.15s, border-color 0.15s",
-                }}
-                className={"rounded-2xl border-2 bg-white select-none " +
-                  (isDragOver ? "border-brand shadow-lg scale-[1.02]" :
-                   isSelected ? "border-[" + nodeColor + "] shadow-lg" :
-                   "border-secondary shadow-sm hover:border-primary hover:shadow-md")}>
-
-                {/* Header stripe */}
-                <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
-                  {/* Step number + color dot */}
-                  <div className="flex shrink-0 size-8 items-center justify-center rounded-xl text-white text-xs font-bold"
-                    style={{ background: nodeColor }}>
-                    {i + 1}
+        {PALETTE_CATEGORIES.map(cat => (
+          <div key={cat} className="px-2 pt-2 pb-1">
+            <p className="text-[9px] font-bold text-quaternary uppercase tracking-wider px-1 mb-1">{cat}</p>
+            {(Object.entries(NODE_TYPE_META) as [FlowNodeType, typeof NODE_TYPE_META[FlowNodeType]][])
+              .filter(([, m]) => m.category === cat)
+              .map(([type, meta]) => (
+                <div key={type}
+                  draggable
+                  onDragStart={e => { setPaletteType(type); e.dataTransfer.effectAllowed = "copy"; }}
+                  onDragEnd={() => setPaletteType(null)}
+                  className="flex items-center gap-2 rounded-lg px-2 py-2 cursor-grab hover:bg-secondary_alt transition-colors mb-0.5 select-none">
+                  <div className="flex size-6 items-center justify-center rounded-lg text-xs shrink-0" style={{ background: meta.bg }}>
+                    <span style={{ fontSize: 12 }}>{meta.icon}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-primary truncate leading-tight">{task.name}</p>
-                    <p className="text-[10px] text-quaternary mt-0.5 truncate">{task.assigneeRole}</p>
-                  </div>
-                  {/* Status indicator */}
-                  <div className={"shrink-0 size-2 rounded-full " + (task.enabled ? "bg-success-solid" : "bg-secondary")} />
+                  <span className="text-xs text-secondary font-medium leading-tight">{meta.label}</span>
                 </div>
-
-                {/* Meta bar */}
-                <div className="flex items-center gap-2 px-3 pb-2.5">
-                  {isFirst
-                    ? <span className="rounded-full bg-[#FFF4F0] text-[#D34108] text-[10px] font-semibold px-2 py-0.5">Start</span>
-                    : <span className="rounded-full bg-secondary text-quaternary text-[10px] px-2 py-0.5">→ on complete</span>}
-                  {task.condition && <span className="rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium px-2 py-0.5 truncate max-w-[80px]">if: {task.condition.replace(/_/g," ")}</span>}
-                  {task.completionOptions && task.completionOptions.length > 1 && (
-                    <span className="rounded-full bg-purple-50 text-purple-600 text-[10px] font-medium px-2 py-0.5">{task.completionOptions.length} outcomes</span>
-                  )}
-                </div>
-
-                {/* Action buttons — visible on hover/select */}
-                <div className={"absolute -right-8 top-2 flex flex-col gap-1 transition-opacity " + (isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100 pointer-events-none")}
-                  style={{ opacity: isSelected ? 1 : undefined }}>
-                  <button data-node="1" onClick={e => { e.stopPropagation(); onEditTask(task); }}
-                    className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-brand hover:text-brand-secondary transition-colors text-secondary">
-                    <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5a2.121 2.121 0 013 3L5 15H1v-4L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-                  </button>
-                  <button data-node="1" onClick={e => { e.stopPropagation(); onDeleteTask(task.id); }}
-                    className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-error-primary hover:text-error-primary transition-colors text-quaternary">
-                    <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Add task button */}
-          <button
-            data-node="1"
-            onClick={onAddTask}
-            style={{ position: "absolute", left: svgWidth / 2 - 72, top: totalHeight - 52, width: 144 }}
-            className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-secondary py-3 text-xs font-medium text-tertiary hover:border-brand hover:text-brand-secondary hover:bg-brand-secondary transition-colors bg-white">
-            <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-            Add step
-          </button>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-4 px-4 py-2 border-t border-secondary bg-primary shrink-0 flex-wrap">
-        <span className="text-[10px] text-quaternary uppercase tracking-wider">Assignee</span>
-        {Object.entries({ Consultant:"#D34108", Admin:"#3B82F6", Services:"#8B5CF6", Compliance:"#F59E0B", Manager:"#EC4899", "Task Master":"#10B981" }).map(([role, color]) => (
-          <div key={role} className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full shrink-0" style={{ background: color }} />
-            <span className="text-[10px] text-quaternary">{role}</span>
+              ))}
           </div>
         ))}
+      </div>
+
+      {/* ── Canvas + toolbar ── */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-secondary bg-primary shrink-0">
+          <span className="text-xs text-quaternary">Click node to select · drag to move · + to insert</span>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setZoom(z => Math.max(40, z - 10))} className="flex size-6 items-center justify-center rounded border border-secondary text-secondary hover:bg-secondary text-sm">−</button>
+            <span className="text-xs text-quaternary w-9 text-center tabular-nums">{zoom}%</span>
+            <button onClick={() => setZoom(z => Math.min(160, z + 10))} className="flex size-6 items-center justify-center rounded border border-secondary text-secondary hover:bg-secondary text-sm">+</button>
+            <button onClick={() => { setZoom(85); setPan({ x: 0, y: 0 }); }} className="rounded border border-secondary px-2 py-1 text-xs text-secondary hover:bg-secondary">Reset</button>
+          </div>
+        </div>
+
+        {/* Canvas */}
+        <div ref={containerRef}
+          className="flex-1 overflow-hidden relative cursor-grab active:cursor-grabbing"
+          style={{ backgroundImage:"radial-gradient(circle, #CBD5E1 1px, transparent 1px)", backgroundSize:"24px 24px", backgroundColor:"#F8F9FB" }}
+          onMouseDown={onCanvasMouseDown}
+          onDragOver={e => { if (paletteType) e.preventDefault(); }}
+          onDrop={e => {
+            if (!paletteType || !containerRef.current) return;
+            const container = containerRef.current.getBoundingClientRect();
+            const scale = zoom / 100;
+            const cx = (e.clientX - container.left - pan.x - canvasW / 2 * scale) / scale;
+            const cy = (e.clientY - container.top - pan.y) / scale;
+            const meta = NODE_TYPE_META[paletteType];
+            const newUid = uid();
+            setNodes(prev => [...prev, { uid: newUid, type: paletteType, label: meta.label, x: cx, y: cy, enabled: true }]);
+            setPaletteType(null);
+            setSelectedUid(newUid);
+          }}>
+
+          <div style={{ position:"absolute", left: pan.x, top: pan.y, transformOrigin:"50% 0", transform:`scale(${zoom/100})`, width: canvasW, height: Math.max(600, maxY) }}>
+
+            {/* SVG edges */}
+            <svg style={{ position:"absolute", inset:0, width:canvasW, height:Math.max(600,maxY), pointerEvents:"none" }}>
+              <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L8,3 z" fill={brandColor} opacity="0.6" />
+                </marker>
+              </defs>
+              {edges.map((edge, ei) => {
+                const fromNode = nodes.find(n => n.uid === edge.fromUid);
+                const toNode = nodes.find(n => n.uid === edge.toUid);
+                if (!fromNode || !toNode) return null;
+                const isFromSpecial = fromNode.type === "trigger" || fromNode.type === "end";
+                const isToSpecial = toNode.type === "trigger" || toNode.type === "end";
+                const fW = isFromSpecial ? 140 : NODE_W;
+                const tW = isToSpecial ? 140 : NODE_W;
+                const x1 = canvasW/2 + fromNode.x;
+                const y1 = fromNode.y + NODE_H;
+                const x2 = canvasW/2 + toNode.x;
+                const y2 = toNode.y;
+                const midY = (y1 + y2) / 2;
+                return (
+                  <g key={ei}>
+                    <path d={`M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`}
+                      stroke={brandColor} strokeWidth="1.5" fill="none" opacity="0.45" markerEnd="url(#arrow)" />
+                    {edge.label && (
+                      <>
+                        <rect x={x2-18} y={midY-8} width="36" height="16" rx="8" fill="white" stroke={brandColor} strokeWidth="1" opacity="0.9"/>
+                        <text x={x2} y={midY+4} textAnchor="middle" fontSize="7" fill={brandColor} fontFamily="Metrophobic,sans-serif" fontWeight="700">{edge.label}</text>
+                      </>
+                    )}
+                    {/* Insert (+) button mid-edge */}
+                    <g style={{ cursor:"pointer" }} data-interactive="1"
+                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAddMenuAt({ x: x2, y: midY, afterUid: edge.fromUid }); setSelectedUid(null); }}>
+                      <circle cx={x2} cy={midY} r="10" fill="white" stroke={brandColor} strokeWidth="1.5" opacity="0.9"/>
+                      <text x={x2} y={midY+4} textAnchor="middle" fontSize="13" fill={brandColor} style={{ userSelect:"none" }}>+</text>
+                    </g>
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Nodes */}
+            {nodes.map((node, i) => renderNode(node, i))}
+
+            {/* Add-node context menu */}
+            {addMenuAt && (
+              <div data-interactive="1"
+                style={{ position:"absolute", left: addMenuAt.x + 12, top: addMenuAt.y - 20, zIndex:100, width: 200 }}
+                className="rounded-xl border border-secondary bg-white shadow-xl overflow-hidden">
+                <div className="px-3 py-2 border-b border-secondary">
+                  <p className="text-xs font-semibold text-primary">Insert node</p>
+                </div>
+                <div className="max-h-64 overflow-y-auto py-1">
+                  {(Object.entries(NODE_TYPE_META) as [FlowNodeType, typeof NODE_TYPE_META[FlowNodeType]][])
+                    .filter(([t]) => t !== "trigger")
+                    .map(([type, meta]) => (
+                      <button key={type}
+                        onClick={() => addNodeAfter(addMenuAt.afterUid, type)}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 hover:bg-secondary_alt text-left transition-colors">
+                        <div className="flex size-6 items-center justify-center rounded-md text-xs" style={{ background: meta.bg }}>
+                          <span style={{ fontSize:12 }}>{meta.icon}</span>
+                        </div>
+                        <span className="text-xs text-secondary">{meta.label}</span>
+                      </button>
+                    ))}
+                </div>
+                <button onClick={() => setAddMenuAt(null)} className="w-full px-3 py-1.5 text-xs text-quaternary hover:bg-secondary border-t border-secondary">Cancel</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Legend strip */}
+        <div className="flex items-center gap-3 px-3 py-1.5 border-t border-secondary bg-primary shrink-0 flex-wrap overflow-x-auto">
+          {(Object.entries(NODE_TYPE_META) as [FlowNodeType, typeof NODE_TYPE_META[FlowNodeType]][]).map(([type, meta]) => (
+            <div key={type} className="flex items-center gap-1 shrink-0">
+              <span className="text-xs">{meta.icon}</span>
+              <span className="text-[10px] text-quaternary">{meta.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
