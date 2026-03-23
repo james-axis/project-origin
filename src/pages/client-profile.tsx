@@ -58,15 +58,10 @@ const FILE_LIBRARY: FileEntry[] = [
 const SECTION_DEFS = [
   { id: "customer_info",  label: "Customer Information" },
   { id: "tasks",          label: "Tasks" },
-  { id: "dependants",     label: "Dependants" },
-  { id: "superfunds",     label: "Client's Existing Superfunds" },
-  { id: "contact_info",   label: "Contact Information" },
-  { id: "customer_profile", label: "Customer Profile" },
-  { id: "lead_progress",  label: "Lead Progress" },
   { id: "lead_info",      label: "Lead Information" },
   { id: "activity_log",   label: "Activity Log" },
 ];
-const SECTIONS_KEY = "axis_profile_sections_v1";
+const SECTIONS_KEY = "axis_profile_sections_v2";
 
 function loadSectionOrder(): string[] {
   try { const r = localStorage.getItem(SECTIONS_KEY); if (r) return JSON.parse(r); } catch {}
@@ -92,8 +87,28 @@ const CUSTOMER_FIELD_DEFS: FieldDef[] = [
   { key: "referrer",   label: "Referrer Name",           defaultVisible: true  },
   { key: "taxRate",    label: "Marginal Tax Rate",       defaultVisible: true  },
   { key: "group",      label: "Group",                   defaultVisible: true  },
+  // Contact Information
+  { key: "phone",      label: "Phone",                   defaultVisible: true  },
+  { key: "phone2",     label: "Additional Phone(s)",     defaultVisible: true  },
+  { key: "contactTime",label: "Preferred Contact Time",  defaultVisible: true  },
+  { key: "email",      label: "Email",                   defaultVisible: true  },
+  { key: "email2",     label: "Additional Email(s)",     defaultVisible: false },
+  // Customer Profile
+  { key: "address",    label: "Address",                 defaultVisible: true  },
+  { key: "cityState",  label: "City, State, Postcode",   defaultVisible: true  },
+  { key: "height",     label: "Height",                  defaultVisible: false },
+  { key: "weight",     label: "Weight",                  defaultVisible: false },
+  { key: "bmi",        label: "BMI",                     defaultVisible: false },
+  { key: "smoker",     label: "Smoker Status",           defaultVisible: true  },
+  { key: "marital",    label: "Marital Status",          defaultVisible: true  },
+  { key: "children",   label: "Children",                defaultVisible: true  },
+  // Lead Progress (merged into Lead Info)
+  { key: "assignedTo", label: "Assigned To",             defaultVisible: true  },
+  { key: "createdOn",  label: "Created On",              defaultVisible: true  },
+  { key: "assignedOn", label: "Assigned On",             defaultVisible: false },
+  { key: "updatedOn",  label: "Updated On",              defaultVisible: false },
 ];
-const FIELDS_KEY = "axis_profile_fields_v1";
+const FIELDS_KEY = "axis_profile_fields_v2";
 interface FieldState { order: string[]; visible: Record<string, boolean>; }
 function loadFieldState(): FieldState {
   try { const r = localStorage.getItem(FIELDS_KEY); if (r) return JSON.parse(r); } catch {}
@@ -170,7 +185,7 @@ function DropdownButton({ label, icon, items, variant = "default" }: {
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)}
         className={"inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors " + (variant === "brand" ? "border-brand-solid bg-brand-solid text-white hover:bg-brand-solid_hover" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
-        {icon && <span>{icon}</span>}{label}<ChevronDown className="size-3" />
+        {icon && <span>{icon}</span>}{label}
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
@@ -316,6 +331,23 @@ function CustomerInfoGrid({ fieldState }: { fieldState: FieldState }) {
       case "referrer":   return CLIENT.referrer || "—";
       case "taxRate":    return CLIENT.marginaltaxRate;
       case "group":      return <EditableGroupField value={CLIENT.group} />;
+      case "phone":      return <span className="text-brand-secondary">{CLIENT.phone}</span>;
+      case "phone2":     return <span className="text-brand-secondary">{CLIENT.phone2}</span>;
+      case "contactTime":return CLIENT.contactTime;
+      case "email":      return <span className="text-brand-secondary">{CLIENT.email}</span>;
+      case "email2":     return <span className="text-brand-secondary">{CLIENT.email2}</span>;
+      case "address":    return CLIENT.address;
+      case "cityState":  return `${CLIENT.city}, ${CLIENT.state} ${CLIENT.postcode}`;
+      case "height":     return `${CLIENT.height} cm`;
+      case "weight":     return `${CLIENT.weight} kg`;
+      case "bmi":        return CLIENT.bmi;
+      case "smoker":     return CLIENT.smoker ? "Smoker" : "Non-smoker";
+      case "marital":    return CLIENT.maritalStatus;
+      case "children":   return `${CLIENT.children} children (aged ${CLIENT.childrenAges})`;
+      case "assignedTo": return <EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} />;
+      case "createdOn":  return CLIENT.createdOn;
+      case "assignedOn": return CLIENT.assignedOn;
+      case "updatedOn":  return CLIENT.updatedOn;
       default:           return "—";
     }
   }
@@ -410,63 +442,18 @@ export function ClientProfilePage() {
           <div className="px-4 py-4 text-sm text-quaternary text-center">No tasks yet</div>
         </SectionCard>
       );
-      case "dependants": return (
-        <SectionCard key={id} id={id} title="Dependants" defaultOpen={false} actionLabel="Add Dependant" action={() => {}} {...dragProps}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            <div><p className="text-[11px] text-quaternary mb-0.5">Marital Status</p><p className="text-sm text-primary font-medium">{CLIENT.maritalStatus}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Children</p><p className="text-sm text-primary font-medium">{CLIENT.children} children (aged {CLIENT.childrenAges})</p></div>
-          </div>
-        </SectionCard>
-      );
-      case "superfunds": return (
-        <SectionCard key={id} id={id} title="Client's Existing Superfunds" defaultOpen={false} actionLabel="Add Superfund" action={() => {}} {...dragProps}>
-          <div className="px-4 py-4 text-sm text-quaternary text-center">No superfunds added</div>
-        </SectionCard>
-      );
-      case "contact_info": return (
-        <SectionCard key={id} id={id} title="Contact Information" defaultOpen={false} {...dragProps}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            <div><p className="text-[11px] text-quaternary mb-0.5">Phone</p><p className="text-sm font-medium text-brand-secondary">{CLIENT.phone}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Additional Phone(s)</p><p className="text-sm font-medium text-brand-secondary">{CLIENT.phone2}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Preferred Contact Time</p><p className="text-sm text-primary font-medium">{CLIENT.contactTime}</p></div>
-            <div className="col-span-2"><p className="text-[11px] text-quaternary mb-0.5">Email</p><p className="text-sm font-medium text-brand-secondary">{CLIENT.email}</p></div>
-            <div className="col-span-2"><p className="text-[11px] text-quaternary mb-0.5">Additional Email(s)</p><p className="text-sm font-medium text-brand-secondary">{CLIENT.email2}</p></div>
-          </div>
-        </SectionCard>
-      );
-      case "customer_profile": return (
-        <SectionCard key={id} id={id} title="Customer Profile" defaultOpen={false} {...dragProps}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            {[
-              ["Marital Status", CLIENT.maritalStatus],
-              ["Children", `${CLIENT.children} children (aged ${CLIENT.childrenAges})`],
-              ["Address", CLIENT.address],
-              ["City, State, Postcode", `${CLIENT.city}, ${CLIENT.state} ${CLIENT.postcode}`],
-              ["Height", `${CLIENT.height} cm`],
-              ["Weight", `${CLIENT.weight} kg`],
-              ["BMI", CLIENT.bmi],
-              ["Smoker Status", CLIENT.smoker ? "Smoker" : "Non-smoker"],
-            ].map(([label, value]) => (
-              <div key={label as string}><p className="text-[11px] text-quaternary mb-0.5">{label}</p><p className="text-sm text-primary font-medium">{value}</p></div>
-            ))}
-          </div>
-        </SectionCard>
-      );
-      case "lead_progress": return (
-        <SectionCard key={id} id={id} title="Lead Progress" defaultOpen={false} {...dragProps}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            <div><p className="text-[11px] text-quaternary mb-0.5">Assigned To</p>
-              <EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} />
-            </div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Created On</p><p className="text-sm text-primary font-medium">{CLIENT.createdOn}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Assigned On</p><p className="text-sm text-primary font-medium">{CLIENT.assignedOn}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Updated On</p><p className="text-sm text-primary font-medium">{CLIENT.updatedOn}</p></div>
-          </div>
-        </SectionCard>
-      );
+
+
+
+
+
       case "lead_info": return (
         <SectionCard key={id} id={id} title="Lead Information" defaultOpen={false} {...dragProps}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
+            <div><p className="text-[11px] text-quaternary mb-0.5">Assigned To</p><EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} /></div>
+            <div><p className="text-[11px] text-quaternary mb-0.5">Created On</p><p className="text-sm text-primary font-medium">{CLIENT.createdOn}</p></div>
+            <div><p className="text-[11px] text-quaternary mb-0.5">Assigned On</p><p className="text-sm text-primary font-medium">{CLIENT.assignedOn}</p></div>
+            <div><p className="text-[11px] text-quaternary mb-0.5">Updated On</p><p className="text-sm text-primary font-medium">{CLIENT.updatedOn}</p></div>
             {[
               ["Campaign Group", CLIENT.campaignGroup], ["Campaign", CLIENT.campaign],
               ["Refer", CLIENT.refer || "—"], ["Keywords", CLIENT.keywords || "—"],
@@ -529,12 +516,15 @@ export function ClientProfilePage() {
                 <span className="text-xs text-quaternary">· Created {CLIENT.createdOn}</span>
               </div>
             </div>
+            {/* Edit icon */}
+            <button title="Edit client" className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
+              <Edit01 className="size-4" />
+            </button>
           </div>
 
           {/* Toolbar */}
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">✏️ Edit</button>
-            <DropdownButton variant="brand" label="New" icon="✚" items={[
+            <DropdownButton label="New" icon="✚" items={[
               { label: "Quote",          icon: "💡" },
               { label: "Pre-Assessment", icon: "🩺" },
               { label: "Application",    icon: "📝" },
@@ -551,10 +541,11 @@ export function ClientProfilePage() {
               { label: "Set Status",   icon: "🔄" },
             ]} />
             <DropdownButton label="Other" icon="⋯" items={[
-              { label: "PDF",            icon: "📄" },
-              { label: "Docs",           icon: "📁" },
-              { label: "Off APL",        icon: "🔕" },
-              { label: "Marketing List", icon: "📊" },
+              { label: "PDF",              icon: "📄" },
+              { label: "Docs",             icon: "📁" },
+              { label: "Off APL",          icon: "🔕" },
+              { label: "Superfund Details",icon: "💰" },
+              { label: "Marketing List",   icon: "📊" },
             ]} />
           </div>
         </div>
