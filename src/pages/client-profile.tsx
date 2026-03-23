@@ -2,9 +2,8 @@ import { useState } from "react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
-  ChevronDown, ChevronRight, Plus, X, Edit01, Phone01 as Phone, Mail01 as Mail,
-  Download01, Check, AlertCircle, File01, User01, Users01,
-  Calendar, Clock, Tag01,
+  ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01,
+  File01, User01, Users01, Tag01,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -243,8 +242,8 @@ export function ClientProfilePage() {
                 { label: "Next Contact",      value: CLIENT.nextContact },
                 { label: "Contacts Made",     value: (
                   <span className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-quaternary"><Phone className="size-3" />{CLIENT.callsMade}</span>
-                    <span className="flex items-center gap-1 text-quaternary"><Mail className="size-3" />{CLIENT.emailsSent}</span>
+                    <span className="flex items-center gap-1 text-quaternary"><Phone01 className="size-3" />{CLIENT.callsMade}</span>
+                    <span className="flex items-center gap-1 text-quaternary"><Mail01 className="size-3" />{CLIENT.emailsSent}</span>
                     <span className="flex items-center gap-1 text-quaternary">💬{CLIENT.smsSent}</span>
                   </span>
                 )},
