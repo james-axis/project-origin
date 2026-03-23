@@ -5,6 +5,8 @@ import { HomeScreen } from "@/pages/home-screen";
 import { TasksPage } from "@/pages/tasks";
 import { ClientsPage } from "@/pages/clients";
 import { ClientProfilePage } from "@/pages/client-profile";
+import { ApplicationsPage } from "@/pages/applications";
+import { ApplicationProfilePage } from "@/pages/application-profile";
 import { NotFound } from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { RouteProvider } from "@/providers/router-provider";
@@ -26,6 +28,9 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/tasks/*" element={<RequireAuth><TasksPage /></RequireAuth>} />
               <Route path="/clients" element={<RequireAuth><ClientsPage /></RequireAuth>} />
               <Route path="/clients/*" element={<RequireAuth><ClientsPage /></RequireAuth>} />
+              <Route path="/applications" element={<RequireAuth><ApplicationsPage /></RequireAuth>} />
+              <Route path="/applications/*" element={<RequireAuth><ApplicationsPage /></RequireAuth>} />
+              <Route path="/application/:id" element={<RequireAuth><ApplicationProfilePage /></RequireAuth>} />
               <Route path="/client/:id" element={<RequireAuth><ClientProfilePage /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/settings/*" element={<RequireAuth><HomeScreen /></RequireAuth>} />
