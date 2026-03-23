@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, createPortal } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
@@ -109,7 +110,7 @@ const CUST_FIELD_DEFS: FieldDef[] = [
 ];
 interface FieldState { order: string[]; visible: Record<string, boolean>; }
 const FIELDS_KEY = "axis_app_fields_v1";
-function loadFieldState(): FieldState { try { const r = localStorage.getItem(FIELDS_KEY); if (r) return JSON.parse(r); } catch {} return { order: CUST_FIELD_DEFS.map(f => f.key), visible: Object.fromEntries(CUST_FIELD_DEFS.map(f => [f.key, f.defaultVisible])) }; }
+function loadFieldState(): FieldState { try { const r = localStorage.getItem(FIELDS_KEY); if (r) return JSON.parse(r); } catch {} return { order: CUST_FIELD_DEFS.map((f: FieldDef) => f.key), visible: Object.fromEntries(CUST_FIELD_DEFS.map((f: FieldDef) => [f.key, f.defaultVisible])) }; }
 function saveFieldState(s: FieldState) { localStorage.setItem(FIELDS_KEY, JSON.stringify(s)); }
 
 // ─── Reusable components ──────────────────────────────────────────────────────
@@ -190,7 +191,11 @@ function FieldPanel({ defs, state, onChange, onClose, anchorRef }: {
   const dragIdx = useRef<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [pos, setPos] = useState({ top: 0, right: 0 });
-  const ordered = state.order.map(k => defs.find(d => d.key === k)).filter((d): d is FieldDef => !!d);
+  const ordered: FieldDef[] = [];
+  for (const k of state.order) {
+    const found = defs.find((d: FieldDef): boolean => d.key === k);
+    if (found) ordered.push(found);
+  }
 
   useEffect(() => {
     if (!anchorRef.current) return;

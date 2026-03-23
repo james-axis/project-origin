@@ -47,7 +47,7 @@ const STORE_KEY = "axis_apps_cols_v1";
 
 function loadColState(defs: ColDef[]) {
   try { const r = localStorage.getItem(STORE_KEY); if (r) return JSON.parse(r); } catch {}
-  return { order: defs.map(c => c.key), visible: Object.fromEntries(defs.map(c => [c.key, c.defaultVisible])) };
+  return { order: defs.map((c: ColDef) => c.key), visible: Object.fromEntries(defs.map((c: ColDef) => [c.key, c.defaultVisible])) };
 }
 function saveColState(s: { order: string[]; visible: Record<string, boolean> }) { localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
 
@@ -91,7 +91,11 @@ function ColumnPanel({ defs, order, visible, onToggle, onReorder, onClose }: {
 }) {
   const dragIdx = useRef<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
-  const ordered = order.map(k => defs.find(d => d.key === k)).filter(Boolean) as ColDef[];
+  const ordered: ColDef[] = [];
+  for (const k of order) {
+    const found = defs.find((d: ColDef): boolean => d.key === k);
+    if (found) ordered.push(found);
+  }
 
   function onDrop(i: number) {
     if (dragIdx.current === null || dragIdx.current === i) return;
