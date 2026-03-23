@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
@@ -107,8 +108,9 @@ const CUSTOMER_FIELD_DEFS: FieldDef[] = [
   { key: "createdOn",  label: "Created On",              defaultVisible: true  },
   { key: "assignedOn", label: "Assigned On",             defaultVisible: false },
   { key: "updatedOn",  label: "Updated On",              defaultVisible: false },
+  { key: "tags",       label: "Tags",                    defaultVisible: true  },
 ];
-const FIELDS_KEY = "axis_profile_fields_v2";
+const FIELDS_KEY = "axis_profile_fields_v3";
 interface FieldState { order: string[]; visible: Record<string, boolean>; }
 function loadFieldState(): FieldState {
   try { const r = localStorage.getItem(FIELDS_KEY); if (r) return JSON.parse(r); } catch {}
@@ -200,14 +202,28 @@ function DropdownButton({ label, icon, items, variant = "default" }: {
   );
 }
 
-// ─── Field selector panel ─────────────────────────────────────────────────────
-function FieldPanel({ defs, state, onChange, onClose }: {
+// ─── Field selector panel — renders in a portal at fixed position ─────────────
+function FieldPanel({ defs, state, onChange, onClose, anchorRef }: {
   defs: FieldDef[]; state: FieldState;
   onChange: (s: FieldState) => void; onClose: () => void;
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   const dragIdx = useRef<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
   const ordered = state.order.map(k => defs.find(d => d.key === k)).filter((d): d is FieldDef => !!d);
+
+  // Compute position from anchor button each render
+  useEffect(() => {
+    if (!anchorRef.current) return;
+    const r = anchorRef.current.getBoundingClientRect();
+    const panelW = 240;
+    const panelH = Math.min(400, 52 + ordered.length * 36);
+    const spaceBelow = window.innerHeight - r.bottom - 8;
+    const top = spaceBelow >= panelH ? r.bottom + 4 : Math.max(8, r.top - panelH - 4);
+    const right = Math.max(8, window.innerWidth - r.right);
+    setPos({ top, right });
+  });
 
   function onDrop(i: number) {
     if (dragIdx.current === null || dragIdx.current === i) return;
@@ -218,17 +234,19 @@ function FieldPanel({ defs, state, onChange, onClose }: {
     dragIdx.current = null; setDragOver(null);
   }
 
-  return (
-    <div className="absolute right-0 top-8 z-50 w-60 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden">
+  const panel = (
+    <div style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 9999, width: 240 }}
+      className="rounded-xl border border-secondary bg-white shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-secondary">
         <p className="text-xs font-semibold text-primary">Fields</p>
         <div className="flex items-center gap-2">
-          <button onClick={() => onChange({ order: defs.map(d => d.key), visible: Object.fromEntries(defs.map(d => [d.key, d.defaultVisible])) })} className="text-[10px] text-brand-secondary hover:underline">Reset</button>
+          <button onClick={() => onChange({ order: defs.map(d => d.key), visible: Object.fromEntries(defs.map(d => [d.key, d.defaultVisible])) })}
+            className="text-[10px] text-brand-secondary hover:underline">Reset</button>
           <button onClick={onClose} className="text-fg-quaternary hover:text-secondary"><X className="size-3.5" /></button>
         </div>
       </div>
       <p className="text-[10px] text-quaternary px-3 pt-2 pb-1">Drag to reorder · toggle to show/hide</p>
-      <ul className="max-h-72 overflow-y-auto py-1">
+      <ul className="overflow-y-auto py-1" style={{ maxHeight: "min(320px, 60vh)" }}>
         {ordered.map((f, i) => (
           <li key={f.key} draggable
             onDragStart={() => { dragIdx.current = i; }}
@@ -246,8 +264,14 @@ function FieldPanel({ defs, state, onChange, onClose }: {
           </li>
         ))}
       </ul>
+      <div className="border-t border-secondary px-3 py-2 flex items-center justify-between">
+        <span className="text-[10px] text-quaternary">{ordered.filter(f => state.visible[f.key]).length}/{ordered.length} visible</span>
+        <button onClick={onClose} className="text-[10px] font-medium text-brand-secondary hover:underline">Done</button>
+      </div>
     </div>
   );
+
+  return createPortal(panel, document.body);
 }
 
 // ─── Draggable Section Card ───────────────────────────────────────────────────
@@ -348,6 +372,7 @@ function CustomerInfoGrid({ fieldState }: { fieldState: FieldState }) {
       case "createdOn":  return CLIENT.createdOn;
       case "assignedOn": return CLIENT.assignedOn;
       case "updatedOn":  return CLIENT.updatedOn;
+      case "tags":       return CLIENT.tags.length > 0 ? (<span className="flex flex-wrap gap-1">{CLIENT.tags.map(t => <span key={t} className="text-xs font-semibold text-brand-secondary hover:underline cursor-pointer">{t}</span>)}</span>) : <span className="text-quaternary">—</span>;
       default:           return "—";
     }
   }
@@ -391,6 +416,7 @@ export function ClientProfilePage() {
 
   // Field state for Customer Information
   const [fieldState, setFieldState] = useState<FieldState>(loadFieldState);
+  const gearBtnRef = useRef<HTMLButtonElement | null>(null);
   const [fieldPanelOpen, setFieldPanelOpen] = useState(false);
   function updateFieldState(s: FieldState) { setFieldState(s); saveFieldState(s); }
 
@@ -417,24 +443,18 @@ export function ClientProfilePage() {
         <SectionCard key={id} id={id} title="Customer Information" {...dragProps}
           extraAction={
             <div className="relative">
-              <button onClick={e => { e.stopPropagation(); setFieldPanelOpen(v => !v); }}
+              <button ref={gearBtnRef} onClick={e => { e.stopPropagation(); setFieldPanelOpen(v => !v); }}
                 title="Show/hide fields"
                 className={"flex size-7 items-center justify-center rounded-lg border transition-colors " + (fieldPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary hover:bg-secondary text-quaternary")}>
                 <Settings01 className="size-3.5" />
               </button>
               {fieldPanelOpen && (
-                <FieldPanel defs={CUSTOMER_FIELD_DEFS} state={fieldState} onChange={updateFieldState} onClose={() => setFieldPanelOpen(false)} />
+                <FieldPanel defs={CUSTOMER_FIELD_DEFS} state={fieldState} onChange={updateFieldState} onClose={() => setFieldPanelOpen(false)} anchorRef={gearBtnRef} />
               )}
             </div>
           }>
           <CustomerInfoGrid fieldState={fieldState} />
-          {CLIENT.tags.length > 0 && (
-            <div className="flex items-center gap-2 px-4 pb-3">
-              <Tag01 className="size-3.5 text-quaternary" />
-              <span className="text-xs text-quaternary">Tags:</span>
-              {CLIENT.tags.map(t => <span key={t} className="text-xs font-semibold text-brand-secondary hover:underline cursor-pointer">{t}</span>)}
-            </div>
-          )}
+
         </SectionCard>
       );
       case "tasks": return (
