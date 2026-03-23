@@ -116,6 +116,31 @@ interface FieldState { order: string[]; visible: Record<string, boolean>; }
 const FIELDS_KEY = "axis_app_fields_v2";
 function loadFieldState(): FieldState { try { const r = localStorage.getItem(FIELDS_KEY); if (r) return JSON.parse(r); } catch {} return { order: CUST_FIELD_DEFS.map((f: FieldDef) => f.key), visible: Object.fromEntries(CUST_FIELD_DEFS.map((f: FieldDef) => [f.key, f.defaultVisible])) }; }
 function saveFieldState(s: FieldState) { localStorage.setItem(FIELDS_KEY, JSON.stringify(s)); }
+// ─── Application Info field definitions ──────────────────────────────────────
+const APP_INFO_FIELD_DEFS: FieldDef[] = [
+  { key:"insurer",           label:"Insurer",              defaultVisible:true  },
+  { key:"assignedTo",        label:"Assigned To",          defaultVisible:true  },
+  { key:"adviser",           label:"Adviser",              defaultVisible:true  },
+  { key:"inSuper",           label:"In Super",             defaultVisible:true  },
+  { key:"appType",           label:"Application Type",     defaultVisible:true  },
+  { key:"insuranceType",     label:"Insurance Type",       defaultVisible:true  },
+  { key:"premium",           label:"Insurance Premium",    defaultVisible:true  },
+  { key:"premiumType",       label:"Premium Type",         defaultVisible:true  },
+  { key:"commission",        label:"Commission",           defaultVisible:true  },
+  { key:"ongoingCommission", label:"Ongoing Commission",   defaultVisible:false },
+  { key:"createdOn",         label:"Created On",           defaultVisible:true  },
+  { key:"updatedOn",         label:"Updated On",           defaultVisible:false },
+  { key:"submittedOn",       label:"Submitted On",         defaultVisible:true  },
+  { key:"expectedCompletion",label:"Expected Completion",  defaultVisible:false },
+];
+const APP_INFO_FIELDS_KEY = "axis_app_info_fields_v1";
+function loadAppInfoFieldState(): FieldState {
+  try { const r = localStorage.getItem(APP_INFO_FIELDS_KEY); if (r) return JSON.parse(r); } catch {}
+  return { order: APP_INFO_FIELD_DEFS.map((f: FieldDef) => f.key), visible: Object.fromEntries(APP_INFO_FIELD_DEFS.map((f: FieldDef) => [f.key, f.defaultVisible])) };
+}
+function saveAppInfoFieldState(s: FieldState) { localStorage.setItem(APP_INFO_FIELDS_KEY, JSON.stringify(s)); }
+
+
 
 // ─── Reusable components ──────────────────────────────────────────────────────
 function EditableSelect({ value, options }: { value: string; options: string[] }) {
@@ -344,6 +369,10 @@ export function ApplicationProfilePage() {
   const [fieldState, setFieldState] = useState<FieldState>(loadFieldState);
   const [fieldPanelOpen, setFieldPanelOpen] = useState(false);
   const gearBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [appInfoFieldState, setAppInfoFieldState] = useState<FieldState>(loadAppInfoFieldState);
+  const [appInfoFieldPanelOpen, setAppInfoFieldPanelOpen] = useState(false);
+  const appInfoGearRef = useRef<HTMLButtonElement | null>(null);
+  function updateAppInfoFieldState(s: FieldState) { setAppInfoFieldState(s); saveAppInfoFieldState(s); }
   const [sectionOrder, setSectionOrder] = useState<string[]>(loadSectionOrder);
   const [dragSectionId, setDragSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
@@ -427,26 +456,51 @@ export function ApplicationProfilePage() {
           )}
         </SectionCard>
       );
-      case "app_info": return (
-        <SectionCard key={id} id={id} title="Application Information" {...dragProps(id)}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            <InfoCell label="Insurer" value={<EditableSelect value={APP.info.insurer} options={INSURERS} />} />
-            <InfoCell label="Assigned To" value={<EditableSelect value={APP.info.assignedTo} options={USERS_LIST} />} />
-            <InfoCell label="Adviser" value={APP.info.adviser} />
-            <InfoCell label="In Super" value={APP.info.inSuper} />
-            <InfoCell label="Application Type" value={APP.info.appType} />
-            <InfoCell label="Insurance Type" value={APP.info.insuranceType} />
-            <InfoCell label="Insurance Premium" value={`$${APP.info.premium.toFixed(2)}`} />
-            <InfoCell label="Premium Type" value={APP.info.premiumType} />
-            <InfoCell label="Commission" value={`$${APP.info.commission.toFixed(2)}`} />
-            <InfoCell label="Ongoing Commission" value={APP.info.ongoingCommission ? `$${APP.info.ongoingCommission.toFixed(2)}` : "—"} />
-            <InfoCell label="Created On" value={APP.info.createdOn} />
-            <InfoCell label="Updated On" value={APP.info.updatedOn} />
-            <InfoCell label="Submitted On" value={APP.info.submittedOn} />
-            <InfoCell label="Expected Completion" value={APP.info.expectedCompletion || "—"} />
-          </div>
-        </SectionCard>
-      );
+      case "app_info": {
+        const appInfoVisible: FieldDef[] = [];
+        for (const k of appInfoFieldState.order) {
+          const f = APP_INFO_FIELD_DEFS.find((d: FieldDef): boolean => d.key === k);
+          if (f && appInfoFieldState.visible[f.key]) appInfoVisible.push(f);
+        }
+        function renderAppInfoValue(key: string): React.ReactNode {
+          switch (key) {
+            case "insurer":           return <EditableSelect value={APP.info.insurer} options={INSURERS} />;
+            case "assignedTo":        return <EditableSelect value={APP.info.assignedTo} options={USERS_LIST} />;
+            case "adviser":           return APP.info.adviser;
+            case "inSuper":           return APP.info.inSuper;
+            case "appType":           return APP.info.appType;
+            case "insuranceType":     return APP.info.insuranceType;
+            case "premium":           return `$${APP.info.premium.toFixed(2)}`;
+            case "premiumType":       return APP.info.premiumType;
+            case "commission":        return `$${APP.info.commission.toFixed(2)}`;
+            case "ongoingCommission": return APP.info.ongoingCommission ? `$${APP.info.ongoingCommission.toFixed(2)}` : "—";
+            case "createdOn":         return APP.info.createdOn;
+            case "updatedOn":         return APP.info.updatedOn;
+            case "submittedOn":       return APP.info.submittedOn;
+            case "expectedCompletion":return APP.info.expectedCompletion || "—";
+            default:                  return "—";
+          }
+        }
+        return (
+          <SectionCard key={id} id={id} title="Application Information" {...dragProps(id)}
+            extraAction={
+              <div className="relative">
+                <button ref={appInfoGearRef} onClick={e => { e.stopPropagation(); setAppInfoFieldPanelOpen(v => !v); }}
+                  title="Show/hide fields"
+                  className={"flex size-7 items-center justify-center rounded-lg border transition-colors " + (appInfoFieldPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary hover:bg-secondary text-quaternary")}>
+                  <Settings01 className="size-3.5" />
+                </button>
+                {appInfoFieldPanelOpen && (
+                  <FieldPanel defs={APP_INFO_FIELD_DEFS} state={appInfoFieldState} onChange={updateAppInfoFieldState} onClose={() => setAppInfoFieldPanelOpen(false)} anchorRef={appInfoGearRef} />
+                )}
+              </div>
+            }>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
+              {appInfoVisible.map(f => <InfoCell key={f.key} label={f.label} value={renderAppInfoValue(f.key)} />)}
+            </div>
+          </SectionCard>
+        );
+      }
       case "insurance_products": return (
         <SectionCard key={id} id={id} title="Insurance Products" defaultOpen={false} {...dragProps(id)}>
           {POLICY_IDS.length === 0 ? (
@@ -669,9 +723,6 @@ export function ApplicationProfilePage() {
           </div>
           {/* Toolbar */}
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <button onClick={() => setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">
-              <Users01 className="size-3.5" /> More Info
-            </button>
             <StatusButton />
             <DropdownButton label="New" icon="✚" items={[
               { label:"Pre-Assessment", icon:"🩺" },
@@ -694,6 +745,9 @@ export function ApplicationProfilePage() {
               { label:"Marketing List", icon:"📊" },
               { label:"Close", icon:"✕", danger:true },
             ]} />
+            <button onClick={() => setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">
+              <Users01 className="size-3.5" /> More Info
+            </button>
           </div>
         </div>
 
@@ -735,6 +789,7 @@ export function ApplicationProfilePage() {
       )}
 
       {fieldPanelOpen && <div className="fixed inset-0 z-40" onClick={() => setFieldPanelOpen(false)} />}
+      {appInfoFieldPanelOpen && <div className="fixed inset-0 z-40" onClick={() => setAppInfoFieldPanelOpen(false)} />}
     </div>
   );
 }
