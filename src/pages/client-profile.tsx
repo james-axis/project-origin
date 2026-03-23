@@ -442,7 +442,7 @@ export function ClientProfilePage() {
                 {CALLS.map((call, i) => (
                   <div key={i} className="border-b border-secondary pb-2 last:border-0">
                     <p className="text-[11px] text-tertiary flex items-center gap-1">
-                      <Phone className="size-3 text-quaternary" />
+                      <Phone01 className="size-3 text-quaternary" />
                       {call.date} | {call.status} | {call.duration}
                     </p>
                     <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
