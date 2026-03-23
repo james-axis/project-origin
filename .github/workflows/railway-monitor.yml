@@ -1,0 +1,162 @@
+name: Railway Deploy Monitor
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  monitor-deploy:
+    name: Watch Railway Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Wait for Railway to pick up the push
+        run: sleep 20
+
+      - name: Poll Railway until deploy completes
+        id: railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_ID: f95085d7-4c77-443a-85d8-b0a464db8e4c
+          ENVIRONMENT_ID: 546b6800-4ada-4d75-9892-25c6d4e981c2
+        run: |
+          echo "Polling Railway deployment status..."
+          MAX_ATTEMPTS=40   # 40 × 15s = 10 min
+          ATTEMPT=0
+          STATUS=""
+          DEPLOY_URL="https://project-origin-production.up.railway.app"
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt $ATTEMPT / $MAX_ATTEMPTS"
+
+            RESPONSE=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"{ deployments(input: { serviceId: \\\"$SERVICE_ID\\\", environmentId: \\\"$ENVIRONMENT_ID\\\" }, first: 1) { edges { node { id status createdAt staticUrl meta { commitMessage commitAuthor { name } } } } } }\"}")
+
+            echo "Raw response: $RESPONSE"
+
+            STATUS=$(echo "$RESPONSE" | python3 -c "import sys,json; data=json.load(sys.stdin); edges=data.get('data',{}).get('deployments',{}).get('edges',[]); print(edges[0]['node']['status'] if edges else 'UNKNOWN')" 2>/dev/null || echo "UNKNOWN")
+            DEPLOY_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; data=json.load(sys.stdin); edges=data.get('data',{}).get('deployments',{}).get('edges',[]); print(edges[0]['node']['id'] if edges else '')" 2>/dev/null || echo "")
+            COMMIT_MSG=$(echo "$RESPONSE" | python3 -c "import sys,json; data=json.load(sys.stdin); edges=data.get('data',{}).get('deployments',{}).get('edges',[]); m=edges[0]['node'].get('meta',{}) if edges else {}; print(m.get('commitMessage','')[:80] if m else '')" 2>/dev/null || echo "")
+            AUTHOR=$(echo "$RESPONSE" | python3 -c "import sys,json; data=json.load(sys.stdin); edges=data.get('data',{}).get('deployments',{}).get('edges',[]); m=edges[0]['node'].get('meta',{}) if edges else {}; a=m.get('commitAuthor',{}) if m else {}; print(a.get('name','') if a else '')" 2>/dev/null || echo "")
+
+            echo "Status: $STATUS"
+
+            if [ "$STATUS" = "SUCCESS" ]; then
+              echo "deploy_status=success" >> $GITHUB_OUTPUT
+              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+              echo "author=$AUTHOR" >> $GITHUB_OUTPUT
+              echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+              break
+            elif [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CRASHED" ] || [ "$STATUS" = "REMOVED" ]; then
+              # Fetch build logs
+              LOGS=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
+                -H "Authorization: Bearer $RAILWAY_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "{\"query\":\"{ deploymentLogs(deploymentId: \\\"$DEPLOY_ID\\\", limit: 50) { message severity } }\"}" \
+                | python3 -c "import sys,json; data=json.load(sys.stdin); logs=data.get('data',{}).get('deploymentLogs',[]); print('\n'.join([l.get('message','') for l in logs if 'error' in l.get('severity','').lower() or 'Error' in l.get('message','')])[:1000])" 2>/dev/null || echo "Could not fetch logs")
+
+              echo "deploy_status=failed" >> $GITHUB_OUTPUT
+              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+              echo "author=$AUTHOR" >> $GITHUB_OUTPUT
+              echo "error_logs<<EOF" >> $GITHUB_OUTPUT
+              echo "$LOGS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              break
+            elif [ "$STATUS" = "BUILDING" ] || [ "$STATUS" = "DEPLOYING" ] || [ "$STATUS" = "INITIALIZING" ] || [ "$STATUS" = "UNKNOWN" ]; then
+              echo "Still in progress ($STATUS), waiting 15s..."
+              sleep 15
+            else
+              echo "Unexpected status: $STATUS, waiting 15s..."
+              sleep 15
+            fi
+          done
+
+          if [ $ATTEMPT -ge $MAX_ATTEMPTS ] && [ "$STATUS" != "SUCCESS" ] && [ "$STATUS" != "FAILED" ] && [ "$STATUS" != "CRASHED" ]; then
+            echo "deploy_status=timeout" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Slack — Success ✅
+        if: steps.railway.outputs.deploy_status == 'success'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          COMMIT_MSG="${{ steps.railway.outputs.commit_msg }}"
+          AUTHOR="${{ steps.railway.outputs.author }}"
+          DEPLOY_URL="${{ steps.railway.outputs.deploy_url }}"
+          TIMESTAMP=$(date -u "+%d %b %Y %H:%M UTC")
+
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"✅ *Project Origin deployed successfully*\",
+              \"attachments\": [{
+                \"color\": \"#22C55E\",
+                \"blocks\": [
+                  {
+                    \"type\": \"section\",
+                    \"text\": {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"✅ *Deploy successful* — <$DEPLOY_URL|Open app>\n*Commit:* \`$SHORT_SHA\` $COMMIT_MSG\n*By:* $AUTHOR\n*Time:* $TIMESTAMP\"
+                    }
+                  }
+                ]
+              }]
+            }"
+
+      - name: Notify Slack — Failed ❌
+        if: steps.railway.outputs.deploy_status == 'failed' || steps.railway.outputs.deploy_status == 'timeout'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          COMMIT_MSG="${{ steps.railway.outputs.commit_msg }}"
+          AUTHOR="${{ steps.railway.outputs.author }}"
+          ERROR_LOGS="${{ steps.railway.outputs.error_logs }}"
+          STATUS="${{ steps.railway.outputs.deploy_status }}"
+          TIMESTAMP=$(date -u "+%d %b %Y %H:%M UTC")
+          GH_URL="https://github.com/$GH_REPO/actions/runs/$RUN_ID"
+
+          if [ "$STATUS" = "timeout" ]; then
+            MSG="⏱ *Deploy timed out* (>10 min)"
+          else
+            MSG="❌ *Deploy failed*"
+          fi
+
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"$MSG — Project Origin\",
+              \"attachments\": [{
+                \"color\": \"#EF4444\",
+                \"blocks\": [
+                  {
+                    \"type\": \"section\",
+                    \"text\": {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"$MSG\n*Commit:* \`$SHORT_SHA\` $COMMIT_MSG\n*By:* $AUTHOR\n*Time:* $TIMESTAMP\n<$GH_URL|View GitHub Action logs>\"
+                    }
+                  },
+                  {
+                    \"type\": \"section\",
+                    \"text\": {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"*Build errors:*\n\`\`\`${ERROR_LOGS:0:800}\`\`\`\"
+                    }
+                  }
+                ]
+              }]
+            }"
+
+          # Fail the workflow so GitHub also marks it red
+          exit 1
