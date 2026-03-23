@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { useNavigate } from "react-router";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import { Download01, X, Settings01, Plus, Check } from "@untitledui/icons";
@@ -207,6 +208,7 @@ export function ClientsPage() {
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
   const [page, setPage] = useState(1);
   const [colPanelOpen, setColPanelOpen] = useState(false);
+  const navigate = useNavigate();
   const [colState, setColStateRaw] = useState(() => loadColState(CLIENT_COLS));
 
   function updateCols(next: typeof colState) { setColStateRaw(next); saveColState(next); }
@@ -302,9 +304,14 @@ export function ClientsPage() {
 
   function renderCell(row: Client, key: string) {
     switch (key) {
-      case "id": return <span className="text-quaternary text-xs font-mono">{row.id}</span>;
+      case "id": return (
+        <button onClick={() => navigate(`/client/${row.id}`)}
+          className="text-quaternary text-xs font-mono hover:text-brand-secondary hover:underline">
+          {row.id}
+        </button>
+      );
       case "customer": return (
-        <span className="font-medium cursor-pointer hover:underline" style={{ color: STATUS_MAP[row.status].color }}>
+        <span className="font-medium hover:underline" style={{ color: STATUS_MAP[row.status].color }}>
           {row.customer}
         </span>
       );
@@ -488,8 +495,9 @@ export function ClientsPage() {
                   <tr><td colSpan={visibleCols.length + 1} className="px-4 py-16 text-center text-sm text-quaternary">No clients found</td></tr>
                 ) : pageRows.map(row => (
                   <tr key={row.id}
+                    onClick={() => navigate(`/client/${row.id}`)}
                     className="group hover:bg-secondary_alt cursor-pointer transition-colors">
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleRow(row.id)}
                         className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                     </td>
