@@ -697,6 +697,269 @@ function EditTaskModal({ task, onSave, onClose }: { task: TaskItem | null; onSav
 }
 
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Task Builder ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
+
+// ─── Flow Chart View ─────────────────────────────────────────────────────────
+// Drag-and-drop visual flowchart for task chains.
+// Nodes are positioned vertically; branches (conditional outcomes) fan out horizontally.
+
+interface FlowNode {
+  task: TaskItem;
+  index: number;
+  x: number; // grid col (0 = centre, ±1 = branches)
+  y: number; // row
+  parentIndex: number | null;
+  branchLabel?: string; // e.g. "Pass", "Remediation Required"
+}
+
+function buildFlowNodes(tasks: TaskItem[]): FlowNode[] {
+  const nodes: FlowNode[] = [];
+  let row = 0;
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    const prev = tasks[i - 1];
+    // If previous task had completion options, fan them out
+    const options = prev?.completionOptions;
+    if (options && options.length > 1 && i === nodes.find(n => n.task.id === prev.id)!.index + 1) {
+      // first branch goes left
+    }
+    nodes.push({ task, index: i, x: 0, y: row, parentIndex: i > 0 ? i - 1 : null });
+    row++;
+  }
+  return nodes;
+}
+
+function getNodeColor(role: string): string {
+  const map: Record<string, string> = {
+    Consultant:  "#D34108",
+    Admin:       "#3B82F6",
+    Services:    "#8B5CF6",
+    Compliance:  "#F59E0B",
+    Manager:     "#EC4899",
+    "Task Master":"#10B981",
+  };
+  return map[role] ?? "#6B7280";
+}
+
+function FlowChartView({
+  tasks, domainColor, onEditTask, onDeleteTask, onReorder, onAddTask,
+}: {
+  tasks: TaskItem[];
+  domainColor: string;
+  onEditTask: (t: TaskItem) => void;
+  onDeleteTask: (id: number) => void;
+  onReorder: (tasks: TaskItem[]) => void;
+  onAddTask: () => void;
+}) {
+  const [dragIdx, setDragIdx] = React.useState<number | null>(null);
+  const [dragOver, setDragOver] = React.useState<number | null>(null);
+  const [zoom, setZoom] = React.useState(100);
+  const [selectedId, setSelectedId] = React.useState<number | null>(null);
+  const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const panRef = React.useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const NODE_W = 220;
+  const NODE_H = 80;
+  const COL_GAP = 260;
+  const ROW_GAP = 44; // gap between nodes (connector height)
+
+  // Build layout: most tasks are linear; tasks with completionOptions branch
+  interface LayoutNode { task: TaskItem; index: number; col: number; row: number; }
+
+  const layoutNodes: LayoutNode[] = [];
+  let row = 0;
+  for (let i = 0; i < tasks.length; i++) {
+    layoutNodes.push({ task: tasks[i], index: i, col: 0, row });
+    row += NODE_H + ROW_GAP;
+  }
+
+  const totalHeight = row + 60; // for the + button
+
+  // Handle canvas pan
+  function onCanvasMouseDown(e: React.MouseEvent) {
+    if ((e.target as HTMLElement).closest("[data-node]")) return;
+    panRef.current = { startX: e.clientX, startY: e.clientY, startPanX: pan.x, startPanY: pan.y };
+    const onMove = (ev: MouseEvent) => {
+      if (!panRef.current) return;
+      setPan({ x: panRef.current.startPanX + ev.clientX - panRef.current.startX, y: panRef.current.startPanY + ev.clientY - panRef.current.startY });
+    };
+    const onUp = () => { panRef.current = null; window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function onNodeDragStart(e: React.DragEvent, idx: number) {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+  }
+  function onNodeDrop(idx: number) {
+    if (dragIdx === null || dragIdx === idx) return;
+    const next = [...tasks];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(idx, 0, moved);
+    onReorder(next);
+    setDragIdx(null); setDragOver(null);
+  }
+
+  const brandColor = domainColor === "bg-brand-solid" ? "#D34108" :
+    domainColor === "bg-warning-solid" ? "#F59E0B" :
+    domainColor === "bg-success-solid" ? "#22C55E" :
+    domainColor === "bg-purple-500"    ? "#8B5CF6" : "#D34108";
+
+  const svgHeight = Math.max(200, totalHeight);
+  const svgWidth = Math.max(400, NODE_W + 120);
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-secondary bg-primary shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-quaternary">Drag nodes to reorder · click to edit</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setZoom(z => Math.max(40, z - 10))}
+            className="flex size-7 items-center justify-center rounded border border-secondary text-secondary hover:bg-secondary text-sm font-medium transition-colors">−</button>
+          <span className="text-xs text-quaternary w-10 text-center tabular-nums">{zoom}%</span>
+          <button onClick={() => setZoom(z => Math.min(150, z + 10))}
+            className="flex size-7 items-center justify-center rounded border border-secondary text-secondary hover:bg-secondary text-sm font-medium transition-colors">+</button>
+          <button onClick={() => { setZoom(100); setPan({ x: 0, y: 0 }); }}
+            className="ml-1 rounded border border-secondary px-2 py-1 text-xs text-secondary hover:bg-secondary transition-colors">Reset</button>
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <div ref={containerRef}
+        className="flex-1 overflow-hidden bg-[#F8F9FB] relative cursor-grab active:cursor-grabbing"
+        onMouseDown={onCanvasMouseDown}
+        style={{ backgroundImage: "radial-gradient(circle, #CBD5E1 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
+        <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`, transformOrigin: "50% 20px", transition: "none", position: "absolute", left: "50%", top: 0, marginLeft: -svgWidth / 2 }}>
+
+          {/* SVG connector lines */}
+          <svg style={{ position: "absolute", top: 0, left: 0, width: svgWidth, height: svgHeight, pointerEvents: "none" }}>
+            {layoutNodes.map((node, i) => {
+              if (i === 0) return null;
+              const prev = layoutNodes[i - 1];
+              const x1 = svgWidth / 2;
+              const y1 = prev.row + NODE_H;
+              const x2 = svgWidth / 2;
+              const y2 = node.row;
+              const midY = (y1 + y2) / 2;
+              return (
+                <g key={node.task.id}>
+                  <path d={`M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`}
+                    stroke={brandColor} strokeWidth="2" fill="none" opacity="0.5" />
+                  {/* Arrow head */}
+                  <polygon points={`${x2},${y2} ${x2-5},${y2-8} ${x2+5},${y2-8}`} fill={brandColor} opacity="0.6" />
+                  {/* Step connector label */}
+                  <rect x={x2 - 20} y={midY - 9} width="40" height="18" rx="9" fill="white" stroke={brandColor} strokeWidth="1" opacity="0.8" />
+                  <text x={x2} y={midY + 4} textAnchor="middle" fontSize="8" fill={brandColor} fontFamily="Metrophobic, sans-serif" fontWeight="700">
+                    done
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Nodes */}
+          {layoutNodes.map((node, i) => {
+            const { task } = node;
+            const nodeX = svgWidth / 2 - NODE_W / 2;
+            const nodeColor = getNodeColor(task.assigneeRole);
+            const isSelected = selectedId === task.id;
+            const isDragOver = dragOver === i;
+            const isFirst = i === 0;
+
+            return (
+              <div key={task.id}
+                data-node="1"
+                draggable
+                onDragStart={e => onNodeDragStart(e, i)}
+                onDragOver={e => { e.preventDefault(); setDragOver(i); }}
+                onDragEnter={() => setDragOver(i)}
+                onDrop={() => onNodeDrop(i)}
+                onDragEnd={() => { setDragIdx(null); setDragOver(null); }}
+                onClick={() => setSelectedId(id => id === task.id ? null : task.id)}
+                style={{
+                  position: "absolute",
+                  left: nodeX,
+                  top: node.row,
+                  width: NODE_W,
+                  cursor: "grab",
+                  transition: "box-shadow 0.15s, border-color 0.15s",
+                }}
+                className={"rounded-2xl border-2 bg-white select-none " +
+                  (isDragOver ? "border-brand shadow-lg scale-[1.02]" :
+                   isSelected ? "border-[" + nodeColor + "] shadow-lg" :
+                   "border-secondary shadow-sm hover:border-primary hover:shadow-md")}>
+
+                {/* Header stripe */}
+                <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+                  {/* Step number + color dot */}
+                  <div className="flex shrink-0 size-8 items-center justify-center rounded-xl text-white text-xs font-bold"
+                    style={{ background: nodeColor }}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-primary truncate leading-tight">{task.name}</p>
+                    <p className="text-[10px] text-quaternary mt-0.5 truncate">{task.assigneeRole}</p>
+                  </div>
+                  {/* Status indicator */}
+                  <div className={"shrink-0 size-2 rounded-full " + (task.enabled ? "bg-success-solid" : "bg-secondary")} />
+                </div>
+
+                {/* Meta bar */}
+                <div className="flex items-center gap-2 px-3 pb-2.5">
+                  {isFirst
+                    ? <span className="rounded-full bg-[#FFF4F0] text-[#D34108] text-[10px] font-semibold px-2 py-0.5">Start</span>
+                    : <span className="rounded-full bg-secondary text-quaternary text-[10px] px-2 py-0.5">→ on complete</span>}
+                  {task.condition && <span className="rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium px-2 py-0.5 truncate max-w-[80px]">if: {task.condition.replace(/_/g," ")}</span>}
+                  {task.completionOptions && task.completionOptions.length > 1 && (
+                    <span className="rounded-full bg-purple-50 text-purple-600 text-[10px] font-medium px-2 py-0.5">{task.completionOptions.length} outcomes</span>
+                  )}
+                </div>
+
+                {/* Action buttons — visible on hover/select */}
+                <div className={"absolute -right-8 top-2 flex flex-col gap-1 transition-opacity " + (isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100 pointer-events-none")}
+                  style={{ opacity: isSelected ? 1 : undefined }}>
+                  <button data-node="1" onClick={e => { e.stopPropagation(); onEditTask(task); }}
+                    className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-brand hover:text-brand-secondary transition-colors text-secondary">
+                    <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5a2.121 2.121 0 013 3L5 15H1v-4L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button data-node="1" onClick={e => { e.stopPropagation(); onDeleteTask(task.id); }}
+                    className="flex size-7 items-center justify-center rounded-lg bg-white border border-secondary shadow-sm hover:border-error-primary hover:text-error-primary transition-colors text-quaternary">
+                    <svg className="size-3" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add task button */}
+          <button
+            data-node="1"
+            onClick={onAddTask}
+            style={{ position: "absolute", left: svgWidth / 2 - 72, top: totalHeight - 52, width: 144 }}
+            className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-secondary py-3 text-xs font-medium text-tertiary hover:border-brand hover:text-brand-secondary hover:bg-brand-secondary transition-colors bg-white">
+            <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            Add step
+          </button>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 px-4 py-2 border-t border-secondary bg-primary shrink-0 flex-wrap">
+        <span className="text-[10px] text-quaternary uppercase tracking-wider">Assignee</span>
+        {Object.entries({ Consultant:"#D34108", Admin:"#3B82F6", Services:"#8B5CF6", Compliance:"#F59E0B", Manager:"#EC4899", "Task Master":"#10B981" }).map(([role, color]) => (
+          <div key={role} className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full shrink-0" style={{ background: color }} />
+            <span className="text-[10px] text-quaternary">{role}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TaskBuilder() {
   const [domains, setDomains] = useState<DomainConfig[]>(initialDomains);
   const [view, setView] = useState<TaskBuilderView>("templates");
@@ -709,6 +972,7 @@ function TaskBuilder() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
+  const [taskViewMode, setTaskViewMode] = useState<"list"|"flow">("list");
 
   const activeDomain = domains.find(d => d.id === activeDomainId);
   const activeTemplate = activeDomain?.templates.find(t => t.id === activeTemplateId);
@@ -864,15 +1128,30 @@ function TaskBuilder() {
   // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ View: Tasks (drag-drop chain) ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
   if (view === "tasks" && activeDomain && activeTemplate) {
     return (
-      <div className="flex flex-col min-h-0">
+      <div className="flex flex-col min-h-0" style={{ height: "100%" }}>
         {/* Breadcrumb + toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-secondary">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-secondary shrink-0">
           <div className="flex items-center gap-2 text-sm text-tertiary">
             <button onClick={() => setView("templates")} className="hover:text-primary transition-colors">Task Flows</button>
             <ChevronRight className="size-3.5 text-quaternary" aria-hidden />
             <span className="font-medium text-primary">{activeTemplate.name}</span>
           </div>
           <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="flex items-center rounded-lg border border-secondary bg-secondary p-0.5">
+              <button onClick={() => setTaskViewMode("list")}
+                className={"flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors " +
+                  (taskViewMode === "list" ? "bg-white text-primary shadow-xs" : "text-quaternary hover:text-secondary")}>
+                <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                List
+              </button>
+              <button onClick={() => setTaskViewMode("flow")}
+                className={"flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors " +
+                  (taskViewMode === "flow" ? "bg-white text-primary shadow-xs" : "text-quaternary hover:text-secondary")}>
+                <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" stroke="currentColor" strokeWidth="1.25"/><circle cx="4" cy="13" r="2" stroke="currentColor" strokeWidth="1.25"/><circle cx="12" cy="13" r="2" stroke="currentColor" strokeWidth="1.25"/><path d="M8 5v3M8 8l-3 3M8 8l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round"/></svg>
+                Flow
+              </button>
+            </div>
             <StatusBadge status={activeTemplate.status} />
             {activeTemplate.status !== "published"
               ? <button onClick={() => setConfirmPublish(true)} className="rounded-lg bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover transition-colors">Publish</button>
@@ -881,8 +1160,24 @@ function TaskBuilder() {
           </div>
         </div>
 
+        {/* Flow view */}
+        {taskViewMode === "flow" && (
+          <div className="flex-1 min-h-0" style={{ height: "calc(100% - 56px)" }}>
+            <FlowChartView
+              tasks={activeTemplate.tasks}
+              domainColor={activeDomain.color}
+              onEditTask={setEditingTask}
+              onDeleteTask={id => updateTemplate(activeTemplate.tasks.filter(t => t.id !== id))}
+              onReorder={updateTemplate}
+              onAddTask={() => setEditingTask("new")}
+            />
+          </div>
+        )}
+
+        {/* List view */}
+        {taskViewMode === "list" && <>
         {/* Info */}
-        <div className="mx-4 sm:mx-6 mt-4 flex items-start gap-2 rounded-xl border border-secondary bg-secondary_alt px-4 py-3">
+        <div className="mx-4 sm:mx-6 mt-4 flex items-start gap-2 rounded-xl border border-secondary bg-secondary_alt px-4 py-3 shrink-0">
           <InfoCircle className="size-4 text-fg-tertiary mt-0.5 shrink-0" aria-hidden />
           <p className="text-xs text-tertiary leading-relaxed">
             <strong className="font-medium text-secondary">First task</strong> fires on object creation. Each subsequent task fires when the previous is marked complete.
@@ -913,6 +1208,7 @@ function TaskBuilder() {
             <Plus className="size-4" aria-hidden />Add task to chain
           </button>
         </div>
+        </>}
 
         {editingTask !== null && <EditTaskModal task={editingTask === "new" ? null : editingTask} onSave={task => { editingTask === "new" ? updateTemplate([...activeTemplate.tasks, { ...task, triggerType: "task_completed" }]) : updateTemplate(activeTemplate.tasks.map(t => t.id === task.id ? task : t)); setEditingTask(null); }} onClose={() => setEditingTask(null)} />}
         {wizardOpen && <Wizard domains={domains} startStep={3} prefillDomainId={activeDomain.id} prefillTemplateId={activeTemplate.id} onComplete={handleWizardComplete} onClose={() => setWizardOpen(false)} />}
