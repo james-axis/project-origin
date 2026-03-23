@@ -337,6 +337,7 @@ export function ClientProfilePage() {
   const [noteText, setNoteText] = useState("");
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [clientsExpanded, setClientsExpanded] = useState(true);
+  const [sidebarPinned, setSidebarPinned] = useState(true);
 
   // Section order
   const [sectionOrder, setSectionOrder] = useState<string[]>(loadSectionOrder);
@@ -408,7 +409,7 @@ export function ClientProfilePage() {
         </SectionCard>
       );
       case "dependants": return (
-        <SectionCard key={id} id={id} title="Dependants" actionLabel="Add Dependant" action={() => {}} {...dragProps}>
+        <SectionCard key={id} id={id} title="Dependants" defaultOpen={false} actionLabel="Add Dependant" action={() => {}} {...dragProps}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
             <div><p className="text-[11px] text-quaternary mb-0.5">Marital Status</p><p className="text-sm text-primary font-medium">{CLIENT.maritalStatus}</p></div>
             <div><p className="text-[11px] text-quaternary mb-0.5">Children</p><p className="text-sm text-primary font-medium">{CLIENT.children} children (aged {CLIENT.childrenAges})</p></div>
@@ -416,12 +417,12 @@ export function ClientProfilePage() {
         </SectionCard>
       );
       case "superfunds": return (
-        <SectionCard key={id} id={id} title="Client's Existing Superfunds" actionLabel="Add Superfund" action={() => {}} {...dragProps}>
+        <SectionCard key={id} id={id} title="Client's Existing Superfunds" defaultOpen={false} actionLabel="Add Superfund" action={() => {}} {...dragProps}>
           <div className="px-4 py-4 text-sm text-quaternary text-center">No superfunds added</div>
         </SectionCard>
       );
       case "contact_info": return (
-        <SectionCard key={id} id={id} title="Contact Information" {...dragProps}>
+        <SectionCard key={id} id={id} title="Contact Information" defaultOpen={false} {...dragProps}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
             <div><p className="text-[11px] text-quaternary mb-0.5">Phone</p><p className="text-sm font-medium text-brand-secondary">{CLIENT.phone}</p></div>
             <div><p className="text-[11px] text-quaternary mb-0.5">Additional Phone(s)</p><p className="text-sm font-medium text-brand-secondary">{CLIENT.phone2}</p></div>
@@ -432,7 +433,7 @@ export function ClientProfilePage() {
         </SectionCard>
       );
       case "customer_profile": return (
-        <SectionCard key={id} id={id} title="Customer Profile" {...dragProps}>
+        <SectionCard key={id} id={id} title="Customer Profile" defaultOpen={false} {...dragProps}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
             {[
               ["Marital Status", CLIENT.maritalStatus],
@@ -450,7 +451,7 @@ export function ClientProfilePage() {
         </SectionCard>
       );
       case "lead_progress": return (
-        <SectionCard key={id} id={id} title="Lead Progress" {...dragProps}>
+        <SectionCard key={id} id={id} title="Lead Progress" defaultOpen={false} {...dragProps}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
             <div><p className="text-[11px] text-quaternary mb-0.5">Assigned To</p>
               <EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} />
@@ -462,7 +463,7 @@ export function ClientProfilePage() {
         </SectionCard>
       );
       case "lead_info": return (
-        <SectionCard key={id} id={id} title="Lead Information" {...dragProps}>
+        <SectionCard key={id} id={id} title="Lead Information" defaultOpen={false} {...dragProps}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
             {[
               ["Campaign Group", CLIENT.campaignGroup], ["Campaign", CLIENT.campaign],
@@ -568,8 +569,18 @@ export function ClientProfilePage() {
             {sectionOrder.map(id => renderSection(id))}
           </div>
 
-          {/* Right sidebar */}
-          <div className="w-80 shrink-0 border-l border-secondary bg-primary overflow-y-auto px-4 py-4 space-y-4 hidden xl:block">
+          {/* Right sidebar — collapsible */}
+          <div className={"shrink-0 border-l border-secondary bg-primary hidden xl:flex flex-row transition-all duration-200 " + (sidebarPinned ? "w-80" : "w-10")}>
+            {/* Toggle strip */}
+            <div className="flex flex-col items-center pt-3 w-10 shrink-0">
+              <button onClick={() => setSidebarPinned(p => !p)} title={sidebarPinned ? "Collapse sidebar" : "Expand sidebar"}
+                className="flex size-7 items-center justify-center rounded-lg hover:bg-secondary transition-colors text-quaternary hover:text-secondary">
+                {sidebarPinned ? <ChevronRight className="size-4" /> : <ChevronRight className="size-4 rotate-180" />}
+              </button>
+            </div>
+            {/* Sidebar content */}
+            {sidebarPinned && (
+            <div className="flex-1 min-w-0 overflow-y-auto px-3 py-4 space-y-4">
 
             {/* Clients & Applications — collapsible */}
             <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
@@ -674,6 +685,8 @@ export function ClientProfilePage() {
                 ))}
               </div>
             </div>
+            </div>
+            )}
           </div>
         </div>
       </main>
