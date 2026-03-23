@@ -569,8 +569,8 @@ export function ClientProfilePage() {
             ]} />
             {/* Mobile sidebar trigger — only visible below xl */}
             <button onClick={() => setMobileSidebarOpen(true)}
-              className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors ml-auto">
-              <Users01 className="size-3.5" /> Info
+              className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
+              <Users01 className="size-3.5" /> More Info
             </button>
             <DropdownButton label="Other" icon="⋯" items={[
               { label: "PDF",              icon: "📄" },
