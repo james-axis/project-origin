@@ -74,15 +74,14 @@ const INSURERS   = ["Acenda","NEOS","MetLife","OnePath","TAL","Encompass","Clear
 
 // ─── Section defs ─────────────────────────────────────────────────────────────
 const SECTION_DEFS = [
-  { id:"customer_info",  label:"Customer Information" },
-  { id:"app_info",       label:"Application Information" },
-  { id:"insurance_products", label:"Insurance Products" },
-  { id:"tasks",          label:"Tasks" },
-  { id:"policy_ids",     label:"Policy IDs" },
-  { id:"contact_info",   label:"Contact Information" },
-  { id:"activity_log",   label:"Activity Log" },
+  { id:"customer_info",       label:"Customer Information" },
+  { id:"app_info",            label:"Application Information" },
+  { id:"tasks",               label:"Tasks" },
+  { id:"insurance_products",  label:"Insurance Products" },
+  { id:"policy_ids",          label:"Policy IDs" },
+  { id:"activity_log",        label:"Activity Log" },
 ];
-const SECTIONS_KEY = "axis_app_profile_sections_v1";
+const SECTIONS_KEY = "axis_app_profile_sections_v2";
 function loadSectionOrder(): string[] { try { const r = localStorage.getItem(SECTIONS_KEY); if (r) return JSON.parse(r); } catch {} return SECTION_DEFS.map(s => s.id); }
 function saveSectionOrder(o: string[]) { localStorage.setItem(SECTIONS_KEY, JSON.stringify(o)); }
 
@@ -104,12 +103,17 @@ const CUST_FIELD_DEFS: FieldDef[] = [
   { key:"weight",      label:"Weight",                   defaultVisible:false },
   { key:"bmi",         label:"BMI",                      defaultVisible:true  },
   { key:"smoker",      label:"Smoker Status",            defaultVisible:true  },
-  { key:"phone",       label:"Phone",                    defaultVisible:false },
-  { key:"email",       label:"Email",                    defaultVisible:false },
+  { key:"phone",       label:"Phone",                    defaultVisible:true  },
+  { key:"phone2",      label:"Additional Phone(s)",      defaultVisible:false },
+  { key:"email",       label:"Email",                    defaultVisible:true  },
+  { key:"email2",      label:"Additional Email(s)",      defaultVisible:false },
   { key:"address",     label:"Address",                  defaultVisible:false },
+  { key:"city",        label:"City",                     defaultVisible:false },
+  { key:"postcode",    label:"Postcode",                 defaultVisible:false },
+  { key:"contactTime", label:"Preferred Contact Time",   defaultVisible:false },
 ];
 interface FieldState { order: string[]; visible: Record<string, boolean>; }
-const FIELDS_KEY = "axis_app_fields_v1";
+const FIELDS_KEY = "axis_app_fields_v2";
 function loadFieldState(): FieldState { try { const r = localStorage.getItem(FIELDS_KEY); if (r) return JSON.parse(r); } catch {} return { order: CUST_FIELD_DEFS.map((f: FieldDef) => f.key), visible: Object.fromEntries(CUST_FIELD_DEFS.map((f: FieldDef) => [f.key, f.defaultVisible])) }; }
 function saveFieldState(s: FieldState) { localStorage.setItem(FIELDS_KEY, JSON.stringify(s)); }
 
@@ -152,6 +156,43 @@ function EditableField({ label, value, options }: { label: string; value: string
           <span className="text-xs font-medium text-primary group-hover:text-brand-secondary transition-colors">{val}</span>
           <Edit01 className="size-3 text-quaternary opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
+      )}
+    </div>
+  );
+}
+
+function StatusButton() {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState("New App");
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+  const statuses = [
+    { label:"In Progress", color:"#3B82F6" },
+    { label:"On Hold",     color:"#F59E0B" },
+    { label:"Complete",    color:"#22C55E" },
+    { label:"Closed",      color:"#6B7280" },
+  ];
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
+        🔄 Set Status
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 w-40 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
+          {statuses.map(s => (
+            <button key={s.label} onClick={() => { setCurrent(s.label); setOpen(false); }}
+              className={"flex items-center gap-2.5 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (current === s.label ? "font-semibold" : "text-primary")}>
+              <span className="size-2 rounded-full shrink-0" style={{ background: s.color }} />
+              {s.label}
+              {current === s.label && <Check className="size-3 ml-auto text-brand-secondary" />}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -464,19 +505,7 @@ export function ApplicationProfilePage() {
           <div className="px-4 py-4 text-sm text-quaternary text-center">No policy IDs added</div>
         </SectionCard>
       );
-      case "contact_info": return (
-        <SectionCard key={id} id={id} title="Contact Information" defaultOpen={false} {...dragProps(id)}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            <InfoCell label="Phone" value={<span className="text-brand-secondary">{APP.customer.phone}</span>} />
-            <InfoCell label="Additional Phone(s)" value={APP.customer.phone2 || "—"} />
-            <InfoCell label="Preferred Contact Time" value={APP.customer.contactTime || "—"} />
-            <div className="col-span-2"><InfoCell label="Email" value={<span className="text-brand-secondary">{APP.customer.email}</span>} /></div>
-            <InfoCell label="Address" value={APP.customer.address} />
-            <InfoCell label="City" value={APP.customer.city} />
-            <InfoCell label="Postcode" value={APP.customer.postcode} />
-          </div>
-        </SectionCard>
-      );
+
       case "activity_log": return (
         <SectionCard key={id} id={id} title="Activity Log" defaultOpen={false} {...dragProps(id)}>
           <div className="overflow-x-auto">
@@ -643,6 +672,7 @@ export function ApplicationProfilePage() {
             <button onClick={() => setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">
               <Users01 className="size-3.5" /> More Info
             </button>
+            <StatusButton />
             <DropdownButton label="New" icon="✚" items={[
               { label:"Pre-Assessment", icon:"🩺" },
               { label:"Claim",          icon:"🛡️" },
@@ -655,7 +685,6 @@ export function ApplicationProfilePage() {
               { label:"Form",         icon:"📋" },
               { label:"Schedule",     icon:"📅" },
               { label:"Upload Files", icon:"📎" },
-              { label:"Set Status",   icon:"🔄" },
               { label:"Complete",     icon:"✅" },
               { label:"Change Dates", icon:"📆" },
             ]} />
