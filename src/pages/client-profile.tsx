@@ -4,7 +4,7 @@ import { SidebarNavigationSlim } from "@/components/application/app-navigation/s
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
   ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check,
-  File01, User01, Users01, Tag01, Settings01, DotsGrid,
+  File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, PinOff,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,10 +59,11 @@ const FILE_LIBRARY: FileEntry[] = [
 const SECTION_DEFS = [
   { id: "customer_info",  label: "Customer Information" },
   { id: "tasks",          label: "Tasks" },
+  { id: "superfunds",     label: "Client's Existing Superfunds" },
   { id: "lead_info",      label: "Lead Information" },
   { id: "activity_log",   label: "Activity Log" },
 ];
-const SECTIONS_KEY = "axis_profile_sections_v2";
+const SECTIONS_KEY = "axis_profile_sections_v3";
 
 function loadSectionOrder(): string[] {
   try { const r = localStorage.getItem(SECTIONS_KEY); if (r) return JSON.parse(r); } catch {}
@@ -457,6 +458,11 @@ export function ClientProfilePage() {
 
         </SectionCard>
       );
+      case "superfunds": return (
+        <SectionCard key={id} id={id} title="Client's Existing Superfunds" defaultOpen={false} actionLabel="Add Superfund" action={() => {}} {...dragProps}>
+          <div className="px-4 py-4 text-sm text-quaternary text-center">No superfunds added</div>
+        </SectionCard>
+      );
       case "tasks": return (
         <SectionCard key={id} id={id} title="Tasks" actionLabel="New Task" action={() => {}} {...dragProps}>
           <div className="px-4 py-4 text-sm text-quaternary text-center">No tasks yet</div>
@@ -564,7 +570,6 @@ export function ClientProfilePage() {
               { label: "PDF",              icon: "📄" },
               { label: "Docs",             icon: "📁" },
               { label: "Off APL",          icon: "🔕" },
-              { label: "Superfund Details",icon: "💰" },
               { label: "Marketing List",   icon: "📊" },
             ]} />
           </div>
@@ -582,42 +587,42 @@ export function ClientProfilePage() {
             {sectionOrder.map(id => renderSection(id))}
           </div>
 
-          {/* Right sidebar — collapsible */}
-          <div className={"shrink-0 border-l border-secondary bg-primary hidden xl:flex flex-row transition-all duration-200 " + (sidebarPinned ? "w-80" : "w-10")}>
-            {/* Toggle strip */}
-            <div className="flex flex-col items-center pt-3 w-10 shrink-0">
-              <button onClick={() => setSidebarPinned(p => { const next = !p; try { localStorage.setItem("axis_profile_sidebar_v1", next ? "1" : "0"); } catch {} return next; })} title={sidebarPinned ? "Collapse sidebar" : "Expand sidebar"}
-                className="flex size-7 items-center justify-center rounded-lg hover:bg-secondary transition-colors text-quaternary hover:text-secondary">
-                {sidebarPinned ? <ChevronRight className="size-4" /> : <ChevronRight className="size-4 rotate-180" />}
+          {/* Right sidebar — pin/unpin */}
+          <div className={"shrink-0 border-l border-secondary bg-primary hidden xl:flex flex-col transition-all duration-200 " + (sidebarPinned ? "w-80" : "w-10")}>
+            {/* Pin toggle — at top, full width */}
+            <div className={"flex items-center px-2 pt-2 pb-1 " + (sidebarPinned ? "justify-end" : "justify-center")}>
+              <button
+                onClick={() => setSidebarPinned(p => { const next = !p; try { localStorage.setItem("axis_profile_sidebar_v1", next ? "1" : "0"); } catch {} return next; })}
+                title={sidebarPinned ? "Unpin sidebar" : "Pin sidebar"}
+                className={"flex size-7 items-center justify-center rounded-lg transition-colors " + (sidebarPinned ? "text-brand-secondary bg-brand-secondary hover:bg-brand-secondary" : "text-quaternary hover:bg-secondary hover:text-secondary")}>
+                {sidebarPinned ? <Pin01 className="size-3.5" /> : <PinOff className="size-3.5" />}
               </button>
             </div>
             {/* Sidebar content */}
             {sidebarPinned && (
-            <div className="flex-1 min-w-0 overflow-y-auto px-3 py-4 space-y-4">
+            <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 space-y-4">
 
             {/* Clients & Applications — collapsible */}
-            <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2">
+            <div>
+              <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-semibold text-primary">Clients & Applications</p>
                 <div className="flex items-center gap-1">
-                  {clientsExpanded && (
-                    <>
-                      <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><User01 className="size-3.5 text-quaternary" /></button>
-                      <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><Users01 className="size-3.5 text-quaternary" /></button>
-                      <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><Users01 className="size-3.5 text-quaternary" /></button>
-                    </>
-                  )}
+                  <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><User01 className="size-3.5 text-quaternary" /></button>
+                  <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><Users01 className="size-3.5 text-quaternary" /></button>
+                  <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><Users01 className="size-3.5 text-quaternary" /></button>
                   <button onClick={() => setClientsExpanded(e => !e)} title={clientsExpanded ? "Minimise" : "Maximise"}
-                    className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors ml-0.5">
+                    className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
                     {clientsExpanded ? <ChevronDown className="size-3.5 text-quaternary" /> : <ChevronRight className="size-3.5 text-quaternary" />}
                   </button>
                 </div>
               </div>
               {clientsExpanded && (
-                <div className="px-3 pb-3">
-                  <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
-                    <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}</span>
-                    <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Prospect</span>
+                <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
+                  <div className="px-3 py-2.5">
+                    <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
+                      <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}</span>
+                      <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Prospect</span>
+                    </div>
                   </div>
                 </div>
               )}
