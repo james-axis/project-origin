@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
-  ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01,
+  ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check,
   File01, User01, Users01, Tag01,
 } from "@untitledui/icons";
 
@@ -97,6 +97,120 @@ const FILE_LIBRARY: FileEntry[] = [
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+// ─── Dropdown button ─────────────────────────────────────────────────────────
+function DropdownButton({ label, icon, items, variant = "default" }: {
+  label: string; icon?: string;
+  items: { label: string; icon?: string; danger?: boolean }[];
+  variant?: "default" | "brand";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className={"inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors " +
+          (variant === "brand"
+            ? "border-brand-solid bg-brand-solid text-white hover:bg-brand-solid_hover"
+            : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
+        {icon && <span>{icon}</span>}
+        {label}
+        <ChevronDown className="size-3" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
+          {items.map((item, i) => (
+            <button key={i} onClick={() => setOpen(false)}
+              className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " +
+                (item.danger ? "text-error-primary" : "text-primary")}>
+              {item.icon && <span>{item.icon}</span>}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Inline editable field ────────────────────────────────────────────────────
+function EditableField({ label, value, options }: {
+  label: string; value: string; options?: string[];
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value);
+  const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
+  useEffect(() => { if (editing) (inputRef.current as HTMLElement | null)?.focus(); }, [editing]);
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-secondary last:border-0">
+      <div className="flex items-center gap-2 text-xs text-tertiary">
+        <User01 className="size-3.5 text-quaternary" />
+        {label}:
+      </div>
+      {editing ? (
+        <div className="flex items-center gap-1">
+          {options ? (
+            <select ref={inputRef as React.RefObject<HTMLSelectElement>}
+              value={val} onChange={e => setVal(e.target.value)}
+              onBlur={() => setEditing(false)}
+              className="rounded border border-brand bg-primary px-2 py-0.5 text-xs text-primary outline-none">
+              {options.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          ) : (
+            <input ref={inputRef as React.RefObject<HTMLInputElement>}
+              value={val} onChange={e => setVal(e.target.value)}
+              onBlur={() => setEditing(false)}
+              onKeyDown={e => e.key === "Enter" && setEditing(false)}
+              className="rounded border border-brand bg-primary px-2 py-0.5 text-xs text-primary outline-none w-32" />
+          )}
+          <button onClick={() => setEditing(false)}
+            className="flex size-5 items-center justify-center rounded bg-brand-solid text-white hover:bg-brand-solid_hover">
+            <Check className="size-3" />
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => setEditing(true)}
+          className="flex items-center gap-1.5 group">
+          <span className="text-xs font-medium text-primary group-hover:text-brand-secondary transition-colors">{val}</span>
+          <Edit01 className="size-3 text-quaternary opacity-0 group-hover:opacity-100 transition-opacity" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Inline editable group field ──────────────────────────────────────────────
+function EditableGroupField({ value }: { value: string }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value);
+  const GROUPS = ["Three Dogs Insurance","UFinancial","Surety","Vital","Hunter Galloway","Covered Life","CH Life","Armor Insurance Solutions"];
+  return editing ? (
+    <div className="flex items-center gap-1.5 mt-0.5">
+      <select value={val} onChange={e => setVal(e.target.value)}
+        autoFocus onBlur={() => setEditing(false)}
+        className="rounded border border-brand bg-primary px-2 py-0.5 text-xs text-primary outline-none flex-1">
+        {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+      </select>
+      <button onClick={() => setEditing(false)}
+        className="flex size-5 items-center justify-center rounded bg-brand-solid text-white">
+        <Check className="size-3" />
+      </button>
+    </div>
+  ) : (
+    <button onClick={() => setEditing(true)}
+      className="flex items-center gap-1 group text-xs text-tertiary mt-0.5 hover:text-brand-secondary transition-colors">
+      {val}
+      <Edit01 className="size-3 text-quaternary opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+    </button>
+  );
+}
+
 function InfoGrid({ items }: { items: { label: string; value: React.ReactNode; span?: boolean }[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
@@ -191,35 +305,37 @@ export function ClientProfilePage() {
                     {CLIENT.statusLabel}
                   </span>
                 </div>
-                <p className="text-xs text-tertiary mt-0.5">{CLIENT.group} · Created {CLIENT.createdOn}</p>
+                <div className="flex items-center gap-1 mt-0.5"><EditableGroupField value={CLIENT.group} /><span className="text-xs text-quaternary">· Created {CLIENT.createdOn}</span></div>
               </div>
             </div>
           </div>
 
           {/* Action toolbar */}
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <ActionButton label="Re-assign" icon="👤" />
-            <ActionButton label="Take" icon="✋" />
             <ActionButton label="Edit" icon="✏️" />
-            <ActionButton label="Group" icon="🏢" />
             <ActionButton label="Form" icon="📋" />
-            <ActionButton label="SMS" icon="💬" />
-            <ActionButton label="Email" icon="✉️" />
-            <ActionButton label="PDF" icon="📄" />
-            <ActionButton label="Docs" icon="📁" />
-            <ActionButton label="Schedule" icon="📅" />
-            <ActionButton label="New Quote" icon="💡" />
-            <ActionButton label="Off APL" icon="🔕" />
-            <ActionButton label="Upload Files" icon="📎" />
-            <ActionButton label="Pre-Assessment" icon="🩺" />
-            <ActionButton label="New App" icon="📝" />
-            <ActionButton label="Add Existing App" icon="📋" />
-            <ActionButton label="Set Status" icon="🔄" />
-            <ActionButton label="Close" variant="danger" icon="✕" />
-            <ActionButton label="Dishonour" icon="⚠️" />
-            <ActionButton label="Claim" icon="🛡️" />
-            <ActionButton label="Complaint" icon="💬" />
-            <ActionButton label="Marketing List" icon="📊" />
+            <DropdownButton variant="brand" label="New" icon="✚" items={[
+              { label: "Quote",          icon: "💡" },
+              { label: "Pre-Assessment", icon: "🩺" },
+              { label: "Application",    icon: "📝" },
+              { label: "Claim",          icon: "🛡️" },
+              { label: "Dishonour",      icon: "⚠️" },
+              { label: "Complaint",      icon: "💬" },
+            ]} />
+            <DropdownButton label="Actions" icon="⚡" items={[
+              { label: "SMS",           icon: "💬" },
+              { label: "Email",         icon: "✉️" },
+              { label: "Schedule",      icon: "📅" },
+              { label: "Upload Files",  icon: "📎" },
+              { label: "Set Status",    icon: "🔄" },
+              { label: "Close",         icon: "✕", danger: true },
+            ]} />
+            <DropdownButton label="Other" icon="⋯" items={[
+              { label: "PDF",            icon: "📄" },
+              { label: "Docs",           icon: "📁" },
+              { label: "Off APL",        icon: "🔕" },
+              { label: "Marketing List", icon: "📊" },
+            ]} />
           </div>
         </div>
 
@@ -390,20 +506,10 @@ export function ClientProfilePage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold text-primary">Assigned Team</p>
-                <button className="text-xs font-medium text-brand-secondary hover:underline">Edit</button>
+
               </div>
-              {[
-                { role: "Consultant", name: "James Nicholls" },
-                { role: "Admin", name: "SLG Test Training" },
-              ].map(({ role, name }) => (
-                <div key={role} className="flex items-center justify-between py-2 border-b border-secondary last:border-0">
-                  <div className="flex items-center gap-2 text-xs text-tertiary">
-                    <User01 className="size-3.5 text-quaternary" />
-                    {role}:
-                  </div>
-                  <span className="text-xs font-medium text-primary">{name}</span>
-                </div>
-              ))}
+              <EditableField label="Consultant" value="James Nicholls" options=["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"] />
+              <EditableField label="Admin" value="SLG Test Training" options=["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"] />
             </div>
 
             {/* Notes */}
