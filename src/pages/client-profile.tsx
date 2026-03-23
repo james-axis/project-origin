@@ -723,8 +723,7 @@ export function ClientProfilePage() {
           {/* Slide-in panel */}
           <div className="fixed top-0 right-0 bottom-0 z-50 w-80 bg-primary border-l border-secondary flex flex-col xl:hidden shadow-2xl animate-in slide-in-from-right duration-200">
             {/* Panel header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-secondary shrink-0">
-              
+            <div className="flex items-center justify-end px-4 py-2 border-b border-secondary shrink-0">
               <button onClick={() => setMobileSidebarOpen(false)}
                 className="flex size-7 items-center justify-center rounded-lg hover:bg-secondary transition-colors text-quaternary">
                 <X className="size-4" />
