@@ -4,7 +4,7 @@ import { SidebarNavigationSlim } from "@/components/application/app-navigation/s
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
   ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check,
-  File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, PinOff,
+  File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -595,7 +595,7 @@ export function ClientProfilePage() {
                 onClick={() => setSidebarPinned(p => { const next = !p; try { localStorage.setItem("axis_profile_sidebar_v1", next ? "1" : "0"); } catch {} return next; })}
                 title={sidebarPinned ? "Unpin sidebar" : "Pin sidebar"}
                 className={"flex size-7 items-center justify-center rounded-lg transition-colors " + (sidebarPinned ? "text-brand-secondary bg-brand-secondary hover:bg-brand-secondary" : "text-quaternary hover:bg-secondary hover:text-secondary")}>
-                {sidebarPinned ? <Pin01 className="size-3.5" /> : <PinOff className="size-3.5" />}
+                {sidebarPinned ? <Pin01 className="size-3.5" /> : <Pin02 className="size-3.5" />}
               </button>
             </div>
             {/* Sidebar content */}
