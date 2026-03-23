@@ -213,12 +213,11 @@ export function ClientsPage() {
   function toggleCol(key: string) { updateCols({ ...colState, visible: { ...colState.visible, [key]: !colState.visible[key] } }); }
   function reorderCols(order: string[]) { updateCols({ ...colState, order }); }
 
-  const visibleCols: ColDef[] = colState.order
-    .reduce<ColDef[]>((acc, k: string) => {
-      const col = CLIENT_COLS.find((c: ColDef) => c.key === k);
-      if (col && colState.visible[col.key]) acc.push(col);
-      return acc;
-    }, []);
+  const visibleCols: ColDef[] = [];
+  for (const k of colState.order) {
+    const col = CLIENT_COLS.find((c: ColDef) => c.key === k);
+    if (col && colState.visible[col.key]) visibleCols.push(col);
+  }
 
   // Tab filtering
   const tabStatuses = TABS.find(t => t.key === activeTab)?.statuses ?? null;
