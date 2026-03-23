@@ -4,11 +4,19 @@ on:
   push:
     branches: [main]
 
+# ── Fix 1: Cancel any in-progress run for this branch when a new push arrives ─
+concurrency:
+  group: railway-monitor-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   monitor-and-fix:
     name: Watch → Fix → Notify
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    # ── Fix 2: Skip entirely if this is an auto-fix commit (prevents infinite loop) ──
+    if: "!startsWith(github.event.head_commit.message, 'fix(ci):')"
 
     steps:
       - uses: actions/checkout@v4
@@ -17,79 +25,186 @@ jobs:
           fetch-depth: 5
 
       - name: Wait for Railway to pick up the push
-        run: sleep 25
+        run: sleep 30
 
-      # ── Poll Railway until deploy completes ───────────────────────────────────
+      # ── Fix 3: Poll for the deployment matching THIS commit SHA specifically ──
       - name: Poll Railway deployment
         id: railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           SERVICE_ID: f95085d7-4c77-443a-85d8-b0a464db8e4c
           ENVIRONMENT_ID: 546b6800-4ada-4d75-9892-25c6d4e981c2
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           MAX_ATTEMPTS=40
           ATTEMPT=0
           STATUS=""
+          DEPLOY_ID=""
 
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             ATTEMPT=$((ATTEMPT + 1))
             echo "Poll $ATTEMPT/$MAX_ATTEMPTS"
 
-            RESPONSE=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
-              -H "Authorization: Bearer $RAILWAY_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{"query":"{ deployments(input: { serviceId: \"'"$SERVICE_ID"'\", environmentId: \"'"$ENVIRONMENT_ID"'\" }, first: 1) { edges { node { id status meta { commitMessage } } } } }"}')
+            # Fetch last 5 deployments and find the one matching our commit SHA
+            python3 - << PYEOF
+import os, json, urllib.request, sys
 
-            STATUS=$(echo "$RESPONSE" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-edges=d.get('data',{}).get('deployments',{}).get('edges',[])
-print(edges[0]['node']['status'] if edges else 'UNKNOWN')
-" 2>/dev/null || echo "UNKNOWN")
+token = os.environ["RAILWAY_TOKEN"]
+service_id = os.environ["SERVICE_ID"]
+env_id = os.environ["ENVIRONMENT_ID"]
+target_sha = os.environ["COMMIT_SHA"]
 
-            DEPLOY_ID=$(echo "$RESPONSE" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-edges=d.get('data',{}).get('deployments',{}).get('edges',[])
-print(edges[0]['node']['id'] if edges else '')
-" 2>/dev/null || echo "")
+query = """
+{
+  deployments(input: { serviceId: "%s", environmentId: "%s" }, first: 5) {
+    edges {
+      node {
+        id
+        status
+        meta {
+          commitMessage
+          commitHash
+        }
+      }
+    }
+  }
+}
+""" % (service_id, env_id)
 
-            COMMIT_MSG=$(echo "$RESPONSE" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-edges=d.get('data',{}).get('deployments',{}).get('edges',[])
-m=(edges[0]['node'].get('meta') or {}) if edges else {}
-print((m.get('commitMessage') or '')[:80])
-" 2>/dev/null || echo "")
+req = urllib.request.Request(
+    "https://backboard.railway.app/graphql/v2",
+    data=json.dumps({"query": query}).encode(),
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    method="POST"
+)
 
-            echo "Status: $STATUS"
+try:
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.load(resp)
+    edges = data.get("data", {}).get("deployments", {}).get("edges", [])
+
+    # Find deploy matching our SHA, fall back to most recent
+    matched = None
+    for edge in edges:
+        node = edge["node"]
+        meta = node.get("meta") or {}
+        commit_hash = meta.get("commitHash", "")
+        if commit_hash and target_sha.startswith(commit_hash) or commit_hash.startswith(target_sha[:7]):
+            matched = node
+            break
+
+    if matched is None and edges:
+        matched = edges[0]["node"]  # fallback to latest
+
+    if matched:
+        meta = matched.get("meta") or {}
+        print(f"DEPLOY_ID={matched['id']}")
+        print(f"STATUS={matched['status']}")
+        print(f"COMMIT_MSG={meta.get('commitMessage', '')[:80]}")
+    else:
+        print("DEPLOY_ID=")
+        print("STATUS=UNKNOWN")
+        print("COMMIT_MSG=")
+except Exception as e:
+    print(f"DEPLOY_ID=", file=sys.stderr)
+    print(f"STATUS=UNKNOWN", file=sys.stderr)
+    print(f"Error: {e}", file=sys.stderr)
+    print("STATUS=UNKNOWN")
+PYEOF
+
+            # Parse the python output into shell vars
+            POLL_OUT=$(python3 - << PYEOF2
+import os, json, urllib.request, sys
+
+token = os.environ["RAILWAY_TOKEN"]
+service_id = os.environ["SERVICE_ID"]
+env_id = os.environ["ENVIRONMENT_ID"]
+target_sha = os.environ["COMMIT_SHA"]
+
+query = """{ deployments(input: { serviceId: "%s", environmentId: "%s" }, first: 5) { edges { node { id status meta { commitMessage commitHash } } } } }""" % (service_id, env_id)
+
+req = urllib.request.Request(
+    "https://backboard.railway.app/graphql/v2",
+    data=json.dumps({"query": query}).encode(),
+    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+    method="POST"
+)
+try:
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.load(resp)
+    edges = data.get("data", {}).get("deployments", {}).get("edges", [])
+    matched = None
+    for edge in edges:
+        node = edge["node"]
+        meta = node.get("meta") or {}
+        h = meta.get("commitHash", "")
+        if h and (target_sha.startswith(h) or h.startswith(target_sha[:7])):
+            matched = node
+            break
+    if matched is None and edges:
+        matched = edges[0]["node"]
+    if matched:
+        meta = matched.get("meta") or {}
+        import base64
+        msg = (meta.get("commitMessage") or "")[:80].replace("\n", " ")
+        print(f"{matched['id']}|||{matched['status']}|||{msg}")
+    else:
+        print("|||UNKNOWN|||")
+except Exception as e:
+    print(f"|||UNKNOWN|||error: {e}")
+PYEOF2
+            )
+
+            DEPLOY_ID=$(echo "$POLL_OUT" | cut -d'|||' -f1)
+            STATUS=$(echo "$POLL_OUT"  | cut -d'|||' -f2)
+            COMMIT_MSG=$(echo "$POLL_OUT" | cut -d'|||' -f3)
+
+            echo "Status: $STATUS | Deploy: $DEPLOY_ID"
 
             if [ "$STATUS" = "SUCCESS" ]; then
               echo "result=success" >> $GITHUB_OUTPUT
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
               echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
               break
+
             elif [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CRASHED" ]; then
-              LOGS=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
-                -H "Authorization: Bearer $RAILWAY_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d '{"query":"{ deploymentLogs(deploymentId: \"'"$DEPLOY_ID"'\", limit: 80) { message severity } }"}' \
-                | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-logs=d.get('data',{}).get('deploymentLogs',[])
-print('\n'.join([l.get('message','') for l in logs if l.get('message','').strip()])[-3000:])
-" 2>/dev/null || echo "Could not fetch logs")
+              # ── Fix 4: Fetch logs via Python to avoid heredoc/escaping issues ──
+              python3 - << PYEOF3 > /tmp/error_logs.txt
+import os, json, urllib.request
+
+token = os.environ["RAILWAY_TOKEN"]
+deploy_id = "$DEPLOY_ID"
+
+query = """{ deploymentLogs(deploymentId: "%s", limit: 100) { message severity } }""" % deploy_id
+
+req = urllib.request.Request(
+    "https://backboard.railway.app/graphql/v2",
+    data=json.dumps({"query": query}).encode(),
+    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+    method="POST"
+)
+try:
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.load(resp)
+    logs = data.get("data", {}).get("deploymentLogs", [])
+    lines = [l.get("message", "") for l in logs if l.get("message", "").strip()]
+    # Keep last 3000 chars, focus on error lines
+    output = "\n".join(lines)
+    print(output[-3000:])
+except Exception as e:
+    print(f"Could not fetch logs: {e}")
+PYEOF3
 
               echo "result=failed" >> $GITHUB_OUTPUT
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
               echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
-              {
-                echo "error_logs<<LOGSEOF"
-                echo "$LOGS"
-                echo "LOGSEOF"
-              } >> $GITHUB_OUTPUT
+              # ── Fix 5: Write logs to file rather than GITHUB_OUTPUT heredoc ──
+              cp /tmp/error_logs.txt /tmp/error_logs_final.txt
               break
+
             else
               echo "Building ($STATUS)... waiting 15s"
               sleep 15
@@ -98,6 +213,7 @@ print('\n'.join([l.get('message','') for l in logs if l.get('message','').strip(
 
           if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ] && [ "$STATUS" != "SUCCESS" ] && [ "$STATUS" != "FAILED" ] && [ "$STATUS" != "CRASHED" ]; then
             echo "result=timeout" >> $GITHUB_OUTPUT
+            echo "Timed out waiting for deployment" > /tmp/error_logs_final.txt
           fi
 
       # ── Success → Slack ───────────────────────────────────────────────────────
@@ -120,44 +236,79 @@ print('\n'.join([l.get('message','') for l in logs if l.get('message','').strip(
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_PAT: ${{ secrets.GH_PAT }}
-          ERROR_LOGS: ${{ steps.railway.outputs.error_logs }}
-          COMMIT_MSG: ${{ steps.railway.outputs.commit_msg }}
         run: |
+          COMMIT_MSG="${{ steps.railway.outputs.commit_msg }}"
           echo "Build failed on: $COMMIT_MSG"
           echo "Calling Anthropic to diagnose and fix..."
 
-          # Gather relevant source files
-          SRC_CONTEXT=""
-          for f in $(find src -name "*.tsx" -o -name "*.ts" | grep -v ".d.ts" | head -25); do
-            SRC_CONTEXT="$SRC_CONTEXT\n=== $f ===\n$(head -150 $f)\n"
-          done
+          # ── Fix 6: Read ALL relevant source files fully, not just first 150 lines ──
+          python3 - << 'PYEOF'
+import os, glob
 
-          # Write inputs to temp files (avoids shell escaping issues)
-          echo "$ERROR_LOGS" > /tmp/error_logs.txt
-          printf "%b" "$SRC_CONTEXT" > /tmp/src_context.txt
+output_parts = []
+# Prioritise recently changed files by checking git diff
+import subprocess
+try:
+    changed = subprocess.check_output(
+        ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
+        text=True
+    ).strip().split("\n")
+    changed = [f for f in changed if f.endswith((".tsx", ".ts")) and os.path.exists(f)]
+except:
+    changed = []
 
-          python3 << 'PYEOF'
-import os, json, urllib.request, sys
+# All tsx/ts files
+all_files = glob.glob("src/**/*.tsx", recursive=True) + glob.glob("src/**/*.ts", recursive=True)
+all_files = [f for f in all_files if ".d.ts" not in f]
+
+# Changed files first, then others
+ordered = changed + [f for f in all_files if f not in changed]
+
+total_chars = 0
+for filepath in ordered[:30]:
+    try:
+        with open(filepath) as f:
+            content = f.read()
+        if total_chars + len(content) > 12000:
+            # Include truncated version
+            content = content[:3000] + "\n... (truncated)"
+        output_parts.append(f"=== {filepath} ===\n{content}\n")
+        total_chars += len(content)
+        if total_chars > 12000:
+            break
+    except:
+        pass
+
+with open("/tmp/src_context.txt", "w") as f:
+    f.write("\n".join(output_parts))
+
+print(f"Gathered {total_chars} chars from {len(output_parts)} files")
+print(f"Changed files prioritised: {changed}")
+PYEOF
+
+          # Call Anthropic
+          python3 - << 'PYEOF2'
+import os, json, urllib.request
 
 api_key = os.environ["ANTHROPIC_API_KEY"]
 
-with open("/tmp/error_logs.txt") as f:
+with open("/tmp/error_logs_final.txt") as f:
     error_logs = f.read()[:3000]
 
 with open("/tmp/src_context.txt") as f:
-    src_context = f.read()[:8000]
+    src_context = f.read()[:12000]
 
 prompt = f"""You are an expert TypeScript/React/Vite developer. A Railway production build just failed.
 
 BUILD ERROR LOGS:
 {error_logs}
 
-SOURCE FILES (excerpts):
+SOURCE FILES (recently changed files first):
 {src_context}
 
-Diagnose the exact TypeScript or build errors shown in the logs and provide file patches to fix them.
+Diagnose the exact TypeScript or build errors and provide file patches.
 
-Respond ONLY with valid JSON in this exact structure — no markdown fences, no preamble:
+Respond ONLY with valid JSON — no markdown fences, no preamble:
 {{
   "analysis": "one-sentence root cause",
   "fixes": [
@@ -171,8 +322,8 @@ Respond ONLY with valid JSON in this exact structure — no markdown fences, no 
 
 Rules:
 - Only address errors that appear in the build logs
-- find must be unique within the file and match exactly
-- Typical errors: wrong import names, implicit any, missing type annotations, bad JSX syntax
+- find must be unique within the file and match exactly (include enough surrounding context to be unique)
+- Common errors: wrong import names, implicit any, missing type annotations, bad JSX syntax, missing exports
 """
 
 req = urllib.request.Request(
@@ -193,24 +344,26 @@ req = urllib.request.Request(
 try:
     with urllib.request.urlopen(req, timeout=90) as resp:
         data = json.load(resp)
-        text = data["content"][0]["text"].strip()
-        # Strip any accidental markdown fences
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
-        with open("/tmp/fix.json", "w") as f:
-            f.write(text)
-        print(f"Got fix response: {text[:200]}")
+    text = data["content"][0]["text"].strip()
+    # Strip markdown fences if present
+    if "```" in text:
+        parts = text.split("```")
+        for i, part in enumerate(parts):
+            if i % 2 == 1:  # inside code block
+                text = part.lstrip("json").strip()
+                break
+    with open("/tmp/fix.json", "w") as f:
+        f.write(text)
+    print(f"Got response: {text[:300]}")
 except Exception as e:
+    import json as j
     print(f"API error: {e}")
     with open("/tmp/fix.json", "w") as f:
-        json.dump({"analysis": f"API error: {e}", "fixes": []}, f)
-PYEOF
+        j.dump({"analysis": f"API error: {e}", "fixes": []}, f)
+PYEOF2
 
-          # Apply the fixes
-          python3 << 'PYEOF2'
+          # Apply fixes
+          python3 - << 'PYEOF3'
 import json, sys, os
 
 with open("/tmp/fix.json") as f:
@@ -236,32 +389,32 @@ for fix in fixes:
         content = f.read()
     if find_str not in content:
         print(f"  SKIP (pattern not in file): {filepath}")
-        print(f"    Looking for: {repr(find_str[:80])}")
+        print(f"    Pattern: {repr(find_str[:100])}")
         continue
+    count = content.count(find_str)
+    if count > 1:
+        print(f"  WARNING: pattern found {count} times in {filepath}, replacing first")
     new_content = content.replace(find_str, replace_str, 1)
     with open(filepath, "w") as f:
         f.write(new_content)
     print(f"  APPLIED: {filepath}")
     applied += 1
 
-print(f"Total applied: {applied}/{len(fixes)}")
+print(f"Total: {applied}/{len(fixes)} applied")
 if applied == 0:
-    print("No fixes could be applied automatically.")
+    print("No fixes applied — cannot auto-recover")
     sys.exit(1)
 
-# Save analysis for commit message
 with open("/tmp/analysis.txt", "w") as f:
-    f.write(analysis)
-PYEOF2
+    f.write(analysis[:72])
+PYEOF3
 
-          # Commit and push the fix — Railway will auto-redeploy
+          # Commit and push
           git config user.email "ci@axiscrm.com"
           git config user.name "Axis CI Bot"
 
           ANALYSIS=$(cat /tmp/analysis.txt 2>/dev/null || echo "build fix")
-          ANALYSIS="${ANALYSIS:0:72}"
-
           git add -A
           git commit -m "fix(ci): $ANALYSIS"
           git push "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git" main
-          echo "Fix pushed — Railway is now redeploying."
+          echo "Fix pushed — Railway redeploying."
