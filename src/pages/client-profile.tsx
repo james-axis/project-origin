@@ -59,7 +59,7 @@ const FILE_LIBRARY: FileEntry[] = [
 const SECTION_DEFS = [
   { id: "customer_info",  label: "Customer Information" },
   { id: "tasks",          label: "Tasks" },
-  { id: "superfunds",     label: "Client's Existing Superfunds" },
+  { id: "superfunds",     label: "Superfund Details" },
   { id: "lead_info",      label: "Lead Information" },
   { id: "activity_log",   label: "Activity Log" },
 ];
@@ -459,7 +459,7 @@ export function ClientProfilePage() {
         </SectionCard>
       );
       case "superfunds": return (
-        <SectionCard key={id} id={id} title="Client's Existing Superfunds" defaultOpen={false} actionLabel="Add Superfund" action={() => {}} {...dragProps}>
+        <SectionCard key={id} id={id} title="Superfund Details" defaultOpen={false} actionLabel="Add Superfund" action={() => {}} {...dragProps}>
           <div className="px-4 py-4 text-sm text-quaternary text-center">No superfunds added</div>
         </SectionCard>
       );
