@@ -508,8 +508,8 @@ export function ClientProfilePage() {
                 <p className="text-sm font-semibold text-primary">Assigned Team</p>
 
               </div>
-              <EditableField label="Consultant" value="James Nicholls" options=["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"] />
-              <EditableField label="Admin" value="SLG Test Training" options=["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"] />
+              <EditableField label="Consultant" value="James Nicholls" options={["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"]} />
+              <EditableField label="Admin" value="SLG Test Training" options={["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"]} />
             </div>
 
             {/* Notes */}
