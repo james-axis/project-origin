@@ -337,7 +337,9 @@ export function ClientProfilePage() {
   const [noteText, setNoteText] = useState("");
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [clientsExpanded, setClientsExpanded] = useState(true);
-  const [sidebarPinned, setSidebarPinned] = useState(true);
+  const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => {
+    try { const v = localStorage.getItem("axis_profile_sidebar_v1"); return v === null ? true : v === "1"; } catch { return true; }
+  });
 
   // Section order
   const [sectionOrder, setSectionOrder] = useState<string[]>(loadSectionOrder);
@@ -573,7 +575,7 @@ export function ClientProfilePage() {
           <div className={"shrink-0 border-l border-secondary bg-primary hidden xl:flex flex-row transition-all duration-200 " + (sidebarPinned ? "w-80" : "w-10")}>
             {/* Toggle strip */}
             <div className="flex flex-col items-center pt-3 w-10 shrink-0">
-              <button onClick={() => setSidebarPinned(p => !p)} title={sidebarPinned ? "Collapse sidebar" : "Expand sidebar"}
+              <button onClick={() => setSidebarPinned(p => { const next = !p; try { localStorage.setItem("axis_profile_sidebar_v1", next ? "1" : "0"); } catch {} return next; })} title={sidebarPinned ? "Collapse sidebar" : "Expand sidebar"}
                 className="flex size-7 items-center justify-center rounded-lg hover:bg-secondary transition-colors text-quaternary hover:text-secondary">
                 {sidebarPinned ? <ChevronRight className="size-4" /> : <ChevronRight className="size-4 rotate-180" />}
               </button>
