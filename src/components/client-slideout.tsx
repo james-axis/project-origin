@@ -4,7 +4,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { SlideoutMenu } from "@/components/application/slideout-menus/slideout-menu";
-import { Mail01, Phone, Calendar, FileCheck01, ChevronRight, User01, Briefcase01, Building01 } from "@untitledui/icons";
+import { useNavigate } from "react-router";
+import { Mail01, Phone, Calendar, FileCheck01, ChevronRight, User01, Briefcase01, Building01, Expand06 } from "@untitledui/icons";
 import type { SimLead, SimTask } from "@/store/sim-store";
 import { APPLICATION_CHAIN } from "@/store/sim-store";
 
@@ -56,6 +57,7 @@ export function ClientSlideout({ lead, tasks, isOpen, onClose, onSelectTask }: C
   const pct = Math.round((completedCount / total) * 100);
 
   const initials = `${lead.firstName[0]}${lead.lastName[0]}`;
+  const navigate = useNavigate();
 
   // Compute age from DOB
   const age = lead.dob
@@ -68,7 +70,15 @@ export function ClientSlideout({ lead, tasks, isOpen, onClose, onSelectTask }: C
         <>
           <SlideoutMenu.Header onClose={close}>
             {/* Cover banner */}
-            <div className="absolute inset-x-0 top-0 h-24 rounded-tl-none" style={{ background: "linear-gradient(135deg, #D34108 0%, #3B485B 100%)" }} />
+            <div className="absolute inset-x-0 top-0 h-24 rounded-tl-none" style={{ background: "linear-gradient(135deg, #D34108 0%, #3B485B 100%)" }}>
+              <button
+                onClick={() => { close(); navigate(`/client/${lead.id}`); }}
+                title="Open full profile"
+                className="absolute top-2 right-10 flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/30 border border-white/25 px-2.5 py-1.5 text-white text-[11px] font-medium transition-all group">
+                <Expand06 className="size-3.5" />
+                <span>Full profile</span>
+              </button>
+            </div>
 
             {/* Avatar */}
             <div className="relative pt-10 pb-2">
