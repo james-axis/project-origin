@@ -269,6 +269,7 @@ function ActionButton({ label, icon, onClick, variant = "default" }: {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function ClientProfilePage() {
   const [noteText, setNoteText] = useState("");
+  const [clientsExpanded, setClientsExpanded] = useState(true);
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"details" | "applications" | "files">("details");
 
@@ -313,7 +314,6 @@ export function ClientProfilePage() {
           {/* Action toolbar */}
           <div className="mt-3 flex flex-wrap gap-1.5">
             <ActionButton label="Edit" icon="✏️" />
-            <ActionButton label="Form" icon="📋" />
             <DropdownButton variant="brand" label="New" icon="✚" items={[
               { label: "Quote",          icon: "💡" },
               { label: "Pre-Assessment", icon: "🩺" },
@@ -325,10 +325,10 @@ export function ClientProfilePage() {
             <DropdownButton label="Actions" icon="⚡" items={[
               { label: "SMS",           icon: "💬" },
               { label: "Email",         icon: "✉️" },
+              { label: "Form",           icon: "📋" },
               { label: "Schedule",      icon: "📅" },
               { label: "Upload Files",  icon: "📎" },
               { label: "Set Status",    icon: "🔄" },
-              { label: "Close",         icon: "✕", danger: true },
             ]} />
             <DropdownButton label="Other" icon="⋯" items={[
               { label: "PDF",            icon: "📄" },
@@ -368,7 +368,7 @@ export function ClientProfilePage() {
                 { label: "Affiliate Company", value: CLIENT.affiliateCompany },
                 { label: "Referrer Name",     value: CLIENT.referrer },
                 { label: "Marginal Tax Rate", value: CLIENT.marginaltaxRate },
-                { label: "Group",             value: CLIENT.group },
+                { label: "Group",             value: <EditableGroupField value={CLIENT.group} /> },
               ]} />
               {CLIENT.tags.length > 0 && (
                 <div className="flex items-center gap-2 px-4 pb-3">
@@ -427,7 +427,7 @@ export function ClientProfilePage() {
             {/* Lead Progress */}
             <SectionCard title="Lead Progress">
               <InfoGrid items={[
-                { label: "Assigned To",  value: CLIENT.assignedTo },
+                { label: "Assigned To",  value: <EditableField label="" value={CLIENT.assignedTo} options={["James Nicholls","SLG Test Training","Maysee Chang","John Rojas","Dean Hines","Lucas Kenyon","Adam Cowburn","Advice Team","Audits Team","Natasha Carlson"]} /> },
                 { label: "Created On",   value: CLIENT.createdOn },
                 { label: "Assigned On",  value: CLIENT.assignedOn },
                 { label: "Updated On",   value: CLIENT.updatedOn },
@@ -475,31 +475,46 @@ export function ClientProfilePage() {
           {/* Right sidebar */}
           <div className="w-80 shrink-0 border-l border-secondary bg-primary overflow-y-auto px-4 py-4 space-y-4 hidden xl:block">
 
-            {/* Clients & Applications */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
+            {/* Clients & Applications — pin/unpin */}
+            <div className={"rounded-xl border border-secondary bg-primary transition-all overflow-hidden " + (clientsExpanded ? "" : "")}>
+              <div className="flex items-center justify-between px-1 py-1">
                 <p className="text-sm font-semibold text-primary">Clients & Applications</p>
+                <div className="flex items-center gap-1">
+                  {clientsExpanded && (
+                    <div className="flex gap-1">
+                      <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
+                        <User01 className="size-3.5 text-quaternary" />
+                      </button>
+                      <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
+                        <Users01 className="size-3.5 text-quaternary" />
+                      </button>
+                      <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
+                        <Users01 className="size-3.5 text-quaternary" />
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setClientsExpanded(e => !e)}
+                    title={clientsExpanded ? "Minimise" : "Maximise"}
+                    className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors ml-1">
+                    {clientsExpanded
+                      ? <ChevronDown className="size-3.5 text-quaternary" />
+                      : <ChevronRight className="size-3.5 text-quaternary" />}
+                  </button>
+                </div>
               </div>
-              {/* Role icons */}
-              <div className="flex gap-2 mb-2">
-                <button className="flex size-8 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
-                  <User01 className="size-4 text-quaternary" />
-                </button>
-                <button className="flex size-8 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
-                  <Users01 className="size-4 text-quaternary" />
-                </button>
-                <button className="flex size-8 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
-                  <Users01 className="size-4 text-quaternary" />
-                </button>
-              </div>
-              {/* Active client card */}
-              <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
-                <span className="flex items-center gap-2">
-                  <User01 className="size-3.5" />
-                  {CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}
-                </span>
-                <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px]">Prospect</span>
-              </div>
+              {clientsExpanded && (
+                <div className="pb-2">
+                  {/* Active client card */}
+                  <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white mt-1" style={{ background: "#D34108" }}>
+                    <span className="flex items-center gap-2">
+                      <User01 className="size-3.5" />
+                      {CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}
+                    </span>
+                    <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px]">Prospect</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Assigned Team */}
