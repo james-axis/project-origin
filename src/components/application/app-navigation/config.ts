@@ -2,6 +2,7 @@ import type { FC, ReactNode } from "react";
 import {
     AlertCircle,
     Announcement01,
+    Flag01,
     BarChartSquare02,
     CheckDone01,
     CurrencyDollar,
