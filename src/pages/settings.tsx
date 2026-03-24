@@ -1416,7 +1416,7 @@ function PlaceholderSection({ title }: { title: string; description?: string }) 
 export function Settings() {
   const [activeTab, setActiveTab] = useState("task-builder");
   return (
-    <div className="flex flex-col h-full min-h-screen">
+    <div className="flex flex-col h-full min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
       <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
         <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
         <div className="flex overflow-x-auto gap-0 -mb-px">

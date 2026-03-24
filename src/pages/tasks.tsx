@@ -367,7 +367,7 @@ export function TasksPage() {
   const hasFilters   = search || assigneeFilter !== "All" || groupFilter !== "All" || taskTypeFilter !== "All";
 
   return (
-    <div className="lg:flex min-h-screen bg-primary">
+    <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
       <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
       <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
 
