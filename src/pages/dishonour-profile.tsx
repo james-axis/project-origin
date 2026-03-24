@@ -189,10 +189,15 @@ export function DishonourProfilePage() {
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <StatusButton/>
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">📋 Form</button>
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">✅ Saved by</button>
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">✉️ Email</button>
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">💬 SMS</button>
+            <DropdownButton label="Actions" icon="⚡" items={[
+              {label:"SMS",      icon:"💬"},
+              {label:"Email",    icon:"✉️"},
+              {label:"Form",     icon:"📋"},
+              {label:"Saved by", icon:"✅"},
+              {label:"Schedule", icon:"📅"},
+              {label:"Upload Files",icon:"📎"},
+              {label:"PDF",      icon:"📄"},
+            ]}/>
             <button onClick={()=>setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary"><Users01 className="size-3.5"/> More Info</button>
           </div>
         </div>
