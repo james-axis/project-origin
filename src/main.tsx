@@ -13,6 +13,7 @@ import { DishonoursPage } from "@/pages/dishonours";
 import { DishonourProfilePage } from "@/pages/dishonour-profile";
 import { ComplaintsPage } from "@/pages/complaints";
 import { ComplaintProfilePage } from "@/pages/complaint-profile";
+import { CampaignsPage } from "@/pages/campaigns";
 import { NotFound } from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { RouteProvider } from "@/providers/router-provider";
@@ -46,6 +47,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/complaints" element={<RequireAuth><ComplaintsPage /></RequireAuth>} />
               <Route path="/complaints/*" element={<RequireAuth><ComplaintsPage /></RequireAuth>} />
               <Route path="/complaint/:id" element={<RequireAuth><ComplaintProfilePage /></RequireAuth>} />
+              <Route path="/campaigns" element={<RequireAuth><CampaignsPage /></RequireAuth>} />
+              <Route path="/campaigns/*" element={<RequireAuth><CampaignsPage /></RequireAuth>} />
               <Route path="/client/:id" element={<RequireAuth><ClientProfilePage /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><HomeScreen /></RequireAuth>} />
               <Route path="/settings/*" element={<RequireAuth><HomeScreen /></RequireAuth>} />
