@@ -15,9 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    # ── Fix 2: Skip entirely if this is an auto-fix commit (prevents infinite loop) ──
-    if: "!startsWith(github.event.head_commit.message, 'fix(ci):')"
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -415,6 +412,6 @@ PYEOF3
 
           ANALYSIS=$(cat /tmp/analysis.txt 2>/dev/null || echo "build fix")
           git add -A
-          git commit -m "fix(ci): $ANALYSIS"
+          git commit -m "fix(ci): $ANALYSIS [skip ci]"
           git push "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git" main
           echo "Fix pushed — Railway redeploying."
