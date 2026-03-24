@@ -1,5 +1,6 @@
 import type { FC, ReactNode } from "react";
 import {
+    AlertCircle,
     Announcement01,
     BarChartSquare02,
     CheckDone01,
@@ -95,12 +96,20 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
+        label: "Dishonours",
+        href: "/dishonours",
+        icon: AlertCircle,
+        items: [
+            { label: "Active", href: "/dishonours" },
+            { label: "Closed", href: "/dishonours/closed" },
+        ],
+    },
+    {
         label: "Payments",
         href: "/payments",
         icon: CurrencyDollar,
         items: [
             { label: "All Payments", href: "/payments" },
-            { label: "Dishonours", href: "/dishonours" },
         ],
     },
     {

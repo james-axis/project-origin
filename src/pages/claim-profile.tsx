@@ -232,8 +232,7 @@ export function ClaimProfilePage() {
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <StatusButton/>
-            <DropdownButton label="Actions" icon="⚡" items={[{label:"SMS",icon:"💬"},{label:"Email",icon:"✉️"},{label:"Schedule",icon:"📅"},{label:"Upload Files",icon:"📎"},{label:"Complete",icon:"✅"}]}/>
-            <DropdownButton label="Other" icon="⋯" items={[{label:"PDF",icon:"📄"},{label:"Close",icon:"✕",danger:true}]}/>
+            <DropdownButton label="Actions" icon="⚡" items={[{label:"SMS",icon:"💬"},{label:"Email",icon:"✉️"},{label:"Schedule",icon:"📅"},{label:"Upload Files",icon:"📎"},{label:"PDF",icon:"📄"}]}/>
             <button onClick={()=>setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary"><Users01 className="size-3.5"/> More Info</button>
           </div>
         </div>
