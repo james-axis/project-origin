@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { CreateApplicationModal } from "@/components/modals/create-application-modal";
 import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
@@ -365,6 +366,7 @@ export function ApplicationProfilePage() {
     try { const v = localStorage.getItem("axis_app_sidebar_v1"); return v === null ? true : v === "1"; } catch { return true; }
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNewApp, setShowNewApp] = useState(false);
   const [clientsExpanded, setClientsExpanded] = useState(true);
   const [fieldState, setFieldState] = useState<FieldState>(loadFieldState);
   const [fieldPanelOpen, setFieldPanelOpen] = useState(false);
@@ -724,12 +726,16 @@ export function ApplicationProfilePage() {
           {/* Toolbar */}
           <div className="mt-3 flex flex-wrap gap-1.5">
             <StatusButton />
-            <DropdownButton label="New" icon="✚" items={[
-              { label:"Pre-Assessment", icon:"🩺" },
-              { label:"Claim",          icon:"🛡️" },
-              { label:"Dishonour",      icon:"⚠️" },
-              { label:"Policy ID",      icon:"🔑" },
-            ]} />
+            <div className="relative">
+              <DropdownButton label="New" icon="✚" items={[
+                { label:"New Application", icon:"📝" },
+                { label:"Pre-Assessment",  icon:"🩺" },
+                { label:"Claim",           icon:"🛡️" },
+                { label:"Dishonour",       icon:"⚠️" },
+                { label:"Policy ID",       icon:"🔑" },
+              ]} />
+            </div>
+            {showNewApp && <CreateApplicationModal clientName={`${APP.customer.title} ${APP.customer.firstName} ${APP.customer.lastName}`} onClose={() => setShowNewApp(false)}/>}
             <DropdownButton label="Actions" icon="⚡" items={[
               { label:"SMS",          icon:"💬" },
               { label:"Email",        icon:"✉️" },

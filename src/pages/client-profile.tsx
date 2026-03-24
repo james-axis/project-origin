@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { CreateApplicationModal } from "@/components/modals/create-application-modal";
+import { CreateLeadModal } from "@/components/modals/create-lead-modal";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
@@ -396,6 +398,8 @@ export function ClientProfilePage() {
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [clientsExpanded, setClientsExpanded] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNewApp, setShowNewApp] = useState(false);
+  const [showNewLead, setShowNewLead] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => {
     try { const v = localStorage.getItem("axis_profile_sidebar_v1"); return v === null ? true : v === "1"; } catch { return true; }
   });
