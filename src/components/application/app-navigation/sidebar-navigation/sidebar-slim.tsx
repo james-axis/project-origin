@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { LifeBuoy01, LogOut01, Settings01 } from "@untitledui/icons";
+import { CreateLeadModal } from "@/components/modals/create-lead-modal";
 import { AnimatePresence, motion } from "motion/react";
 import { Button as AriaButton, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
 import { Avatar } from "@/components/base/avatar/avatar";
@@ -32,6 +33,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
     const activeItem = [...items, ...footerItems].find((item) => item.href === activeUrl || item.items?.some((subItem) => subItem.href === activeUrl));
     const [currentItem, setCurrentItem] = useState(activeItem || items[1]);
     const [isHovering, setIsHovering] = useState(false);
+    const [showCreateLead, setShowCreateLead] = useState(false);
 
     const isSecondarySidebarVisible = isHovering && Boolean(currentItem.items?.length);
 
@@ -73,6 +75,15 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     ))}
                 </ul>
                 <div className="mt-auto flex flex-col gap-4 px-3 py-5">
+                    {/* Create New Lead button */}
+                    <button
+                        onClick={() => setShowCreateLead(true)}
+                        title="Create New Lead"
+                        className="flex w-full items-center justify-center rounded-xl bg-brand-solid py-2.5 text-white hover:bg-brand-solid_hover transition-colors shadow-sm"
+                    >
+                        <svg className="size-4" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                    </button>
+                    {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
                     {footerItems.length > 0 && (
                         <ul className="flex flex-col gap-0.5">
                             {footerItems.map((item) => (

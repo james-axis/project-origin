@@ -176,7 +176,7 @@ function EditableGroupField({ value, compact = false }: { value: string; compact
 // ─── Dropdown button ──────────────────────────────────────────────────────────
 function DropdownButton({ label, icon, items, variant = "default" }: {
   label: string; icon?: string; variant?: "default"|"brand";
-  items: { label: string; icon?: string; danger?: boolean }[];
+  items: { label: string; icon?: string; danger?: boolean; onClick?: () => void }[];
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -195,7 +195,7 @@ function DropdownButton({ label, icon, items, variant = "default" }: {
       {open && (
         <div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
           {items.map((item, i) => (
-            <button key={i} onClick={() => setOpen(false)} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger ? "text-error-primary" : "text-primary")}>
+            <button key={i} onClick={() => { setOpen(false); item.onClick?.(); }} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger ? "text-error-primary" : "text-primary")}>
               {item.icon && <span>{item.icon}</span>}{item.label}
             </button>
           ))}
@@ -558,7 +558,7 @@ export function ClientProfilePage() {
             <DropdownButton label="New" icon="✚" items={[
               { label: "Quote",          icon: "💡" },
               { label: "Pre-Assessment", icon: "🩺" },
-              { label: "Application",    icon: "📝" },
+              { label: "Application",    icon: "📝", onClick: () => setShowNewApp(true) },
               { label: "Claim",          icon: "🛡️" },
               { label: "Dishonour",      icon: "⚠️" },
               { label: "Complaint",      icon: "💬" },
