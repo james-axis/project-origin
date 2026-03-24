@@ -828,6 +828,8 @@ export function ClientProfilePage() {
         </>
       )}
       {fieldPanelOpen && <div className="fixed inset-0 z-40" onClick={() => setFieldPanelOpen(false)} />}
+      {showNewApp && <CreateApplicationModal clientName={`${CLIENT.title} ${CLIENT.firstName} ${CLIENT.lastName}`} onClose={() => setShowNewApp(false)} />}
+      {showNewLead && <CreateLeadModal onClose={() => setShowNewLead(false)} />}
     </div>
   );
 }

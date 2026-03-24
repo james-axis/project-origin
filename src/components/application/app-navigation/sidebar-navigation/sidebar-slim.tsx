@@ -79,9 +79,10 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     <button
                         onClick={() => setShowCreateLead(true)}
                         title="Create New Lead"
-                        className="flex w-full items-center justify-center rounded-xl bg-brand-solid py-2.5 text-white hover:bg-brand-solid_hover transition-colors shadow-sm"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-secondary bg-secondary_alt py-2 text-xs font-medium text-secondary hover:bg-secondary hover:text-primary transition-colors"
                     >
-                        <svg className="size-4" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                        <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                        New Lead
                     </button>
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
                     {footerItems.length > 0 && (
