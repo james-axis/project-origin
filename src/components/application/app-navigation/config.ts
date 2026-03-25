@@ -10,7 +10,6 @@ import {
     FileSearch02,
     HomeLine,
     LifeBuoy01,
-    Phone01,
     Settings01,
     ShieldTick,
     Users01,
@@ -153,13 +152,5 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
 
 export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
     { label: "Support", href: "/support", icon: LifeBuoy01 },
-    { 
-        label: "Settings", 
-        href: "/settings", 
-        icon: Settings01,
-        items: [
-            { label: "General", href: "/settings" },
-            { label: "Phone System", href: "/settings/phone", icon: Phone01 },
-        ],
-    },
+    { label: "Settings", href: "/settings", icon: Settings01 },
 ];
