@@ -20,13 +20,11 @@ if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
 }
 
 /**
- * Create Twilio client with AU region configuration
+ * Create Twilio client
+ * Note: region/edge options are for Voice SDK calls, not REST API
  * Stage 3: Region Configuration
  */
-export const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
-  region: 'au1',
-  edge: 'sydney',
-});
+export const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 /**
  * Generate TwiML with Sydney edge routing
