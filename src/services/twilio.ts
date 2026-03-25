@@ -256,7 +256,7 @@ export async function listCalls(params?: {
       if (value !== undefined) query.append(key, String(value));
     });
   }
-  return twilioFetch<CallRecord[]>(`/calls?${query}`);
+  return twilioFetch<CallRecord[]>(`/calls/?${query}`);
 }
 
 /**
