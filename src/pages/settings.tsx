@@ -1461,15 +1461,12 @@ interface SetupStep {
 
 const SETUP_STEPS: SetupStep[] = [
   { id: 'practice', label: 'Practice Details', description: 'Register your practice', icon: Building01 },
-  { id: 'address', label: 'Business Address', description: 'Add regulatory address', icon: MarkerPin01 },
-  { id: 'compliance', label: 'AU Compliance', description: 'Regulatory bundle', icon: Shield01 },
-  { id: 'voice', label: 'Voice Config', description: 'Create TwiML App', icon: Settings01 },
   { id: 'number', label: 'Phone Number', description: 'Purchase a number', icon: PhoneCall01 },
   { id: 'routing', label: 'Call Routing', description: 'Set up IVR', icon: Zap },
 ];
 
 type PhoneSubTab = "practices" | "numbers" | "recording" | "transcription" | "access" | "usage";
-type WizardStepId = 'practice' | 'address' | 'compliance' | 'voice' | 'number' | 'routing';
+type WizardStepId = 'practice' | 'number' | 'routing';
 
 function PhoneSettings() {
   const [subTab, setSubTab] = useState<PhoneSubTab>("practices");
@@ -1491,11 +1488,8 @@ function PhoneSettings() {
     contactEmail: '',
     abn: '',
     afslNumber: '',
-    street: '',
-    city: '',
-    region: 'NSW',
-    postalCode: '',
     numberType: 'local',
+    numberCountry: 'US', // Default to US for instant purchase (no regulatory bundle needed)
     selectedNumber: '',
     greetingText: 'Thank you for calling. Please hold while we connect you.',
     routeType: 'direct',
@@ -1624,119 +1618,22 @@ function PhoneSettings() {
     }
   };
 
-  // Step 2: Create Address
-  const handleCreateAddress = async () => {
-    if (!wizardPractice) return;
-    setWizardLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/regulatory-address`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          street: formData.street,
-          city: formData.city,
-          region: formData.region,
-          postalCode: formData.postalCode,
-          customerName: formData.practiceName || wizardPractice.practice_name,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create address');
-      setWizardPractice(prev => prev ? { ...prev, address_sid: data.addressSid } : null);
-      setWizardStep(2);
-      fetchPractices();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setWizardLoading(false);
-    }
-  };
+  // (Address and compliance steps removed - single account architecture)
 
-  // Step 3: Create Regulatory Bundle
-  const handleCreateBundle = async () => {
-    if (!wizardPractice) return;
-    setWizardLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/regulatory-bundle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numberType: formData.numberType }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create bundle');
-      setWizardPractice(prev => prev ? { ...prev, bundle_sid: data.bundleSid, bundle_status: 'pending-review' } : null);
-      setWizardStep(3);
-      fetchPractices();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setWizardLoading(false);
-    }
-  };
-
-  // Check bundle status
-  const checkBundleStatus = async () => {
-    if (!wizardPractice) return;
-    setWizardLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/bundle-status`);
-      const data = await res.json();
-      if (data.isApproved) {
-        setWizardPractice(prev => prev ? { ...prev, bundle_status: 'twilio-approved' } : null);
-      }
-      fetchPractices();
-    } catch (err) {
-      console.error('Error checking bundle:', err);
-    } finally {
-      setWizardLoading(false);
-    }
-  };
-
-  // Step 4: Create TwiML App
-  const handleCreateTwimlApp = async () => {
-    if (!wizardPractice) return;
-    setWizardLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/twiml-app`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create TwiML App');
-      setWizardPractice(prev => prev ? { ...prev, twiml_app_sid: data.appSid } : null);
-      setWizardStep(4);
-      fetchPractices();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setWizardLoading(false);
-    }
-  };
-
-  // Step 5: Search available numbers
+  // Step 2: Search available numbers (from main Axis account)
   const searchAvailableNumbers = async () => {
     if (!wizardPractice) return;
     setSearchingNumbers(true);
     setAvailableNumbers([]);
     try {
-      // For now, use US numbers since AU requires approved bundle
-      const country = wizardPractice.bundle_status === 'twilio-approved' ? 'AU' : 'US';
+      // Use country selector - defaults to US for instant purchase
+      const country = formData.numberCountry || 'US';
       const res = await fetch(
         `${API_BASE}/api/twilio/practices/${wizardPractice.id}/available-numbers?country=${country}&type=${formData.numberType}`
       );
       const data = await res.json();
       if (res.ok) {
         setAvailableNumbers(data);
-      } else if (country === 'AU') {
-        // Fallback to US if AU fails
-        const usRes = await fetch(
-          `${API_BASE}/api/twilio/practices/${wizardPractice.id}/available-numbers?country=US&type=${formData.numberType}`
-        );
-        const usData = await usRes.json();
-        if (usRes.ok) setAvailableNumbers(usData);
       }
     } catch (err) {
       console.error('Error searching numbers:', err);
@@ -1745,7 +1642,7 @@ function PhoneSettings() {
     }
   };
 
-  // Purchase number
+  // Purchase number (from main Axis account)
   const handlePurchaseNumber = async () => {
     if (!wizardPractice || !formData.selectedNumber) return;
     setWizardLoading(true);
@@ -1761,7 +1658,7 @@ function PhoneSettings() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to purchase number');
-      setWizardStep(5);
+      setWizardStep(2); // Go to step 3 (call routing)
       fetchPhoneNumbers();
       fetchPractices();
     } catch (err: any) {
@@ -1771,7 +1668,7 @@ function PhoneSettings() {
     }
   };
 
-  // Step 6: Create Call Flow
+  // Step 3: Create Call Flow
   const handleCreateCallFlow = async () => {
     if (!wizardPractice) return;
     setWizardLoading(true);
@@ -1847,7 +1744,7 @@ function PhoneSettings() {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-primary">Register Your Practice</h3>
-              <p className="text-sm text-tertiary mt-1">Create a dedicated Twilio subaccount for your practice</p>
+              <p className="text-sm text-tertiary mt-1">Enter your practice details to get started</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -1925,256 +1822,7 @@ function PhoneSettings() {
           </div>
         );
 
-      case 1: // Business Address
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-primary">Business Address</h3>
-              <p className="text-sm text-tertiary mt-1">Required for Australian phone number regulatory compliance</p>
-            </div>
-            <div className="p-4 rounded-lg bg-warning-secondary border border-warning">
-              <div className="flex gap-3">
-                <InfoCircle className="size-5 text-warning-primary flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-warning-primary">AU Regulatory Requirement</p>
-                  <p className="text-xs text-warning-primary/80 mt-1">
-                    Australian phone numbers require a verified business address for regulatory compliance.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-secondary mb-1.5">Street Address *</label>
-                <input
-                  type="text"
-                  value={formData.street}
-                  onChange={e => setFormData(prev => ({ ...prev, street: e.target.value }))}
-                  onInput={e => setFormData(prev => ({ ...prev, street: (e.target as HTMLInputElement).value }))}
-                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
-                  placeholder="123 George Street"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1.5">City *</label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                  onInput={e => setFormData(prev => ({ ...prev, city: (e.target as HTMLInputElement).value }))}
-                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
-                  placeholder="Sydney"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1.5">State *</label>
-                <select
-                  value={formData.region}
-                  onChange={e => setFormData(prev => ({ ...prev, region: e.target.value }))}
-                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
-                >
-                  <option value="NSW">New South Wales</option>
-                  <option value="VIC">Victoria</option>
-                  <option value="QLD">Queensland</option>
-                  <option value="WA">Western Australia</option>
-                  <option value="SA">South Australia</option>
-                  <option value="TAS">Tasmania</option>
-                  <option value="ACT">Australian Capital Territory</option>
-                  <option value="NT">Northern Territory</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary mb-1.5">Postcode *</label>
-                <input
-                  type="text"
-                  value={formData.postalCode}
-                  onChange={e => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-                  onInput={e => setFormData(prev => ({ ...prev, postalCode: (e.target as HTMLInputElement).value }))}
-                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
-                  placeholder="2000"
-                />
-              </div>
-            </div>
-            <div className="flex justify-between pt-4 border-t border-secondary">
-              <button
-                onClick={() => setWizardStep(0)}
-                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
-              >
-                <ArrowLeft className="size-4" /> Back
-              </button>
-              <button
-                onClick={handleCreateAddress}
-                disabled={!formData.street || !formData.city || !formData.postalCode || wizardLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
-                Save Address
-              </button>
-            </div>
-          </div>
-        );
-
-      case 2: // Regulatory Bundle
-        const bundleStatus = wizardPractice?.bundle_status;
-        const isPending = bundleStatus === 'pending-review';
-        const isApproved = bundleStatus === 'twilio-approved';
-        
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-primary">Regulatory Compliance</h3>
-              <p className="text-sm text-tertiary mt-1">Submit your regulatory bundle for Twilio approval</p>
-            </div>
-            
-            {!bundleStatus || bundleStatus === 'not_started' ? (
-              <>
-                <div className="p-4 rounded-lg bg-secondary_alt border border-secondary">
-                  <p className="text-sm text-secondary">
-                    A regulatory bundle links your business address to your identity for Australian phone number compliance.
-                    This is reviewed by Twilio and typically takes 1-3 business days.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Number Type</label>
-                  <select
-                    value={formData.numberType}
-                    onChange={e => setFormData(prev => ({ ...prev, numberType: e.target.value }))}
-                    className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
-                  >
-                    <option value="local">Local Numbers (+61 2/3/7/8)</option>
-                    <option value="mobile">Mobile Numbers (+61 4XX)</option>
-                    <option value="tollFree">Toll-Free (1800)</option>
-                  </select>
-                </div>
-              </>
-            ) : isPending ? (
-              <div className="p-6 rounded-xl bg-warning-secondary border border-warning text-center">
-                <Clock className="size-12 text-warning-primary mx-auto mb-3" />
-                <h4 className="font-semibold text-warning-primary">Pending Review</h4>
-                <p className="text-sm text-warning-primary/80 mt-1">
-                  Your regulatory bundle is being reviewed by Twilio. This typically takes 1-3 business days.
-                </p>
-                <button
-                  onClick={checkBundleStatus}
-                  disabled={wizardLoading}
-                  className="mt-4 px-4 py-2 text-sm font-medium text-warning-primary border border-warning rounded-lg hover:bg-warning/10 flex items-center gap-2 mx-auto"
-                >
-                  {wizardLoading ? <RefreshCw01 className="size-4 animate-spin" /> : <RefreshCw01 className="size-4" />}
-                  Check Status
-                </button>
-              </div>
-            ) : isApproved ? (
-              <div className="p-6 rounded-xl bg-success-secondary border border-success-primary text-center">
-                <CheckCircle className="size-12 text-success-primary mx-auto mb-3" />
-                <h4 className="font-semibold text-success-primary">Approved!</h4>
-                <p className="text-sm text-success-primary/80 mt-1">
-                  Your regulatory bundle has been approved. You can now purchase Australian phone numbers.
-                </p>
-              </div>
-            ) : (
-              <div className="p-6 rounded-xl bg-error-secondary border border-error text-center">
-                <AlertCircle className="size-12 text-error-primary mx-auto mb-3" />
-                <h4 className="font-semibold text-error-primary">Review Required</h4>
-                <p className="text-sm text-error-primary/80 mt-1">
-                  Your bundle requires attention. Please check your Twilio console for details.
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-between pt-4 border-t border-secondary">
-              <button
-                onClick={() => setWizardStep(1)}
-                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
-              >
-                <ArrowLeft className="size-4" /> Back
-              </button>
-              {!bundleStatus || bundleStatus === 'not_started' ? (
-                <button
-                  onClick={handleCreateBundle}
-                  disabled={wizardLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
-                  Submit for Review
-                </button>
-              ) : (
-                <button
-                  onClick={() => setWizardStep(3)}
-                  disabled={!isApproved && isPending}
-                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isPending ? 'Waiting for Approval...' : 'Continue'}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-
-      case 3: // TwiML App
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-primary">Voice Configuration</h3>
-              <p className="text-sm text-tertiary mt-1">Create a TwiML Application for handling voice calls</p>
-            </div>
-            <div className="p-4 rounded-lg bg-secondary_alt border border-secondary">
-              <div className="flex gap-3">
-                <Settings01 className="size-5 text-tertiary flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-primary">What is a TwiML App?</p>
-                  <p className="text-xs text-tertiary mt-1">
-                    A TwiML Application tells Twilio how to handle incoming and outgoing calls. 
-                    It connects your phone numbers to the Axis CRM call routing system.
-                  </p>
-                </div>
-              </div>
-            </div>
-            {wizardPractice?.twiml_app_sid ? (
-              <div className="p-6 rounded-xl bg-success-secondary border border-success-primary text-center">
-                <CheckCircle className="size-12 text-success-primary mx-auto mb-3" />
-                <h4 className="font-semibold text-success-primary">Voice App Created!</h4>
-                <p className="text-sm text-success-primary/80 mt-1">
-                  Your TwiML Application has been configured and is ready to handle calls.
-                </p>
-                <p className="text-xs font-mono text-success-primary/60 mt-2">{wizardPractice.twiml_app_sid}</p>
-              </div>
-            ) : (
-              <div className="p-6 rounded-xl border border-dashed border-secondary text-center">
-                <PlayCircle className="size-12 text-quaternary mx-auto mb-3" />
-                <p className="text-sm text-tertiary">
-                  Click the button below to create your voice application
-                </p>
-              </div>
-            )}
-            <div className="flex justify-between pt-4 border-t border-secondary">
-              <button
-                onClick={() => setWizardStep(2)}
-                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
-              >
-                <ArrowLeft className="size-4" /> Back
-              </button>
-              {wizardPractice?.twiml_app_sid ? (
-                <button
-                  onClick={() => setWizardStep(4)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover"
-                >
-                  Continue to Phone Numbers
-                </button>
-              ) : (
-                <button
-                  onClick={handleCreateTwimlApp}
-                  disabled={wizardLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
-                  Create Voice App
-                </button>
-              )}
-            </div>
-          </div>
-        );
-
-      case 4: // Phone Number
+      case 1: // Phone Number
         return (
           <div className="space-y-6">
             <div>
@@ -2182,6 +1830,15 @@ function PhoneSettings() {
               <p className="text-sm text-tertiary mt-1">Search and purchase a phone number for your practice</p>
             </div>
             <div className="flex gap-3">
+              <select
+                value={formData.numberCountry}
+                onChange={e => setFormData(prev => ({ ...prev, numberCountry: e.target.value, selectedNumber: '' }))}
+                className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="US">United States (+1)</option>
+                <option value="AU">Australia (+61)</option>
+                <option value="GB">United Kingdom (+44)</option>
+              </select>
               <select
                 value={formData.numberType}
                 onChange={e => setFormData(prev => ({ ...prev, numberType: e.target.value, selectedNumber: '' }))}
@@ -2200,6 +1857,14 @@ function PhoneSettings() {
                 Search Numbers
               </button>
             </div>
+            {formData.numberCountry === 'AU' && (
+              <div className="p-3 rounded-lg bg-warning-secondary border border-warning">
+                <p className="text-xs text-warning-primary flex items-center gap-2">
+                  <InfoCircle className="size-4" />
+                  AU numbers require Axis regulatory bundle approval. Contact admin if unavailable.
+                </p>
+              </div>
+            )}
             {availableNumbers.length > 0 && (
               <div className="rounded-xl border border-secondary overflow-hidden max-h-64 overflow-y-auto">
                 <table className="w-full text-sm">
@@ -2237,7 +1902,7 @@ function PhoneSettings() {
             )}
             <div className="flex justify-between pt-4 border-t border-secondary">
               <button
-                onClick={() => setWizardStep(3)}
+                onClick={() => setWizardStep(0)}
                 className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
               >
                 <ArrowLeft className="size-4" /> Back
@@ -2254,7 +1919,7 @@ function PhoneSettings() {
           </div>
         );
 
-      case 5: // Call Routing
+      case 2: // Call Routing
         return (
           <div className="space-y-6">
             <div>
@@ -2294,7 +1959,7 @@ function PhoneSettings() {
             </div>
             <div className="flex justify-between pt-4 border-t border-secondary">
               <button
-                onClick={() => setWizardStep(4)}
+                onClick={() => setWizardStep(1)}
                 className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
               >
                 <ArrowLeft className="size-4" /> Back

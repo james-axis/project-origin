@@ -17,7 +17,7 @@ import { dirname, join } from 'path';
 import db from './lib/db.js';
 
 // Route imports - all stages (0-10)
-import stage0Routes from './routes/stage0-subaccounts.js';
+import stage0Routes from './routes/stage0-practices.js'; // Single-account architecture
 import stage1Routes from './routes/stage1-regulatory.js';
 import stage2Routes from './routes/stage2-phone-numbers.js';
 import stage4Routes from './routes/stage4-call-flows.js';
