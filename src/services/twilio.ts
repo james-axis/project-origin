@@ -514,15 +514,3 @@ export interface TranscriptionCallbackPayload {
   TranscriptionText?: string;
   TranscriptionUrl?: string;
 }
-
-// Export all types for use elsewhere
-export type {
-  TwilioConfig,
-  PhoneNumber,
-  AvailableNumber,
-  CallRecord,
-  Recording,
-  Transcription,
-  UsageRecord,
-  ClientToken,
-};

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone01, Settings01, Microphone01, Users01, BarChart01, Plus, Edit02, Check, XClose } from '@untitledui/icons-react';
+import { Phone01, Settings01, Microphone01, Users01, BarChart01, Plus, Edit02, Check, XClose } from '@untitledui/icons';
 
 // Types
 interface PhoneNumber {
