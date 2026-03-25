@@ -10,10 +10,10 @@ const TITLES = ["Mr","Mrs","Ms","Miss","Dr","Prof"];
 const EMPLOYMENT = ["Employed full-time","Employed part-time","Self-Employed","Casual","Unemployed","Retired","Student","Home Duties"];
 
 const SECTIONS = [
-  { id:"personal",    label:"Personal",    icon:"👤" },
-  { id:"contact",     label:"Contact",     icon:"📞" },
-  { id:"employment",  label:"Employment",  icon:"💼" },
-  { id:"assignment",  label:"Assignment",  icon:"👥" },
+  { id:"personal",    label:"Personal"   },
+  { id:"contact",     label:"Contact"    },
+  { id:"employment",  label:"Employment" },
+  { id:"assignment",  label:"Assignment" },
 ];
 
 interface Props { onClose: () => void; }
@@ -44,17 +44,14 @@ export function CreateLeadModal({ onClose }: Props) {
   const isContactComplete  = !!(form.phone && form.email);
   const canSubmit = isPersonalComplete && isContactComplete;
 
-  function SectionTab({ id, label, icon, complete }: { id:string; label:string; icon:string; complete?:boolean }) {
+  function SectionTab({ id, label, complete }: { id:string; label:string; complete?:boolean }) {
     const active = activeSection === id;
     return (
       <button onClick={() => setActiveSection(id)}
-        className={"flex flex-col items-center gap-1.5 px-4 py-3 text-xs font-medium transition-colors border-b-2 " +
+        className={"relative flex items-center gap-1.5 px-4 py-3 text-xs font-medium transition-colors border-b-2 " +
           (active ? "border-brand text-brand-secondary" : "border-transparent text-quaternary hover:text-secondary hover:border-secondary")}>
-        <span className="relative">
-          <span className="text-base">{icon}</span>
-          {complete && <span className="absolute -top-0.5 -right-1 flex size-3 items-center justify-center rounded-full bg-success-primary"><Check className="size-2 text-white"/></span>}
-        </span>
         {label}
+        {complete && <span className="flex size-3.5 items-center justify-center rounded-full bg-success-primary"><Check className="size-2 text-white"/></span>}
       </button>
     );
   }
@@ -86,10 +83,10 @@ export function CreateLeadModal({ onClose }: Props) {
 
         {/* Section tabs */}
         <div className="flex border-b border-secondary shrink-0 px-2">
-          <SectionTab id="personal"   label="Personal"   icon="👤" complete={isPersonalComplete}/>
-          <SectionTab id="contact"    label="Contact"    icon="📞" complete={isContactComplete}/>
-          <SectionTab id="employment" label="Employment" icon="💼"/>
-          <SectionTab id="assignment" label="Assignment" icon="👥"/>
+          <SectionTab id="personal"   label="Personal"   complete={isPersonalComplete}/>
+          <SectionTab id="contact"    label="Contact"    complete={isContactComplete}/>
+          <SectionTab id="employment" label="Employment"/>
+          <SectionTab id="assignment" label="Assignment"/>
         </div>
 
         {/* Section content */}

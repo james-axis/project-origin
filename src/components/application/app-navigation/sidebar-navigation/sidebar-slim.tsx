@@ -62,7 +62,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
 
                 <ul className="mt-4 flex flex-col gap-0.5 px-3">
                     {items.map((item) => (
-                        <li key={item.label} onPointerEnter={() => setCurrentItem(item)}>
+                        <li key={item.label} onPointerEnter={() => setCurrentItem(item)} title={item.label}>
                             <NavItemButton
                                 size="md"
                                 current={currentItem.href === item.href}
@@ -74,8 +74,8 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                         </li>
                     ))}
                 </ul>
-                <div className="mt-auto flex flex-col gap-4 px-3 py-5">
-                    {/* Create New Lead button */}
+                <div className="mt-auto flex flex-col gap-2 px-3 py-5">
+                    {/* + Create New Lead icon button */}
                     <button
                         onClick={() => setShowCreateLead(true)}
                         title="Create New Lead"
@@ -87,7 +87,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     {footerItems.length > 0 && (
                         <ul className="flex flex-col gap-0.5">
                             {footerItems.map((item) => (
-                                <li key={item.label}>
+                                <li key={item.label} title={item.label}>
                                     <NavItemButton
                                         size="md"
                                         current={currentItem.href === item.href}
@@ -144,9 +144,14 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                         !(hideBorder || hideRightBorder) && "box-content border-r-[1.5px]",
                     )}
                 >
-                    <div style={{ width: SECONDARY_SIDEBAR_WIDTH }} className="flex h-full flex-col px-4 pt-6">
-                        <h3 className="text-sm font-semibold text-brand-secondary">{currentItem.label}</h3>
-                        <ul className="py-2">
+                    <div style={{ width: SECONDARY_SIDEBAR_WIDTH }} className="flex h-full flex-col px-4 pt-5">
+                        <h3 className="text-sm font-semibold text-brand-secondary mb-3">{currentItem.label}</h3>
+                        {/* Search bar */}
+                        <div className="relative mb-2">
+                            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                            <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-secondary_alt pl-7 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand transition-colors placeholder:text-quaternary"/>
+                        </div>
+                        <ul className="py-1">
                             {currentItem.items?.map((item) => (
                                 <li key={item.label} className="py-0.5">
                                     <NavItemBase current={activeUrl === item.href} href={item.href} icon={item.icon} badge={item.badge} type="link">
@@ -155,6 +160,14 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                                 </li>
                             ))}
                         </ul>
+                        {/* Create New Lead button */}
+                        <div className="mt-4 mb-2">
+                            <button onClick={() => setShowCreateLead(true)}
+                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-solid text-white text-sm font-semibold py-2.5 px-4 hover:bg-brand-solid_hover transition-colors shadow-sm">
+                                <svg className="size-4" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/></svg>
+                                Create New Lead
+                            </button>
+                        </div>
                         <div className="sticky bottom-0 mt-auto flex justify-between border-t border-secondary bg-primary px-2 py-5">
                             <div>
                                 <p className="text-sm font-semibold text-primary">Olivia Rhye</p>

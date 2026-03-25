@@ -63,7 +63,6 @@ const SECTION_DEFS = [
   { id: "customer_info",  label: "Customer Information" },
   { id: "tasks",          label: "Tasks" },
   { id: "superfunds",     label: "Superfund Details" },
-  { id: "lead_info",      label: "Lead Information" },
   { id: "activity_log",   label: "Activity Log" },
 ];
 const SECTIONS_KEY = "axis_profile_sections_v3";
@@ -113,6 +112,13 @@ const CUSTOMER_FIELD_DEFS: FieldDef[] = [
   { key: "assignedOn", label: "Assigned On",             defaultVisible: false },
   { key: "updatedOn",  label: "Updated On",              defaultVisible: false },
   { key: "tags",       label: "Tags",                    defaultVisible: true  },
+  // Lead Information (moved from Lead Information section)
+  { key: "campaignGroup", label: "Campaign Group",           defaultVisible: false },
+  { key: "campaign",      label: "Campaign",                 defaultVisible: false },
+  { key: "refer",         label: "Refer",                    defaultVisible: false },
+  { key: "keywords",      label: "Keywords",                 defaultVisible: false },
+  { key: "website",       label: "Website",                  defaultVisible: false },
+  { key: "path",          label: "Path",                     defaultVisible: false },
 ];
 const FIELDS_KEY = "axis_profile_fields_v3";
 interface FieldState { order: string[]; visible: Record<string, boolean>; }
@@ -175,9 +181,10 @@ function EditableGroupField({ value, compact = false }: { value: string; compact
 }
 
 // ─── Dropdown button ──────────────────────────────────────────────────────────
-function DropdownButton({ label, icon, items, variant = "default" }: {
+function DropdownButton({ label, icon, items, variant = "default", pinned, onPin }: {
   label: string; icon?: string; variant?: "default"|"brand";
   items: { label: string; icon?: string; danger?: boolean; onClick?: () => void }[];
+  pinned?: string[]; onPin?: (label: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -194,12 +201,24 @@ function DropdownButton({ label, icon, items, variant = "default" }: {
         {icon && <span>{icon}</span>}{label}
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
-          {items.map((item, i) => (
-            <button key={i} onClick={() => { setOpen(false); item.onClick?.(); }} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger ? "text-error-primary" : "text-primary")}>
-              {item.icon && <span>{item.icon}</span>}{item.label}
-            </button>
-          ))}
+        <div className="absolute left-0 top-full mt-1 z-50 w-52 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
+          {items.map((item, i) => {
+            const isPinned = pinned?.includes(item.label);
+            return (
+              <div key={i} className="flex items-center group">
+                <button onClick={() => { setOpen(false); item.onClick?.(); }} className={"flex items-center gap-2 flex-1 px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger ? "text-error-primary" : "text-primary")}>
+                  {item.icon && <span>{item.icon}</span>}{item.label}
+                </button>
+                {onPin && (
+                  <button onClick={e => { e.stopPropagation(); onPin(item.label); }}
+                    title={isPinned ? "Unpin" : "Pin to toolbar"}
+                    className={"mr-2 flex size-5 items-center justify-center rounded transition-colors " + (isPinned ? "text-brand-secondary" : "opacity-0 group-hover:opacity-100 text-quaternary hover:text-secondary")}>
+                    <svg className="size-3" viewBox="0 0 12 12" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><path d="M9 1L11 3L7.5 4.5L8 8L6 10L4 8L0.5 9L2 5.5L1 3.5L3 3L9 1Z" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -282,27 +301,27 @@ function FieldPanel({ defs, state, onChange, onClose, anchorRef }: {
 function SectionCard({
   id, title, children, action, actionLabel, defaultOpen = true,
   onDragStart, onDragOver, onDrop, onDragEnd, isDragOver,
-  extraAction,
+  extraAction, locked,
 }: {
   id: string; title: string; children: React.ReactNode;
   action?: () => void; actionLabel?: string; defaultOpen?: boolean;
   onDragStart?: (id: string) => void; onDragOver?: (id: string) => void;
   onDrop?: (id: string) => void; onDragEnd?: () => void; isDragOver?: boolean;
-  extraAction?: React.ReactNode;
+  extraAction?: React.ReactNode; locked?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div
-      draggable
-      onDragStart={e => { e.dataTransfer.effectAllowed = "move"; onDragStart?.(id); }}
-      onDragOver={e => { e.preventDefault(); onDragOver?.(id); }}
-      onDrop={() => onDrop?.(id)}
-      onDragEnd={() => onDragEnd?.()}
+      draggable={!locked}
+      onDragStart={locked ? undefined : e => { e.dataTransfer.effectAllowed = "move"; onDragStart?.(id); }}
+      onDragOver={locked ? undefined : e => { e.preventDefault(); onDragOver?.(id); }}
+      onDrop={locked ? undefined : () => onDrop?.(id)}
+      onDragEnd={locked ? undefined : () => onDragEnd?.()}
       className={"rounded-xl border bg-primary overflow-hidden transition-all " + (isDragOver ? "border-brand shadow-lg ring-2 ring-brand ring-opacity-30" : "border-secondary shadow-sm")}>
       <div className="flex w-full items-center justify-between px-3 py-3 hover:bg-secondary_alt transition-colors">
-        {/* Drag handle */}
+        {/* Drag handle — hidden if locked */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="cursor-grab text-quaternary hover:text-secondary transition-colors p-0.5 shrink-0">
+          <div className={locked ? "p-0.5 shrink-0 opacity-0 pointer-events-none" : "cursor-grab text-quaternary hover:text-secondary transition-colors p-0.5 shrink-0"}>
             <DotsGrid className="size-4" />
           </div>
           <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
@@ -400,6 +419,8 @@ export function ClientProfilePage() {
   const [clientsExpanded, setClientsExpanded] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNewApp, setShowNewApp] = useState(false);
+  const [pinnedActions, setPinnedActions] = useState<string[]>(() => { try { const r = localStorage.getItem("axis_pinned_actions_v1"); return r ? JSON.parse(r) : []; } catch { return []; } });
+  function togglePin(label: string) { setPinnedActions(p => { const n = p.includes(label) ? p.filter(x => x !== label) : [...p, label]; try { localStorage.setItem("axis_pinned_actions_v1", JSON.stringify(n)); } catch {} return n; }); }
   const [showNewLead, setShowNewLead] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => {
     try { const v = localStorage.getItem("axis_profile_sidebar_v1"); return v === null ? true : v === "1"; } catch { return true; }
@@ -447,7 +468,7 @@ export function ClientProfilePage() {
 
     switch (id) {
       case "customer_info": return (
-        <SectionCard key={id} id={id} title="Customer Information" {...dragProps}
+        <SectionCard key={id} id={id} title="Customer Information" locked
           extraAction={
             <div className="relative">
               <button ref={gearBtnRef} onClick={e => { e.stopPropagation(); setFieldPanelOpen(v => !v); }}
@@ -466,12 +487,28 @@ export function ClientProfilePage() {
       );
       case "superfunds": return (
         <SectionCard key={id} id={id} title="Superfund Details" defaultOpen={false} actionLabel="Add Superfund" action={() => {}} {...dragProps}>
-          <div className="px-4 py-4 text-sm text-quaternary text-center">No superfunds added</div>
+          <div className="px-4 py-8 flex flex-col items-center gap-3">
+  <svg className="size-12 text-quaternary" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="14" width="36" height="26" rx="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+    <path d="M6 22h36" stroke="currentColor" strokeWidth="2"/>
+    <path d="M14 30h4M14 34h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M16 14v-4a8 8 0 0116 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+  <div className="text-center"><p className="text-sm font-medium text-secondary">No superfunds added</p><p className="text-xs text-quaternary mt-0.5">Client's superannuation accounts will appear here</p></div>
+</div>
         </SectionCard>
       );
       case "tasks": return (
         <SectionCard key={id} id={id} title="Tasks" actionLabel="New Task" action={() => {}} {...dragProps}>
-          <div className="px-4 py-4 text-sm text-quaternary text-center">No tasks yet</div>
+          <div className="px-4 py-8 flex flex-col items-center gap-3">
+  <svg className="size-12 text-quaternary" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+    <path d="M16 16h16M16 22h16M16 28h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <circle cx="36" cy="36" r="8" fill="white" stroke="currentColor" strokeWidth="2"/>
+    <path d="M33 36h6M36 33v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+  <div className="text-center"><p className="text-sm font-medium text-secondary">No tasks yet</p><p className="text-xs text-quaternary mt-0.5">Tasks assigned to this client will appear here</p></div>
+</div>
         </SectionCard>
       );
 
@@ -479,23 +516,7 @@ export function ClientProfilePage() {
 
 
 
-      case "lead_info": return (
-        <SectionCard key={id} id={id} title="Lead Information" defaultOpen={false} {...dragProps}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
-            <div><p className="text-[11px] text-quaternary mb-0.5">Assigned To</p><EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} /></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Created On</p><p className="text-sm text-primary font-medium">{CLIENT.createdOn}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Assigned On</p><p className="text-sm text-primary font-medium">{CLIENT.assignedOn}</p></div>
-            <div><p className="text-[11px] text-quaternary mb-0.5">Updated On</p><p className="text-sm text-primary font-medium">{CLIENT.updatedOn}</p></div>
-            {[
-              ["Campaign Group", CLIENT.campaignGroup], ["Campaign", CLIENT.campaign],
-              ["Refer", CLIENT.refer || "—"], ["Keywords", CLIENT.keywords || "—"],
-              ["Website", CLIENT.website || "—"], ["Path", CLIENT.path || "—"],
-            ].map(([label, value]) => (
-              <div key={label as string}><p className="text-[11px] text-quaternary mb-0.5">{label}</p><p className="text-sm text-primary font-medium">{value}</p></div>
-            ))}
-          </div>
-        </SectionCard>
-      );
+
       case "activity_log": return (
         <SectionCard key={id} id={id} title="Activity Log" defaultOpen={false} {...dragProps}>
           <div className="overflow-x-auto">
@@ -556,7 +577,7 @@ export function ClientProfilePage() {
 
           {/* Toolbar */}
           <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-            <DropdownButton label="New" icon="✚" items={[
+            <DropdownButton label="New" icon="✚" pinned={pinnedActions} onPin={togglePin} items={[
               { label: "Quote",          icon: "💡" },
               { label: "Pre-Assessment", icon: "🩺" },
               { label: "Application",    icon: "📝", onClick: () => setShowNewApp(true) },
@@ -564,7 +585,7 @@ export function ClientProfilePage() {
               { label: "Dishonour",      icon: "⚠️" },
               { label: "Complaint",      icon: "💬" },
             ]} />
-            <DropdownButton label="Actions" icon="⚡" items={[
+            <DropdownButton label="Actions" icon="⚡" pinned={pinnedActions} onPin={togglePin} items={[
               { label: "SMS",          icon: "💬" },
               { label: "Email",        icon: "✉️" },
               { label: "Form",         icon: "📋" },
@@ -572,17 +593,27 @@ export function ClientProfilePage() {
               { label: "Upload Files", icon: "📎" },
               { label: "Set Status",   icon: "🔄" },
             ]} />
-            {/* Mobile sidebar trigger — only visible below xl */}
-            <button onClick={() => setMobileSidebarOpen(true)}
-              className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
-              <Users01 className="size-3.5" /> More Info
-            </button>
-            <DropdownButton label="Other" icon="⋯" items={[
+            <DropdownButton label="Other" icon="⋯" pinned={pinnedActions} onPin={togglePin} items={[
               { label: "PDF",              icon: "📄" },
               { label: "Docs",             icon: "📁" },
               { label: "Off APL",          icon: "🔕" },
               { label: "Marketing List",   icon: "📊" },
             ]} />
+            {/* Pinned quick-access buttons */}
+            {pinnedActions.map(label => (
+              <button key={label} onClick={() => label === "Application" ? setShowNewApp(true) : undefined}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-2.5 py-1.5 text-xs font-medium text-brand-secondary hover:bg-brand-secondary transition-colors">
+                {label}
+                <button onClick={e => { e.stopPropagation(); togglePin(label); }} className="ml-0.5 text-brand-secondary hover:text-brand-secondary opacity-60 hover:opacity-100">
+                  <svg className="size-2.5" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
+              </button>
+            ))}
+            {/* Mobile sidebar trigger */}
+            <button onClick={() => setMobileSidebarOpen(true)}
+              className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
+              <Users01 className="size-3.5" /> More Info
+            </button>
           </div>
         </div>
 

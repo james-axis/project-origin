@@ -6,13 +6,13 @@ const INSURERS = ["Acenda","AIA","AMP","Asteron Life","BT","ClearView","CommInsu
 const USERS = ["Auto assign","Adam Cowburn","Adrian Ranieri","Ben Tutton","Caitlin Gardiner","Dean Hines","Hope Lake","James Nicholls","John Rojas","Justin Carroll","Justin Turtle","Kam Rowshan","Katie Hally","Maysee Chang","Natasha Carlson","Rebel Servante","SLG Support","SLG Test Training","Sonny Lowe","Sumeet Wadhwa","Toni Smilevski","Wilson Chen"];
 const ADMIN_USERS = ["Auto assign","Audits Team","Caitlin Gardiner","Compliance","Holly Barnes","Jas Cheema","John Rojas","Justin Carroll","Katie Hally","Lachlan Grant","LIP Support","Maysee Chang","Nicole Tasker","SLG Support","SLG Test Training","Sonny Lowe","Wilson Chen"];
 const INSURANCE_TYPES = [
-  { id:"life",     label:"Life Insurance",      desc:"Death benefit protection" },
-  { id:"trauma",   label:"Trauma Cover",         desc:"Critical illness lump sum" },
-  { id:"tpd",      label:"TPD Cover",            desc:"Total & permanent disability" },
-  { id:"ip",       label:"Income Protection",    desc:"Monthly income replacement" },
-  { id:"child",    label:"Child Cover",          desc:"Child critical illness" },
-  { id:"business", label:"Business Cover",       desc:"Business expense protection" },
-  { id:"severity", label:"Severity Based Cover", desc:"Tiered severity payments" },
+  { id:"life",     label:"Life Insurance"      },
+  { id:"trauma",   label:"Trauma Cover"        },
+  { id:"tpd",      label:"TPD Cover"           },
+  { id:"ip",       label:"Income Protection"   },
+  { id:"child",    label:"Child Cover"         },
+  { id:"business", label:"Business Cover"      },
+  { id:"severity", label:"Severity Based Cover"},
 ];
 
 interface Props { onClose: () => void; clientName?: string; }
@@ -158,16 +158,13 @@ export function CreateApplicationModal({ onClose, clientName }: Props) {
                 <div className="space-y-2">
                   {INSURANCE_TYPES.map(t => (
                     <button key={t.id} onClick={() => toggleType(t.id)}
-                      className={"flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-colors " +
+                      className={"flex items-center gap-3 w-full rounded-xl border px-3 py-2.5 text-left transition-colors " +
                         (selectedTypes.has(t.id) ? "border-brand bg-brand-secondary" : "border-secondary hover:bg-secondary_alt")}>
-                      <div className={"flex size-5 shrink-0 items-center justify-center rounded border transition-colors " +
+                      <div className={"flex size-4 shrink-0 items-center justify-center rounded border transition-colors " +
                         (selectedTypes.has(t.id) ? "bg-brand-solid border-brand-solid" : "border-secondary bg-primary")}>
                         {selectedTypes.has(t.id) && <Check className="size-3 text-white"/>}
                       </div>
-                      <div>
-                        <p className={"text-sm font-medium " + (selectedTypes.has(t.id) ? "text-brand-secondary" : "text-primary")}>{t.label}</p>
-                        <p className="text-xs text-quaternary">{t.desc}</p>
-                      </div>
+                      <p className={"text-sm font-medium " + (selectedTypes.has(t.id) ? "text-brand-secondary" : "text-primary")}>{t.label}</p>
                     </button>
                   ))}
                 </div>
