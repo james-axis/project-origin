@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Phone01, PhoneOff01, Microphone01, MicrophoneOff01, Volume03, VolumeOff01, Users01, Clock, X, Maximize02, Minimize02 } from '@untitledui/icons';
+import { Phone01, PhoneHangUp, Microphone01, MicrophoneOff01, VolumeMax, VolumeX, Users01, Clock, X, Maximize02, Minimize02 } from '@untitledui/icons';
 import * as TwilioService from '../services/twilio';
 
 // Types
