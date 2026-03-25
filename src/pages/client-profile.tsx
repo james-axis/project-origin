@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { SidebarSection } from "@/components/sidebar-section";
 import { createPortal } from "react-dom";
 import { CreateApplicationModal } from "@/components/modals/create-application-modal";
 import { CreateLeadModal } from "@/components/modals/create-lead-modal";
@@ -610,109 +611,78 @@ export function ClientProfilePage() {
             </div>
             {/* Sidebar content */}
             {sidebarPinned && (
-            <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 space-y-4">
+            <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 pt-2 space-y-2">
 
-            {/* Clients & Applications — collapsible */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-primary">Clients & Applications</p>
-                <div className="flex items-center gap-1">
+              <SidebarSection title="Clients & Applications">
+                <div className="flex gap-1 mb-2">
                   <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><User01 className="size-3.5 text-quaternary" /></button>
                   <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><Users01 className="size-3.5 text-quaternary" /></button>
                   <button className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors"><Users01 className="size-3.5 text-quaternary" /></button>
-                  <button onClick={() => setClientsExpanded(e => !e)} title={clientsExpanded ? "Minimise" : "Maximise"}
-                    className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary transition-colors">
-                    {clientsExpanded ? <ChevronDown className="size-3.5 text-quaternary" /> : <ChevronRight className="size-3.5 text-quaternary" />}
+                </div>
+                <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
+                  <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}</span>
+                  <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Prospect</span>
+                </div>
+              </SidebarSection>
+
+              <SidebarSection title="Assigned Team">
+                <EditableField label="Consultant" value="James Nicholls" options={USERS_LIST} />
+                <EditableField label="Admin" value="SLG Test Training" options={USERS_LIST} />
+              </SidebarSection>
+
+              <SidebarSection title="Notes" action={{ label:"Audit", onClick:()=>{} }}>
+                <div className="flex gap-2 mb-2">
+                  <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
+                    onKeyDown={e => e.key === "Enter" && addNote()}
+                    className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs outline-none focus:border-brand" />
+                  <button onClick={addNote} className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary">
+                    <Plus className="size-4 text-secondary" />
                   </button>
                 </div>
-              </div>
-              {clientsExpanded && (
-                <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
-                  <div className="px-3 py-2.5">
-                    <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
-                      <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}</span>
-                      <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Prospect</span>
+                {notes.length === 0
+                  ? <p className="text-center text-xs text-quaternary py-3">No notes yet</p>
+                  : <div className="space-y-2">{notes.map(n => (
+                      <div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2">
+                        <p className="text-xs text-primary">{n.text}</p>
+                        <p className="text-[10px] text-quaternary mt-1">{n.author} · {n.date}</p>
+                      </div>
+                    ))}</div>
+                }
+              </SidebarSection>
+
+              <SidebarSection title="Calls" defaultOpen={false}>
+                <div className="space-y-2">
+                  {CALLS.map((call, i) => (
+                    <div key={i} className="border-b border-secondary pb-2 last:border-0">
+                      <p className="text-[11px] text-tertiary flex items-center gap-1"><Phone01 className="size-3 text-quaternary" />{call.date} | {call.status} | {call.duration}</p>
+                      <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
+                      <button className="text-[11px] text-brand-secondary hover:underline">Call recording</button>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </SidebarSection>
 
-            {/* Assigned Team */}
-            <div>
-              <p className="text-sm font-semibold text-primary mb-3">Assigned Team</p>
-              <EditableField label="Consultant" value="James Nicholls" options={USERS_LIST} />
-              <EditableField label="Admin" value="SLG Test Training" options={USERS_LIST} />
-            </div>
+              <SidebarSection title="Scheduled Actions" action={{ label:"New action", onClick:()=>{} }} defaultOpen={false}>
+                <p className="text-center text-xs text-quaternary py-3">No actions scheduled</p>
+              </SidebarSection>
 
-            {/* Notes */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-primary">Notes</p>
-                <button className="text-xs font-medium text-brand-secondary hover:underline">Audit</button>
-              </div>
-              <div className="flex gap-2 mb-2">
-                <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
-                  onKeyDown={e => e.key === "Enter" && addNote()}
-                  className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs outline-none focus:border-brand" />
-                <button onClick={addNote} className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary">
-                  <Plus className="size-4 text-secondary" />
-                </button>
-              </div>
-              {notes.length === 0
-                ? <p className="text-center text-xs text-quaternary py-4">This section is empty</p>
-                : <div className="space-y-2">{notes.map(n => (
-                    <div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2">
-                      <p className="text-xs text-primary">{n.text}</p>
-                      <p className="text-[10px] text-quaternary mt-1">{n.author} · {n.date}</p>
-                    </div>
-                  ))}</div>
-              }
-            </div>
+              <SidebarSection title="Attachments" defaultOpen={false}>
+                <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
+                <p className="text-center text-xs text-quaternary py-3">No files matching query found</p>
+              </SidebarSection>
 
-            {/* Calls */}
-            <div>
-              <p className="text-sm font-semibold text-primary mb-2">Calls</p>
-              <div className="space-y-2">
-                {CALLS.map((call, i) => (
-                  <div key={i} className="border-b border-secondary pb-2 last:border-0">
-                    <p className="text-[11px] text-tertiary flex items-center gap-1"><Phone01 className="size-3 text-quaternary" />{call.date} | {call.status} | {call.duration}</p>
-                    <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
-                    <button className="text-[11px] text-brand-secondary hover:underline">Call recording</button>
-                  </div>
-                ))}
-              </div>
-            </div>
+              <SidebarSection title="File Library" defaultOpen={false}>
+                <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
+                <div className="space-y-1">
+                  {FILE_LIBRARY.map((f, i) => (
+                    <button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5 transition-colors">
+                      <File01 className="size-3.5 text-quaternary shrink-0 mt-0.5" />
+                      <div className="min-w-0"><p className="text-[10px] text-quaternary">{f.date}</p><p className="text-xs text-brand-secondary hover:underline truncate">{f.name}</p></div>
+                    </button>
+                  ))}
+                </div>
+              </SidebarSection>
 
-            {/* Scheduled Actions */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-primary">Scheduled Actions</p>
-                <button className="text-xs font-medium text-brand-secondary hover:underline">New action</button>
-              </div>
-              <p className="text-center text-xs text-quaternary py-3">No actions scheduled</p>
-            </div>
-
-            {/* Attachments */}
-            <div>
-              <p className="text-sm font-semibold text-primary mb-2">Attachments</p>
-              <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
-              <p className="text-center text-xs text-quaternary py-3">No files matching query found</p>
-            </div>
-
-            {/* File Library */}
-            <div>
-              <p className="text-sm font-semibold text-primary mb-2">File Library</p>
-              <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
-              <div className="space-y-1.5">
-                {FILE_LIBRARY.map((f, i) => (
-                  <button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5 transition-colors">
-                    <File01 className="size-3.5 text-quaternary shrink-0 mt-0.5" />
-                    <div className="min-w-0"><p className="text-[10px] text-quaternary">{f.date}</p><p className="text-xs text-brand-secondary hover:underline truncate">{f.name}</p></div>
-                  </button>
-                ))}
-              </div>
-            </div>
             </div>
             )}
           </div>

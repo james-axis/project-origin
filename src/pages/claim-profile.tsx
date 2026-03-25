@@ -1,3 +1,4 @@
+import { SidebarSection } from "@/components/sidebar-section";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
@@ -184,28 +185,27 @@ export function ClaimProfilePage() {
   }
 
   const sidebarContent = (
-    <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-primary mb-2">Client</p>
+    <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 pt-2 space-y-2">
+      <SidebarSection title="Client">
         <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{background:"#D34108"}}>
           <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0"/>{CLAIM.customer.title} {CLAIM.customer.firstName} {CLAIM.customer.lastName}</span>
           <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Claim</span>
         </div>
-      </div>
-      <div>
-        <div className="flex items-center justify-between mb-2"><p className="text-sm font-semibold text-primary">Notes</p></div>
+      </SidebarSection>
+      <SidebarSection title="Notes">
         <div className="flex gap-2 mb-2">
           <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note..." onKeyDown={e=>e.key==="Enter"&&addNote()} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs outline-none focus:border-brand"/>
           <button onClick={addNote} className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary"><Plus className="size-4 text-secondary"/></button>
         </div>
-        {notes.length===0?<p className="text-center text-xs text-quaternary py-4">No notes yet</p>:<div className="space-y-2">{notes.map(n=><div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2"><p className="text-xs text-primary">{n.text}</p><p className="text-[10px] text-quaternary mt-1">{n.author} · {n.date}</p></div>)}</div>}
-      </div>
-      <div><div className="flex items-center justify-between mb-2"><p className="text-sm font-semibold text-primary">Scheduled Actions</p><button className="text-xs font-medium text-brand-secondary hover:underline">New action</button></div><p className="text-center text-xs text-quaternary py-3">No actions scheduled</p></div>
-      <div>
-        <p className="text-sm font-semibold text-primary mb-2">File Library</p>
+        {notes.length===0?<p className="text-center text-xs text-quaternary py-3">No notes yet</p>:<div className="space-y-2">{notes.map(n=><div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2"><p className="text-xs text-primary">{n.text}</p><p className="text-[10px] text-quaternary mt-1">{n.author} · {n.date}</p></div>)}</div>}
+      </SidebarSection>
+      <SidebarSection title="Scheduled Actions" action={{label:"New action",onClick:()=>{}}}>
+        <p className="text-center text-xs text-quaternary py-3">No actions scheduled</p>
+      </SidebarSection>
+      <SidebarSection title="File Library" defaultOpen={false}>
         <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2"/>
-        <div className="space-y-1.5">{FILE_LIBRARY.map((f,i)=><button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5"><File01 className="size-3.5 text-quaternary shrink-0 mt-0.5"/><div className="min-w-0"><p className="text-[10px] text-quaternary">{f.date}</p><p className="text-xs text-brand-secondary hover:underline truncate">{f.name}</p></div></button>)}</div>
-      </div>
+        <div className="space-y-1">{FILE_LIBRARY.map((f,i)=><button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5 transition-colors"><File01 className="size-3.5 text-quaternary shrink-0 mt-0.5"/><div className="min-w-0"><p className="text-[10px] text-quaternary">{f.date}</p><p className="text-xs text-brand-secondary hover:underline truncate">{f.name}</p></div></button>)}</div>
+      </SidebarSection>
     </div>
   );
 

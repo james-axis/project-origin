@@ -1,3 +1,4 @@
+import { SidebarSection } from "@/components/sidebar-section";
 import { useState, useRef, useEffect } from "react";
 import { CreateApplicationModal } from "@/components/modals/create-application-modal";
 import { createPortal } from "react-dom";
@@ -587,9 +588,9 @@ export function ApplicationProfilePage() {
   }
 
   const sidebarContent = (
-    <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 space-y-4">
+    <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 pt-2 space-y-2">
       {/* Clients & Applications */}
-      <div>
+      <SidebarSection title="Clients & Applications">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-semibold text-primary">Clients & Applications</p>
           <div className="flex items-center gap-1">
@@ -612,25 +613,21 @@ export function ApplicationProfilePage() {
             </div>
           </div>
         )}
-      </div>
+      </SidebarSection>
 
       {/* Pre-Assessments */}
-      <div>
-        <p className="text-sm font-semibold text-primary mb-2">Pre-Assessments</p>
+      <SidebarSection title="Pre-Assessments">
         {PRE_ASSESSMENTS.map((pa, i) => (
           <div key={i} className="border-b border-secondary pb-2 last:border-0">
             <p className="text-[11px] text-tertiary">{pa.date}, <span className="font-medium">{pa.company}</span></p>
             <p className="text-xs text-secondary mt-0.5">{pa.note}</p>
           </div>
         ))}
-      </div>
+      </SidebarSection>
 
       {/* Notes */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-primary">Notes</p>
-        </div>
-        <div className="flex gap-2 mb-2">
+      <SidebarSection title="Notes">
+<div className="flex gap-2 mb-2">
           <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
             onKeyDown={e => e.key==="Enter"&&addNote()}
             className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs outline-none focus:border-brand" />
@@ -665,21 +662,16 @@ export function ApplicationProfilePage() {
             ))}
           </div>
         )}
-      </div>
+      </SidebarSection>
 
       {/* Scheduled Actions */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-primary">Scheduled Actions</p>
-          <button className="text-xs font-medium text-brand-secondary hover:underline">New action</button>
-        </div>
-        <p className="text-center text-xs text-quaternary py-3">No actions scheduled</p>
-      </div>
+      <SidebarSection title="Scheduled Actions" action={{ label:"New action", onClick:()=>{} }} defaultOpen={false}>
+<p className="text-center text-xs text-quaternary py-3">No actions scheduled</p>
+      </SidebarSection>
 
       {/* File Library */}
-      <div>
-        <p className="text-sm font-semibold text-primary mb-2">File Library</p>
-        <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
+      <SidebarSection title="File Library" defaultOpen={false}>
+<input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
         <div className="space-y-1.5">
           {FILE_LIBRARY.map((f, i) => (
             <button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5">
@@ -688,7 +680,7 @@ export function ApplicationProfilePage() {
             </button>
           ))}
         </div>
-      </div>
+      </SidebarSection>
     </div>
   );
 
