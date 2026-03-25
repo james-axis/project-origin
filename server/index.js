@@ -136,6 +136,84 @@ app.post('/migrate', async (req, res) => {
   }
 });
 
+// Targeted migration for Stage 0 tables only
+app.post('/migrate-stage0', async (req, res) => {
+  try {
+    console.log('🔄 Creating Stage 0 tables...');
+    
+    // Create twilio_practices table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS twilio_practices (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        practice_name VARCHAR(255) NOT NULL,
+        contact_name VARCHAR(255),
+        contact_email VARCHAR(255) NOT NULL,
+        abn VARCHAR(20),
+        afsl_number VARCHAR(20),
+        twilio_account_sid VARCHAR(34) UNIQUE,
+        twilio_auth_token VARCHAR(100),
+        address_sid VARCHAR(34),
+        bundle_sid VARCHAR(34),
+        bundle_status VARCHAR(50) DEFAULT 'not_started',
+        twiml_app_sid VARCHAR(34),
+        setup_step VARCHAR(50) DEFAULT 'not_started',
+        setup_status VARCHAR(20) DEFAULT 'not_started',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('✅ twilio_practices created');
+    
+    // Create twilio_twiml_apps table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS twilio_twiml_apps (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE,
+        app_sid VARCHAR(34) UNIQUE NOT NULL,
+        friendly_name VARCHAR(255),
+        voice_url TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(practice_id)
+      )
+    `);
+    console.log('✅ twilio_twiml_apps created');
+    
+    // Add practice_id columns to existing tables if missing
+    await db.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'call_flows' AND column_name = 'practice_id') THEN
+          ALTER TABLE call_flows ADD COLUMN practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'phone_numbers' AND column_name = 'practice_id') THEN
+          ALTER TABLE phone_numbers ADD COLUMN practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE;
+        END IF;
+      END $$;
+    `);
+    console.log('✅ practice_id columns added to existing tables');
+    
+    // Verify tables
+    const tablesResult = await db.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Stage 0 tables created successfully',
+      tables: tablesResult.rows.map(r => r.table_name),
+    });
+  } catch (error) {
+    console.error('❌ Stage 0 migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      detail: error.detail || null,
+    });
+  }
+});
+
 app.get('/tables', async (req, res) => {
   try {
     const result = await db.query(`
