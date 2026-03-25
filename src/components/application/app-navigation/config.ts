@@ -132,6 +132,14 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
+        label: "Campaigns",
+        href: "/campaigns",
+        icon: Flag01,
+        items: [
+            { label: "Campaign Groups", href: "/campaigns" },
+        ],
+    },
+    {
         label: "Reports",
         href: "/reports",
         icon: BarChartSquare02,
