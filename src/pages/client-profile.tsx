@@ -211,9 +211,9 @@ function DropdownButton({ label, icon, items, variant = "default", pinned, onPin
                 </button>
                 {onPin && (
                   <button onClick={e => { e.stopPropagation(); onPin(item.label); }}
-                    title={isPinned ? "Unpin" : "Pin to toolbar"}
+                    title={isPinned ? "Unpin from toolbar" : "Pin to toolbar"}
                     className={"mr-2 flex size-5 items-center justify-center rounded transition-colors " + (isPinned ? "text-brand-secondary" : "opacity-0 group-hover:opacity-100 text-quaternary hover:text-secondary")}>
-                    <svg className="size-3" viewBox="0 0 12 12" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><path d="M9 1L11 3L7.5 4.5L8 8L6 10L4 8L0.5 9L2 5.5L1 3.5L3 3L9 1Z" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg className="size-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 10V2M3 5l3-3 3 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                 )}
               </div>
@@ -551,11 +551,11 @@ export function ClientProfilePage() {
 
         {/* ── Header ── */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-full text-white text-base font-bold" style={{ background: statusColor }}>
               {CLIENT.firstName[0]}{CLIENT.lastName[0]}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
                   Client #{CLIENT.id} — {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
@@ -569,51 +569,50 @@ export function ClientProfilePage() {
                 <span className="text-xs text-quaternary">· Created {CLIENT.createdOn}</span>
               </div>
             </div>
-            {/* Edit icon */}
-            <button title="Edit client" className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
-              <Edit01 className="size-4" />
-            </button>
-          </div>
-
-          {/* Toolbar */}
-          <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-            <DropdownButton label="New" icon="✚" pinned={pinnedActions} onPin={togglePin} items={[
-              { label: "Quote",          icon: "💡" },
-              { label: "Pre-Assessment", icon: "🩺" },
-              { label: "Application",    icon: "📝", onClick: () => setShowNewApp(true) },
-              { label: "Claim",          icon: "🛡️" },
-              { label: "Dishonour",      icon: "⚠️" },
-              { label: "Complaint",      icon: "💬" },
-            ]} />
-            <DropdownButton label="Actions" icon="⚡" pinned={pinnedActions} onPin={togglePin} items={[
-              { label: "SMS",          icon: "💬" },
-              { label: "Email",        icon: "✉️" },
-              { label: "Form",         icon: "📋" },
-              { label: "Schedule",     icon: "📅" },
-              { label: "Upload Files", icon: "📎" },
-              { label: "Set Status",   icon: "🔄" },
-            ]} />
-            <DropdownButton label="Other" icon="⋯" pinned={pinnedActions} onPin={togglePin} items={[
-              { label: "PDF",              icon: "📄" },
-              { label: "Docs",             icon: "📁" },
-              { label: "Off APL",          icon: "🔕" },
-              { label: "Marketing List",   icon: "📊" },
-            ]} />
-            {/* Pinned quick-access buttons */}
-            {pinnedActions.map(label => (
-              <button key={label} onClick={() => label === "Application" ? setShowNewApp(true) : undefined}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-secondary px-2.5 py-1.5 text-xs font-medium text-brand-secondary hover:bg-brand-secondary transition-colors">
-                {label}
-                <button onClick={e => { e.stopPropagation(); togglePin(label); }} className="ml-0.5 text-brand-secondary hover:text-brand-secondary opacity-60 hover:opacity-100">
-                  <svg className="size-2.5" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                </button>
+            {/* Toolbar + Edit — all inline */}
+            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+              <DropdownButton label="New" icon="✚" pinned={pinnedActions} onPin={togglePin} items={[
+                { label: "Quote",          icon: "💡" },
+                { label: "Pre-Assessment", icon: "🩺" },
+                { label: "Application",    icon: "📝", onClick: () => setShowNewApp(true) },
+                { label: "Claim",          icon: "🛡️" },
+                { label: "Dishonour",      icon: "⚠️" },
+                { label: "Complaint",      icon: "💬" },
+              ]} />
+              <DropdownButton label="Actions" icon="⚡" pinned={pinnedActions} onPin={togglePin} items={[
+                { label: "SMS",          icon: "💬" },
+                { label: "Email",        icon: "✉️" },
+                { label: "Form",         icon: "📋" },
+                { label: "Schedule",     icon: "📅" },
+                { label: "Upload Files", icon: "📎" },
+                { label: "Set Status",   icon: "🔄" },
+              ]} />
+              <DropdownButton label="Other" icon="⋯" pinned={pinnedActions} onPin={togglePin} items={[
+                { label: "PDF",              icon: "📄" },
+                { label: "Docs",             icon: "📁" },
+                { label: "Off APL",          icon: "🔕" },
+                { label: "Marketing List",   icon: "📊" },
+              ]} />
+              {pinnedActions.map(label => (
+                <div key={label} className="inline-flex items-center rounded-lg border border-secondary bg-primary overflow-hidden">
+                  <button onClick={() => label === "Application" ? setShowNewApp(true) : undefined}
+                    className="px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
+                    {label}
+                  </button>
+                  <button onClick={() => togglePin(label)} title="Unpin"
+                    className="flex size-6 items-center justify-center border-l border-secondary text-quaternary hover:bg-secondary hover:text-secondary transition-colors">
+                    <svg className="size-3" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  </button>
+                </div>
+              ))}
+              <button onClick={() => setMobileSidebarOpen(true)}
+                className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
+                <Users01 className="size-3.5" /> More Info
               </button>
-            ))}
-            {/* Mobile sidebar trigger */}
-            <button onClick={() => setMobileSidebarOpen(true)}
-              className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
-              <Users01 className="size-3.5" /> More Info
-            </button>
+              <button title="Edit client" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
+                <Edit01 className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -671,7 +670,13 @@ export function ClientProfilePage() {
                   </button>
                 </div>
                 {notes.length === 0
-                  ? <p className="text-center text-xs text-quaternary py-3">No notes yet</p>
+                  ? <div className="flex flex-col items-center gap-2 py-4">
+                  <svg className="size-8 text-quaternary" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8Z" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M11 12h10M11 16h10M11 20h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <p className="text-xs text-quaternary">No notes yet</p>
+                </div>
                   : <div className="space-y-2">{notes.map(n => (
                       <div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2">
                         <p className="text-xs text-primary">{n.text}</p>

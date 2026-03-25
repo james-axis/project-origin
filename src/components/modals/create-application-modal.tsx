@@ -38,7 +38,6 @@ export function CreateApplicationModal({ onClose, clientName }: Props) {
   const [admin, setAdmin] = useState("Auto assign");
   const [appType, setAppType] = useState<"new"|"renewal">("new");
   const [inSuper, setInSuper] = useState("Outside");
-  const [smsf, setSmsf] = useState(false);
   const [checklist, setChecklist] = useState({
     cleanskin: null as boolean|null,
     medAuth: null as boolean|null,
@@ -230,16 +229,7 @@ export function CreateApplicationModal({ onClose, clientName }: Props) {
               </div>
               <div>
                 <label className={lbl}>Superannuation</label>
-                <RadioRow options={["Outside","Inside","Inside / Outside"]} value={inSuper} onChange={setInSuper}/>
-              </div>
-              <div className="flex items-center gap-3 rounded-xl border border-secondary px-4 py-3 cursor-pointer hover:bg-secondary_alt transition-colors" onClick={() => setSmsf(v => !v)}>
-                <div className={"flex size-5 shrink-0 items-center justify-center rounded border transition-colors " + (smsf ? "bg-brand-solid border-brand-solid" : "border-secondary bg-primary")}>
-                  {smsf && <Check className="size-3 text-white"/>}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-primary">SMSF Application</p>
-                  <p className="text-xs text-quaternary">Self-Managed Super Fund</p>
-                </div>
+                <RadioRow options={["Outside","Inside","Inside / Outside","SMSF"]} value={inSuper} onChange={setInSuper}/>
               </div>
               <div>
                 <label className={lbl}>Place Inforce</label>

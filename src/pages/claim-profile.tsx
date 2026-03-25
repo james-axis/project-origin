@@ -197,7 +197,13 @@ export function ClaimProfilePage() {
           <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note..." onKeyDown={e=>e.key==="Enter"&&addNote()} className="flex-1 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs outline-none focus:border-brand"/>
           <button onClick={addNote} className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary"><Plus className="size-4 text-secondary"/></button>
         </div>
-        {notes.length===0?<p className="text-center text-xs text-quaternary py-3">No notes yet</p>:<div className="space-y-2">{notes.map(n=><div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2"><p className="text-xs text-primary">{n.text}</p><p className="text-[10px] text-quaternary mt-1">{n.author} · {n.date}</p></div>)}</div>}
+        {notes.length===0?<div className="flex flex-col items-center gap-2 py-4">
+                  <svg className="size-8 text-quaternary" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8Z" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M11 12h10M11 16h10M11 20h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <p className="text-xs text-quaternary">No notes yet</p>
+                </div>:<div className="space-y-2">{notes.map(n=><div key={n.id} className="rounded-lg border border-secondary bg-secondary_alt px-3 py-2"><p className="text-xs text-primary">{n.text}</p><p className="text-[10px] text-quaternary mt-1">{n.author} · {n.date}</p></div>)}</div>}
       </SidebarSection>
       <SidebarSection title="Scheduled Actions" action={{label:"New action",onClick:()=>{}}}>
         <p className="text-center text-xs text-quaternary py-3">No actions scheduled</p>
