@@ -1561,11 +1561,8 @@ function PhoneSettings() {
         contactEmail: '',
         abn: '',
         afslNumber: '',
-        street: '',
-        city: '',
-        region: 'NSW',
-        postalCode: '',
         numberType: 'local',
+        numberCountry: 'US',
         selectedNumber: '',
         greetingText: 'Thank you for calling. Please hold while we connect you.',
         routeType: 'direct',
@@ -1574,12 +1571,11 @@ function PhoneSettings() {
     setShowWizard(true);
   };
 
+  // Simplified step tracking for 3-step wizard
   const getStepIndexForPractice = (practice: Practice): number => {
-    if (!practice.twilio_account_sid) return 0;
-    if (!practice.address_sid) return 1;
-    if (practice.bundle_status !== 'twilio-approved') return 2;
-    if (!practice.twiml_app_sid) return 3;
-    return 4; // Phone number step
+    // Check if practice has phone numbers
+    // For now, always start at step 0 when resuming
+    return 0;
   };
 
   const getStepStatus = (stepIndex: number, practice: Practice | null): 'complete' | 'current' | 'pending' => {
