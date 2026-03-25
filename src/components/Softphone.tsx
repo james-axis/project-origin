@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Phone01, PhoneHangUp, Microphone01, MicrophoneOff01, VolumeMax, VolumeX, X, Minimize02, Clock, ChevronUp, User01 } from '@untitledui/icons';
 
 // Types
@@ -66,7 +66,7 @@ export function Softphone({ onClose }: { onClose: () => void }) {
 
   // Timer for active call
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (activeCall?.status === 'in-progress') {
       interval = setInterval(() => {
         setCallDuration(Math.floor((Date.now() - activeCall.startTime) / 1000));
