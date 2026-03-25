@@ -103,6 +103,53 @@ app.get('/health', (req, res) => {
 });
 
 // =====================================================
+// DATABASE MIGRATION ENDPOINT (for manual trigger)
+// =====================================================
+
+app.post('/migrate', async (req, res) => {
+  try {
+    console.log('🔄 Manual migration triggered...');
+    const schemaPath = join(__dirname, 'db', 'schema.sql');
+    const schema = readFileSync(schemaPath, 'utf8');
+    await db.query(schema);
+    console.log('✅ Manual migration complete');
+    
+    // Verify tables exist
+    const tablesResult = await db.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Database migration complete',
+      tables: tablesResult.rows.map(r => r.table_name),
+    });
+  } catch (error) {
+    console.error('❌ Manual migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      detail: error.detail || null,
+    });
+  }
+});
+
+app.get('/tables', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `);
+    res.json({ tables: result.rows.map(r => r.table_name) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================================================
 // API ROUTES - ALL STAGES (0-10)
 // =====================================================
 
