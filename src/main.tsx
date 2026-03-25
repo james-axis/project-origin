@@ -1,6 +1,6 @@
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { HomeScreen } from "@/pages/home-screen";
 import { TasksPage } from "@/pages/tasks";
 import { ClientsPage } from "@/pages/clients";
@@ -21,7 +21,23 @@ import { RouteProvider } from "@/providers/router-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { RequireAuth } from "@/providers/auth-provider";
 import { ToastProvider } from "@/components/toast";
+import { Softphone, SoftphoneButton } from "@/components/Softphone";
 import "@/styles/globals.css";
+
+// Softphone wrapper - only shows on authenticated routes
+function SoftphoneWrapper() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  
+  // Don't show on login page
+  if (location.pathname === '/login') return null;
+  
+  return open ? (
+    <Softphone onClose={() => setOpen(false)} />
+  ) : (
+    <SoftphoneButton onClick={() => setOpen(true)} />
+  );
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -57,6 +73,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/login" element={<Login />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <SoftphoneWrapper />
           </ToastProvider>
         </RouteProvider>
       </BrowserRouter>
