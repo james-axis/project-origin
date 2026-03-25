@@ -7,8 +7,9 @@
 
 import { Router } from 'express';
 import twilio from 'twilio';
-import { twiml as TwiML } from 'twilio';
 import db from '../lib/db.js';
+
+const TwiML = twilio.twiml;
 
 const router = Router();
 const BASE_URL = process.env.BASE_URL || 'https://project-origin-production-1216.up.railway.app';
