@@ -38,6 +38,7 @@ const upload = multer({
 router.post('/call-flows', async (req, res) => {
   try {
     const {
+      practiceId,
       name,
       greetingText,
       greetingAudioId,
@@ -56,11 +57,12 @@ router.post('/call-flows', async (req, res) => {
 
     const result = await db.query(
       `INSERT INTO call_flows 
-        (name, greeting_text, greeting_audio_id, route_type, route_destination,
+        (practice_id, name, greeting_text, greeting_audio_id, route_type, route_destination,
          ivr_config, recording_enabled, transcription_enabled, timeout_seconds, fallback_action)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
+        practiceId || null,
         name,
         greetingText,
         greetingAudioId,
@@ -78,6 +80,7 @@ router.post('/call-flows', async (req, res) => {
 
     res.status(201).json({
       id: flow.id,
+      practiceId: flow.practice_id,
       name: flow.name,
       greetingText: flow.greeting_text,
       greetingAudioId: flow.greeting_audio_id,
@@ -102,15 +105,25 @@ router.post('/call-flows', async (req, res) => {
  */
 router.get('/call-flows', async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT cf.*, af.name as greeting_audio_name, af.file_url as greeting_audio_url
+    const { practiceId } = req.query;
+    
+    let query = `SELECT cf.*, af.name as greeting_audio_name, af.file_url as greeting_audio_url
        FROM call_flows cf
-       LEFT JOIN audio_files af ON cf.greeting_audio_id = af.id
-       ORDER BY cf.created_at DESC`
-    );
+       LEFT JOIN audio_files af ON cf.greeting_audio_id = af.id`;
+    const values = [];
+    
+    if (practiceId) {
+      query += ' WHERE cf.practice_id = $1';
+      values.push(practiceId);
+    }
+    
+    query += ' ORDER BY cf.created_at DESC';
+
+    const result = await db.query(query, values);
 
     res.json(result.rows.map(row => ({
       id: row.id,
+      practiceId: row.practice_id,
       name: row.name,
       greetingText: row.greeting_text,
       greetingAudioId: row.greeting_audio_id,
