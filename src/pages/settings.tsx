@@ -3,8 +3,8 @@ import {
   Settings01, List, Users01, Shield01, Bell01, Link01, Phone01,
   ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
   Zap, X, Check, InfoCircle, AlertCircle, ArrowLeft,
-  Building01, MapPin01, Globe01, PhoneCall01, CheckCircle,
-  Clock, PlayCircle, Search, RefreshCw, FileText01, 
+  Building01, MarkerPin01, Globe01, PhoneCall01, CheckCircle,
+  Clock, PlayCircle, SearchLg, RefreshCw01, File01, 
 } from "@untitledui/icons";
 
 type TriggerType = "object_created" | "task_completed";
@@ -1461,7 +1461,7 @@ interface SetupStep {
 
 const SETUP_STEPS: SetupStep[] = [
   { id: 'practice', label: 'Practice Details', description: 'Register your practice', icon: Building01 },
-  { id: 'address', label: 'Business Address', description: 'Add regulatory address', icon: MapPin01 },
+  { id: 'address', label: 'Business Address', description: 'Add regulatory address', icon: MarkerPin01 },
   { id: 'compliance', label: 'AU Compliance', description: 'Regulatory bundle', icon: Shield01 },
   { id: 'voice', label: 'Voice Config', description: 'Create TwiML App', icon: Settings01 },
   { id: 'number', label: 'Phone Number', description: 'Purchase a number', icon: PhoneCall01 },
@@ -1913,7 +1913,7 @@ function PhoneSettings() {
                 disabled={!formData.practiceName || !formData.contactEmail || wizardLoading}
                 className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
                 Create Practice
               </button>
             </div>
@@ -1999,7 +1999,7 @@ function PhoneSettings() {
                 disabled={!formData.street || !formData.city || !formData.postalCode || wizardLoading}
                 className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
                 Save Address
               </button>
             </div>
@@ -2051,7 +2051,7 @@ function PhoneSettings() {
                   disabled={wizardLoading}
                   className="mt-4 px-4 py-2 text-sm font-medium text-warning-primary border border-warning rounded-lg hover:bg-warning/10 flex items-center gap-2 mx-auto"
                 >
-                  {wizardLoading ? <RefreshCw className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                  {wizardLoading ? <RefreshCw01 className="size-4 animate-spin" /> : <RefreshCw01 className="size-4" />}
                   Check Status
                 </button>
               </div>
@@ -2086,7 +2086,7 @@ function PhoneSettings() {
                   disabled={wizardLoading}
                   className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                  {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
                   Submit for Review
                 </button>
               ) : (
@@ -2158,7 +2158,7 @@ function PhoneSettings() {
                   disabled={wizardLoading}
                   className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                  {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
                   Create Voice App
                 </button>
               )}
@@ -2188,7 +2188,7 @@ function PhoneSettings() {
                 disabled={searchingNumbers}
                 className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 flex items-center gap-2"
               >
-                {searchingNumbers ? <RefreshCw className="size-4 animate-spin" /> : <Search className="size-4" />}
+                {searchingNumbers ? <RefreshCw01 className="size-4 animate-spin" /> : <SearchLg className="size-4" />}
                 Search Numbers
               </button>
             </div>
@@ -2239,7 +2239,7 @@ function PhoneSettings() {
                 disabled={!formData.selectedNumber || wizardLoading}
                 className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
                 Purchase Number
               </button>
             </div>
@@ -2295,7 +2295,7 @@ function PhoneSettings() {
                 disabled={wizardLoading}
                 className="px-4 py-2 text-sm font-medium text-white bg-success-solid rounded-lg hover:bg-success-solid/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
                 <CheckCircle className="size-4" />
                 Complete Setup
               </button>
@@ -2376,7 +2376,7 @@ function PhoneSettings() {
           
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="size-6 text-tertiary animate-spin" />
+              <RefreshCw01 className="size-6 text-tertiary animate-spin" />
             </div>
           ) : practices.length === 0 ? (
             <div className="rounded-xl border border-dashed border-secondary p-12 text-center">
