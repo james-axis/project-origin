@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Settings01, List, Users01, Shield01, Bell01, Link01,
+  Settings01, List, Users01, Shield01, Bell01, Link01, Phone01,
   ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
   Zap, X, Check, InfoCircle, AlertCircle, ArrowLeft,
 } from "@untitledui/icons";
@@ -19,6 +19,7 @@ const settingsTabs = [
   { id: "users", label: "Users & Permissions", icon: Users01 },
   { id: "security", label: "Security", icon: Shield01 },
   { id: "notifications", label: "Notifications", icon: Bell01 },
+  { id: "phone", label: "Phone System", icon: Phone01 },
   { id: "integrations", label: "Integrations", icon: Link01 },
 ];
 
@@ -1412,6 +1413,232 @@ function PlaceholderSection({ title }: { title: string; description?: string }) 
   );
 }
 
+// ─── Phone Settings ───────────────────────────────────────────────────────────
+const MOCK_PHONE_NUMBERS = [
+  { id: "1", number: "+61 2 8000 1234", label: "Main Line", status: "active", assignedTo: "All Users" },
+  { id: "2", number: "+61 2 8000 1235", label: "Sales", status: "active", assignedTo: "Sales Team" },
+  { id: "3", number: "+61 3 9000 5678", label: "Melbourne", status: "inactive", assignedTo: "Unassigned" },
+];
+
+const MOCK_USERS_PHONE = [
+  { id: "1", name: "Isaac Dickman", email: "isaac@axis.com", softphoneEnabled: true, extension: "101" },
+  { id: "2", name: "Maysee Chang", email: "maysee@axis.com", softphoneEnabled: true, extension: "102" },
+  { id: "3", name: "John Rojas", email: "john@axis.com", softphoneEnabled: false, extension: "103" },
+  { id: "4", name: "Natasha Carlson", email: "natasha@axis.com", softphoneEnabled: true, extension: "104" },
+];
+
+type PhoneSubTab = "numbers" | "recording" | "transcription" | "access" | "usage";
+
+function PhoneSettings() {
+  const [subTab, setSubTab] = useState<PhoneSubTab>("numbers");
+  const [recordingEnabled, setRecordingEnabled] = useState(true);
+  const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
+  const [aiSummaryEnabled, setAiSummaryEnabled] = useState(false);
+
+  const subTabs: { id: PhoneSubTab; label: string }[] = [
+    { id: "numbers", label: "Numbers" },
+    { id: "recording", label: "Recording" },
+    { id: "transcription", label: "Transcription" },
+    { id: "access", label: "Access" },
+    { id: "usage", label: "Usage" },
+  ];
+
+  return (
+    <div className="p-4 sm:p-6">
+      {/* Sub-tabs */}
+      <div className="flex gap-1 mb-6 bg-secondary_alt rounded-lg p-1 w-fit">
+        {subTabs.map(tab => (
+          <button key={tab.id} onClick={() => setSubTab(tab.id)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${subTab === tab.id ? "bg-primary text-primary shadow-sm" : "text-tertiary hover:text-secondary"}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Numbers Tab */}
+      {subTab === "numbers" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-primary">Phone Numbers</h3>
+              <p className="text-xs text-tertiary mt-0.5">Manage your Twilio phone numbers</p>
+            </div>
+            <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors">
+              <Plus className="size-3" />Add Number
+            </button>
+          </div>
+          <div className="rounded-xl border border-secondary overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary_alt border-b border-secondary">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Number</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Label</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Status</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Assigned To</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-secondary">
+                {MOCK_PHONE_NUMBERS.map(num => (
+                  <tr key={num.id} className="hover:bg-secondary_alt transition-colors">
+                    <td className="px-4 py-3 font-mono text-primary">{num.number}</td>
+                    <td className="px-4 py-3 text-secondary">{num.label}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${num.status === "active" ? "bg-success-secondary text-success-primary" : "bg-secondary text-quaternary"}`}>
+                        <span className={`size-1.5 rounded-full ${num.status === "active" ? "bg-success-primary" : "bg-quaternary"}`} />
+                        {num.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-tertiary">{num.assignedTo}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button className="text-tertiary hover:text-secondary text-xs">Edit</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Recording Tab */}
+      {subTab === "recording" && (
+        <div className="space-y-6 max-w-2xl">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Call Recording</h3>
+            <p className="text-xs text-tertiary mt-0.5">Configure automatic call recording settings</p>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-secondary">
+              <div>
+                <p className="text-sm font-medium text-primary">Enable Call Recording</p>
+                <p className="text-xs text-tertiary mt-0.5">Automatically record all inbound and outbound calls</p>
+              </div>
+              <button onClick={() => setRecordingEnabled(!recordingEnabled)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${recordingEnabled ? "bg-brand-solid" : "bg-secondary"}`}>
+                <span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-transform ${recordingEnabled ? "left-6" : "left-1"}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-xl border border-secondary">
+              <div>
+                <p className="text-sm font-medium text-primary">Recording Retention</p>
+                <p className="text-xs text-tertiary mt-0.5">How long to keep call recordings</p>
+              </div>
+              <select className="rounded-lg border border-secondary bg-primary px-3 py-1.5 text-sm text-primary">
+                <option>30 days</option>
+                <option>90 days</option>
+                <option>1 year</option>
+                <option>Forever</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transcription Tab */}
+      {subTab === "transcription" && (
+        <div className="space-y-6 max-w-2xl">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Transcription & AI</h3>
+            <p className="text-xs text-tertiary mt-0.5">Configure automatic transcription and AI features</p>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-secondary">
+              <div>
+                <p className="text-sm font-medium text-primary">Auto Transcription</p>
+                <p className="text-xs text-tertiary mt-0.5">Automatically transcribe recorded calls</p>
+              </div>
+              <button onClick={() => setTranscriptionEnabled(!transcriptionEnabled)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${transcriptionEnabled ? "bg-brand-solid" : "bg-secondary"}`}>
+                <span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-transform ${transcriptionEnabled ? "left-6" : "left-1"}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-xl border border-secondary">
+              <div>
+                <p className="text-sm font-medium text-primary">AI Call Summary</p>
+                <p className="text-xs text-tertiary mt-0.5">Generate AI summaries of call content</p>
+              </div>
+              <button onClick={() => setAiSummaryEnabled(!aiSummaryEnabled)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${aiSummaryEnabled ? "bg-brand-solid" : "bg-secondary"}`}>
+                <span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-transform ${aiSummaryEnabled ? "left-6" : "left-1"}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Access Tab */}
+      {subTab === "access" && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">User Access</h3>
+            <p className="text-xs text-tertiary mt-0.5">Manage which users can access the softphone</p>
+          </div>
+          <div className="rounded-xl border border-secondary overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary_alt border-b border-secondary">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">User</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Extension</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Softphone Access</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-secondary">
+                {MOCK_USERS_PHONE.map(user => (
+                  <tr key={user.id} className="hover:bg-secondary_alt transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-primary">{user.name}</p>
+                      <p className="text-xs text-tertiary">{user.email}</p>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-secondary">{user.extension}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${user.softphoneEnabled ? "bg-success-secondary text-success-primary" : "bg-secondary text-quaternary"}`}>
+                        {user.softphoneEnabled ? "Enabled" : "Disabled"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Usage Tab */}
+      {subTab === "usage" && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Usage & Billing</h3>
+            <p className="text-xs text-tertiary mt-0.5">Current billing period: 1 Mar – 31 Mar 2026</p>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl border border-secondary">
+              <p className="text-xs text-tertiary">Total Minutes</p>
+              <p className="text-2xl font-semibold text-primary mt-1">2,847</p>
+              <p className="text-xs text-success-primary mt-1">↓ 12% from last month</p>
+            </div>
+            <div className="p-4 rounded-xl border border-secondary">
+              <p className="text-xs text-tertiary">Total Calls</p>
+              <p className="text-2xl font-semibold text-primary mt-1">412</p>
+              <p className="text-xs text-tertiary mt-1">This billing period</p>
+            </div>
+            <div className="p-4 rounded-xl border border-secondary">
+              <p className="text-xs text-tertiary">Recordings</p>
+              <p className="text-2xl font-semibold text-primary mt-1">389</p>
+              <p className="text-xs text-tertiary mt-1">94% of calls</p>
+            </div>
+            <div className="p-4 rounded-xl border border-secondary">
+              <p className="text-xs text-tertiary">Estimated Cost</p>
+              <p className="text-2xl font-semibold text-primary mt-1">$142</p>
+              <p className="text-xs text-tertiary mt-1">Based on usage</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Settings page ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 export function Settings() {
   const [activeTab, setActiveTab] = useState("task-builder");
@@ -1438,6 +1665,7 @@ export function Settings() {
         {activeTab === "users" && <PlaceholderSection title="Users & Permissions" />}
         {activeTab === "security" && <PlaceholderSection title="Security" />}
         {activeTab === "notifications" && <PlaceholderSection title="Notifications" />}
+        {activeTab === "phone" && <PhoneSettings />}
         {activeTab === "integrations" && <PlaceholderSection title="Integrations" />}
       </div>
     </div>
