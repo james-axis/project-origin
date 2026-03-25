@@ -2318,33 +2318,6 @@ function PhoneSettings() {
   };
 
   // Wizard Modal
-  const WizardModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-primary rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-secondary">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-primary">Phone System Setup</h2>
-            <button onClick={() => setShowWizard(false)} className="text-quaternary hover:text-secondary">
-              <X className="size-5" />
-            </button>
-          </div>
-        </div>
-        <div className="p-6">
-          {renderStepper()}
-          {error && (
-            <div className="mb-6 p-4 rounded-lg bg-error-secondary border border-error">
-              <p className="text-sm text-error-primary flex items-center gap-2">
-                <AlertCircle className="size-4" />
-                {error}
-              </p>
-            </div>
-          )}
-          {renderWizardContent()}
-        </div>
-      </div>
-    </div>
-  );
-
   // Mock users for access tab
   const MOCK_USERS_PHONE = [
     { id: "1", name: "Isaac Dickman", email: "isaac@axis.com", softphoneEnabled: true, extension: "101" },
@@ -2355,7 +2328,33 @@ function PhoneSettings() {
 
   return (
     <div className="p-4 sm:p-6">
-      {showWizard && <WizardModal />}
+      {/* Wizard Modal - rendered inline to preserve input state */}
+      {showWizard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-primary rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-secondary">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">Phone System Setup</h2>
+                <button onClick={() => setShowWizard(false)} className="text-quaternary hover:text-secondary">
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {renderStepper()}
+              {error && (
+                <div className="mb-6 p-4 rounded-lg bg-error-secondary border border-error">
+                  <p className="text-sm text-error-primary flex items-center gap-2">
+                    <AlertCircle className="size-4" />
+                    {error}
+                  </p>
+                </div>
+              )}
+              {renderWizardContent()}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Sub-tabs */}
       <div className="flex gap-1 mb-6 bg-secondary_alt rounded-lg p-1 w-fit">
