@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { Download01, X, Settings01, Plus, Check } from "@untitledui/icons";
+import { Download01, X, Settings01, Plus, Check, FilterLines, ChevronDown } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ClientStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -208,6 +208,7 @@ export function ClientsPage() {
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
   const [page, setPage] = useState(1);
   const [colPanelOpen, setColPanelOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const navigate = useNavigate();
   const [colState, setColStateRaw] = useState(() => loadColState(CLIENT_COLS));
 
@@ -359,24 +360,39 @@ export function ClientsPage() {
     pageNums.push(totalPages);
   }
 
-  return (
-    <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
-      <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
-      <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
+  const activeFilterCount = [assignedFilter !== "All", statusFilter !== "All", stateFilter !== "All", groupFilter !== "All", dateFilter !== "all"].filter(Boolean).length;
 
-      <main className="min-h-screen overflow-x-hidden lg:flex-1 flex flex-col">
+  return (
+    <div className="flex min-h-screen bg-primary">
+      <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} activeUrl="/clients" />
+
+      <main className="flex-1 flex flex-col overflow-hidden lg:pl-[68px]">
 
         {/* ── Header ── */}
-        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
-          <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-0">
+          <div className="flex items-start justify-between mb-4 gap-3">
             <div>
-              <h1 className="text-xl font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
+              <h1 className="text-lg sm:text-xl font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
                 {TABS.find(t => t.key === activeTab)?.label === "Active" ? "Active Clients" : TABS.find(t => t.key === activeTab)?.label}
               </h1>
               <p className="text-sm text-tertiary mt-0.5">{filtered.length} records</p>
             </div>
-            {/* Top filters */}
-            <div className="flex items-center gap-2 flex-wrap">
+            
+            {/* Mobile filter button */}
+            <button 
+              onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+              className="lg:hidden inline-flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary">
+              <FilterLines className="size-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="size-5 rounded-full bg-brand-solid text-white text-[10px] font-semibold flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
+            {/* Desktop filters */}
+            <div className="hidden lg:flex items-center gap-2 flex-wrap">
               <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer">
                 <option value="all">Select Dates...</option>
                 <option value="today">Today</option>
@@ -402,13 +418,48 @@ export function ClientsPage() {
             </div>
           </div>
 
+          {/* Mobile filters panel */}
+          {mobileFiltersOpen && (
+            <div className="lg:hidden border-t border-secondary py-4 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="all">Select Dates...</option>
+                  <option value="today">Today</option>
+                  <option value="week">Last 7 days</option>
+                  <option value="month">Last 30 days</option>
+                </select>
+                <select value={assignedFilter} onChange={e => setAssignedFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="All">Assigned To</option>
+                  {USERS.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="All">Status</option>
+                  {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="All">Campaign Group</option>
+                  {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <select value={stateFilter} onChange={e => setStateFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand col-span-2 sm:col-span-1">
+                  <option value="All">State</option>
+                  {AU_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {hasFilters && (
+                <button onClick={() => { setSearch(""); setAssignedFilter("All"); setStatusFilter("All"); setStateFilter("All"); setGroupFilter("All"); setDateFilter("all"); setPage(1); }}
+                  className="text-sm text-brand-secondary hover:underline">Clear all filters</button>
+              )}
+            </div>
+          )}
+
           {/* Tab bar */}
-          <div className="flex items-center overflow-x-auto gap-0 -mb-px">
+          <div className="flex items-center overflow-x-auto gap-0 -mb-px scrollbar-hide">
             {TABS.map(({ key, label }) => (
               <button key={key} onClick={() => { setActiveTab(key); setPage(1); setSelectedRows(new Set()); }}
-                className={"flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " +
+                className={"flex items-center gap-1.5 px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition-colors " +
                   (activeTab === key ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
-                {label}
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{label.split(" ")[0]}</span>
                 <span className={"rounded-full px-1.5 py-0.5 text-[10px] font-semibold " + (activeTab === key ? "bg-brand-secondary text-brand-secondary" : "bg-secondary text-quaternary")}>
                   {tabCount(key)}
                 </span>
@@ -417,47 +468,45 @@ export function ClientsPage() {
           </div>
         </div>
 
-        {/* ── Bulk action toolbar ── */}
+        {/* ── Toolbar ── */}
         <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-secondary bg-primary flex items-center gap-2 flex-wrap">
           {/* Search */}
-          <div className="relative min-w-[180px] max-w-xs">
+          <div className="relative flex-1 min-w-0 max-w-xs">
             <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search clients..."
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search..."
               className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-8 py-2 text-sm text-primary outline-none focus:border-brand" />
             {search && <button onClick={() => { setSearch(""); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-quaternary hover:text-secondary"><X className="size-3.5" /></button>}
           </div>
 
-          {/* Bulk actions — only when rows selected */}
-          {selectedRows.size > 0 ? (
-            <>
+          {/* Bulk actions — desktop only */}
+          {selectedRows.size > 0 && (
+            <div className="hidden sm:flex items-center gap-2">
               <span className="text-sm text-secondary font-medium">{selectedRows.size} selected</span>
               <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Assign To ▾</button>
               <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Set Status ▾</button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-                <Plus className="size-3.5 text-success-primary" />Create task...
-              </button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Add tags...</button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Set Group...</button>
               <button className="inline-flex items-center gap-1.5 rounded-lg border border-[#EF4444] bg-[#FEF2F2] px-3 py-2 text-sm font-medium text-[#B91C1C] hover:bg-[#FEE2E2] transition-colors">
-                <X className="size-3.5" />Close
+                <X className="size-3.5" />Clear
               </button>
-            </>
-          ) : (
-            <span className="text-xs text-quaternary">Select rows to perform bulk actions</span>
+            </div>
+          )}
+
+          {/* Mobile selected count */}
+          {selectedRows.size > 0 && (
+            <span className="sm:hidden text-xs text-secondary font-medium">{selectedRows.size} selected</span>
           )}
 
           <div className="ml-auto flex items-center gap-2">
             {hasFilters && (
               <button onClick={() => { setSearch(""); setAssignedFilter("All"); setStatusFilter("All"); setStateFilter("All"); setGroupFilter("All"); setPage(1); }}
-                className="text-sm text-brand-secondary hover:underline">Clear filters</button>
+                className="hidden sm:block text-sm text-brand-secondary hover:underline">Clear filters</button>
             )}
             <button onClick={downloadCSV}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-              <Download01 className="size-4 text-success-primary" />
-              Download CSV
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+              <Download01 className="size-4" />
+              <span className="hidden md:inline">Download</span>
             </button>
-            {/* Column selector */}
-            <div className="relative">
+            {/* Column selector - desktop only */}
+            <div className="relative hidden lg:block">
               <button onClick={() => setColPanelOpen(v => !v)}
                 className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors " +
                   (colPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
@@ -475,9 +524,56 @@ export function ClientsPage() {
           </div>
         </div>
 
-        {/* ── Table ── */}
-        <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="rounded-xl border border-secondary overflow-hidden">
+        {/* ── Content ── */}
+        <div className="flex-1 overflow-auto p-4 sm:px-6 lg:px-8">
+          
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-3">
+            {pageRows.length === 0 ? (
+              <div className="text-center py-16 text-sm text-quaternary">No clients found</div>
+            ) : pageRows.map(row => (
+              <div key={row.id}
+                onClick={() => navigate(`/client/${row.id}`)}
+                className="border border-secondary rounded-xl p-4 bg-primary active:bg-secondary_alt transition-colors cursor-pointer">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" 
+                      checked={selectedRows.has(row.id)} 
+                      onChange={(e) => { e.stopPropagation(); toggleRow(row.id); }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer shrink-0" />
+                    <div>
+                      <p className="font-semibold" style={{ color: STATUS_MAP[row.status].color }}>{row.customer}</p>
+                      <p className="text-xs text-quaternary font-mono">#{row.id}</p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: STATUS_MAP[row.status].color + "15", color: STATUS_MAP[row.status].color }}>
+                    {STATUS_MAP[row.status].label}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs mt-3">
+                  <div>
+                    <span className="text-quaternary">Assigned: </span>
+                    <span className="text-secondary">{row.user}</span>
+                  </div>
+                  <div>
+                    <span className="text-quaternary">State: </span>
+                    <span className="text-secondary">{row.state || "—"}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-quaternary">Group: </span>
+                    <span className="text-secondary">{row.group}</span>
+                  </div>
+                  {row.lastNote && (
+                    <p className="col-span-2 text-tertiary line-clamp-2 mt-1">{row.lastNote}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block rounded-xl border border-secondary overflow-hidden">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-secondary_alt border-b border-secondary">
                 <tr>
@@ -512,22 +608,23 @@ export function ClientsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center gap-2 mt-4 flex-wrap">
-              <span className="text-xs text-quaternary mr-1">Pages:</span>
+            <div className="flex items-center justify-between sm:justify-start gap-2 mt-4">
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                className="text-xs text-secondary hover:text-primary disabled:opacity-30 px-1">← Prev</button>
-              {pageNums.map((p, i) => p < 0
-                ? <span key={`ellipsis-${i}`} className="text-xs text-quaternary px-1">…</span>
-                : <PaginationBtn key={p} p={p} current={page} />
-              )}
+                className="px-3 py-1.5 text-sm text-secondary border border-secondary rounded-lg hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+                ← Prev
+              </button>
+              <span className="text-sm text-tertiary">
+                Page {page} of {totalPages}
+              </span>
               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                className="text-xs text-secondary hover:text-primary disabled:opacity-30 px-1">Next »</button>
+                className="px-3 py-1.5 text-sm text-secondary border border-secondary rounded-lg hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+                Next →
+              </button>
             </div>
           )}
 
-          <p className="text-xs text-quaternary mt-2 px-1">
+          <p className="text-xs text-quaternary mt-3">
             {filtered.length} records · showing {((page-1)*PAGE_SIZE)+1}–{Math.min(page*PAGE_SIZE, filtered.length)}
-            {" · "}{visibleCols.length} of {CLIENT_COLS.length} columns
           </p>
         </div>
       </main>
