@@ -1856,6 +1856,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.practiceName}
                   onChange={e => setFormData(prev => ({ ...prev, practiceName: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, practiceName: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="e.g. Axis Insurance Pty Ltd"
                 />
@@ -1866,6 +1867,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.contactName}
                   onChange={e => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, contactName: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="John Smith"
                 />
@@ -1876,6 +1878,7 @@ function PhoneSettings() {
                   type="email"
                   value={formData.contactEmail}
                   onChange={e => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, contactEmail: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="john@practice.com.au"
                 />
@@ -1886,6 +1889,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.abn}
                   onChange={e => setFormData(prev => ({ ...prev, abn: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, abn: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="12 345 678 901"
                 />
@@ -1896,6 +1900,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.afslNumber}
                   onChange={e => setFormData(prev => ({ ...prev, afslNumber: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, afslNumber: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="123456"
                 />
@@ -1945,6 +1950,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.street}
                   onChange={e => setFormData(prev => ({ ...prev, street: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, street: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="123 George Street"
                 />
@@ -1955,6 +1961,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.city}
                   onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, city: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="Sydney"
                 />
@@ -1982,6 +1989,7 @@ function PhoneSettings() {
                   type="text"
                   value={formData.postalCode}
                   onChange={e => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                  onInput={e => setFormData(prev => ({ ...prev, postalCode: (e.target as HTMLInputElement).value }))}
                   className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   placeholder="2000"
                 />
@@ -2258,6 +2266,7 @@ function PhoneSettings() {
               <textarea
                 value={formData.greetingText}
                 onChange={e => setFormData(prev => ({ ...prev, greetingText: e.target.value }))}
+                onInput={e => setFormData(prev => ({ ...prev, greetingText: (e.target as HTMLTextAreaElement).value }))}
                 rows={3}
                 className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                 placeholder="Thank you for calling..."
