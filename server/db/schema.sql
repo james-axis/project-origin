@@ -7,6 +7,45 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
+-- STAGE 0: Practice/Adviser Subaccounts
+-- =====================================================
+
+-- Practices with their own Twilio subaccounts
+CREATE TABLE IF NOT EXISTS twilio_practices (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    practice_name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255),
+    contact_email VARCHAR(255) NOT NULL,
+    abn VARCHAR(20),
+    afsl_number VARCHAR(20),
+    -- Twilio subaccount
+    twilio_account_sid VARCHAR(34) UNIQUE,
+    twilio_auth_token VARCHAR(100),
+    -- Regulatory compliance
+    address_sid VARCHAR(34),
+    bundle_sid VARCHAR(34),
+    bundle_status VARCHAR(50) DEFAULT 'not_started', -- not_started, pending-review, twilio-approved, twilio-rejected
+    -- Voice app
+    twiml_app_sid VARCHAR(34),
+    -- Setup wizard tracking
+    setup_step VARCHAR(50) DEFAULT 'not_started',
+    setup_status VARCHAR(20) DEFAULT 'not_started', -- not_started, in_progress, complete
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- TwiML Apps per practice
+CREATE TABLE IF NOT EXISTS twilio_twiml_apps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    practice_id UUID NOT NULL REFERENCES twilio_practices(id) ON DELETE CASCADE,
+    app_sid VARCHAR(34) UNIQUE NOT NULL,
+    friendly_name VARCHAR(255),
+    voice_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(practice_id)
+);
+
+-- =====================================================
 -- STAGE 1: Regulatory Compliance
 -- =====================================================
 
@@ -47,6 +86,7 @@ CREATE TABLE IF NOT EXISTS twilio_regulatory_bundles (
 -- Call flows (routing configuration)
 CREATE TABLE IF NOT EXISTS call_flows (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     greeting_audio_id UUID,
     greeting_text TEXT,
@@ -64,6 +104,7 @@ CREATE TABLE IF NOT EXISTS call_flows (
 -- Purchased phone numbers
 CREATE TABLE IF NOT EXISTS phone_numbers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE,
     phone_number_sid VARCHAR(34) UNIQUE NOT NULL,
     phone_number VARCHAR(20) NOT NULL, -- E.164 format
     friendly_name VARCHAR(255),
@@ -73,7 +114,7 @@ CREATE TABLE IF NOT EXISTS phone_numbers (
     voice_url TEXT,
     status_callback TEXT,
     call_flow_id UUID REFERENCES call_flows(id),
-    bundle_sid VARCHAR(34) REFERENCES twilio_regulatory_bundles(bundle_sid),
+    bundle_sid VARCHAR(34),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

@@ -16,7 +16,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import db from './lib/db.js';
 
-// Route imports - all 10 stages
+// Route imports - all stages (0-10)
+import stage0Routes from './routes/stage0-subaccounts.js';
 import stage1Routes from './routes/stage1-regulatory.js';
 import stage2Routes from './routes/stage2-phone-numbers.js';
 import stage4Routes from './routes/stage4-call-flows.js';
@@ -82,6 +83,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     stages: {
+      stage0: 'subaccounts',
       stage1: 'regulatory',
       stage2: 'phone-numbers',
       stage3: 'region-config',
@@ -101,8 +103,11 @@ app.get('/health', (req, res) => {
 });
 
 // =====================================================
-// API ROUTES - ALL 10 STAGES
+// API ROUTES - ALL STAGES (0-10)
 // =====================================================
+
+// Stage 0: Practice/Adviser Subaccounts
+app.use('/api/twilio', stage0Routes);
 
 // Stage 1: Business Address & Regulatory Setup
 app.use('/api/twilio', stage1Routes);

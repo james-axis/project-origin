@@ -3,6 +3,8 @@ import {
   Settings01, List, Users01, Shield01, Bell01, Link01, Phone01,
   ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
   Zap, X, Check, InfoCircle, AlertCircle, ArrowLeft,
+  Building01, MapPin01, Globe01, PhoneCall01, CheckCircle,
+  Clock, PlayCircle, Search, RefreshCw, FileText01, 
 } from "@untitledui/icons";
 
 type TriggerType = "object_created" | "task_completed";
@@ -1414,28 +1416,102 @@ function PlaceholderSection({ title }: { title: string; description?: string }) 
 }
 
 // ─── Phone Settings ───────────────────────────────────────────────────────────
-const MOCK_PHONE_NUMBERS = [
-  { id: "1", number: "+61 2 8000 1234", label: "Main Line", status: "active", assignedTo: "All Users" },
-  { id: "2", number: "+61 2 8000 1235", label: "Sales", status: "active", assignedTo: "Sales Team" },
-  { id: "3", number: "+61 3 9000 5678", label: "Melbourne", status: "inactive", assignedTo: "Unassigned" },
+const API_BASE = 'https://project-origin-production-1216.up.railway.app';
+
+// Types for Phone System
+interface Practice {
+  id: string;
+  practice_name: string;
+  contact_name: string;
+  contact_email: string;
+  abn?: string;
+  afsl_number?: string;
+  twilio_account_sid?: string;
+  address_sid?: string;
+  bundle_sid?: string;
+  bundle_status: string;
+  twiml_app_sid?: string;
+  setup_step: string;
+  setup_status: string;
+}
+
+interface PhoneNumber {
+  id: string;
+  phone_number: string;
+  friendly_name: string;
+  number_type: string;
+  is_active: boolean;
+  practice_id: string;
+}
+
+interface AvailableNumber {
+  phoneNumber: string;
+  friendlyName: string;
+  region: string;
+  locality?: string;
+  capabilities: { voice: boolean; sms?: boolean };
+}
+
+interface SetupStep {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const SETUP_STEPS: SetupStep[] = [
+  { id: 'practice', label: 'Practice Details', description: 'Register your practice', icon: Building01 },
+  { id: 'address', label: 'Business Address', description: 'Add regulatory address', icon: MapPin01 },
+  { id: 'compliance', label: 'AU Compliance', description: 'Regulatory bundle', icon: Shield01 },
+  { id: 'voice', label: 'Voice Config', description: 'Create TwiML App', icon: Settings01 },
+  { id: 'number', label: 'Phone Number', description: 'Purchase a number', icon: PhoneCall01 },
+  { id: 'routing', label: 'Call Routing', description: 'Set up IVR', icon: Zap },
 ];
 
-const MOCK_USERS_PHONE = [
-  { id: "1", name: "Isaac Dickman", email: "isaac@axis.com", softphoneEnabled: true, extension: "101" },
-  { id: "2", name: "Maysee Chang", email: "maysee@axis.com", softphoneEnabled: true, extension: "102" },
-  { id: "3", name: "John Rojas", email: "john@axis.com", softphoneEnabled: false, extension: "103" },
-  { id: "4", name: "Natasha Carlson", email: "natasha@axis.com", softphoneEnabled: true, extension: "104" },
-];
-
-type PhoneSubTab = "numbers" | "recording" | "transcription" | "access" | "usage";
+type PhoneSubTab = "practices" | "numbers" | "recording" | "transcription" | "access" | "usage";
+type WizardStepId = 'practice' | 'address' | 'compliance' | 'voice' | 'number' | 'routing';
 
 function PhoneSettings() {
-  const [subTab, setSubTab] = useState<PhoneSubTab>("numbers");
+  const [subTab, setSubTab] = useState<PhoneSubTab>("practices");
+  const [practices, setPractices] = useState<Practice[]>([]);
+  const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Wizard state
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState<number>(0);
+  const [wizardPractice, setWizardPractice] = useState<Practice | null>(null);
+  const [wizardLoading, setWizardLoading] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    practiceName: '',
+    contactName: '',
+    contactEmail: '',
+    abn: '',
+    afslNumber: '',
+    street: '',
+    city: '',
+    region: 'NSW',
+    postalCode: '',
+    numberType: 'local',
+    selectedNumber: '',
+    greetingText: 'Thank you for calling. Please hold while we connect you.',
+    routeType: 'direct',
+  });
+  
+  // Available numbers for purchase
+  const [availableNumbers, setAvailableNumbers] = useState<AvailableNumber[]>([]);
+  const [searchingNumbers, setSearchingNumbers] = useState(false);
+  
+  // Settings state
   const [recordingEnabled, setRecordingEnabled] = useState(true);
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
   const [aiSummaryEnabled, setAiSummaryEnabled] = useState(false);
 
   const subTabs: { id: PhoneSubTab; label: string }[] = [
+    { id: "practices", label: "Practices" },
     { id: "numbers", label: "Numbers" },
     { id: "recording", label: "Recording" },
     { id: "transcription", label: "Transcription" },
@@ -1443,8 +1519,835 @@ function PhoneSettings() {
     { id: "usage", label: "Usage" },
   ];
 
+  // Fetch practices and numbers on load
+  useEffect(() => {
+    fetchPractices();
+    fetchPhoneNumbers();
+  }, []);
+
+  const fetchPractices = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices`);
+      if (res.ok) {
+        const data = await res.json();
+        setPractices(data);
+      }
+    } catch (err) {
+      console.error('Error fetching practices:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPhoneNumbers = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/phone-numbers`);
+      if (res.ok) {
+        const data = await res.json();
+        setPhoneNumbers(data);
+      }
+    } catch (err) {
+      console.error('Error fetching phone numbers:', err);
+    }
+  };
+
+  // Wizard handlers
+  const startSetupWizard = (practice?: Practice) => {
+    if (practice) {
+      setWizardPractice(practice);
+      // Determine which step to continue from
+      const stepIndex = getStepIndexForPractice(practice);
+      setWizardStep(stepIndex);
+    } else {
+      setWizardPractice(null);
+      setWizardStep(0);
+      setFormData({
+        practiceName: '',
+        contactName: '',
+        contactEmail: '',
+        abn: '',
+        afslNumber: '',
+        street: '',
+        city: '',
+        region: 'NSW',
+        postalCode: '',
+        numberType: 'local',
+        selectedNumber: '',
+        greetingText: 'Thank you for calling. Please hold while we connect you.',
+        routeType: 'direct',
+      });
+    }
+    setShowWizard(true);
+  };
+
+  const getStepIndexForPractice = (practice: Practice): number => {
+    if (!practice.twilio_account_sid) return 0;
+    if (!practice.address_sid) return 1;
+    if (practice.bundle_status !== 'twilio-approved') return 2;
+    if (!practice.twiml_app_sid) return 3;
+    return 4; // Phone number step
+  };
+
+  const getStepStatus = (stepIndex: number, practice: Practice | null): 'complete' | 'current' | 'pending' => {
+    if (!practice) return stepIndex === 0 ? 'current' : 'pending';
+    const currentStepIndex = getStepIndexForPractice(practice);
+    if (stepIndex < currentStepIndex) return 'complete';
+    if (stepIndex === currentStepIndex) return 'current';
+    return 'pending';
+  };
+
+  // Step 1: Create Practice
+  const handleCreatePractice = async () => {
+    setWizardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          practiceName: formData.practiceName,
+          contactName: formData.contactName,
+          contactEmail: formData.contactEmail,
+          abn: formData.abn,
+          afslNumber: formData.afslNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create practice');
+      setWizardPractice(data.practice);
+      setWizardStep(1);
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Step 2: Create Address
+  const handleCreateAddress = async () => {
+    if (!wizardPractice) return;
+    setWizardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/regulatory-address`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          street: formData.street,
+          city: formData.city,
+          region: formData.region,
+          postalCode: formData.postalCode,
+          customerName: formData.practiceName || wizardPractice.practice_name,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create address');
+      setWizardPractice(prev => prev ? { ...prev, address_sid: data.addressSid } : null);
+      setWizardStep(2);
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Step 3: Create Regulatory Bundle
+  const handleCreateBundle = async () => {
+    if (!wizardPractice) return;
+    setWizardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/regulatory-bundle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numberType: formData.numberType }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create bundle');
+      setWizardPractice(prev => prev ? { ...prev, bundle_sid: data.bundleSid, bundle_status: 'pending-review' } : null);
+      setWizardStep(3);
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Check bundle status
+  const checkBundleStatus = async () => {
+    if (!wizardPractice) return;
+    setWizardLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/bundle-status`);
+      const data = await res.json();
+      if (data.isApproved) {
+        setWizardPractice(prev => prev ? { ...prev, bundle_status: 'twilio-approved' } : null);
+      }
+      fetchPractices();
+    } catch (err) {
+      console.error('Error checking bundle:', err);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Step 4: Create TwiML App
+  const handleCreateTwimlApp = async () => {
+    if (!wizardPractice) return;
+    setWizardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/twiml-app`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create TwiML App');
+      setWizardPractice(prev => prev ? { ...prev, twiml_app_sid: data.appSid } : null);
+      setWizardStep(4);
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Step 5: Search available numbers
+  const searchAvailableNumbers = async () => {
+    if (!wizardPractice) return;
+    setSearchingNumbers(true);
+    setAvailableNumbers([]);
+    try {
+      // For now, use US numbers since AU requires approved bundle
+      const country = wizardPractice.bundle_status === 'twilio-approved' ? 'AU' : 'US';
+      const res = await fetch(
+        `${API_BASE}/api/twilio/practices/${wizardPractice.id}/available-numbers?country=${country}&type=${formData.numberType}`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setAvailableNumbers(data);
+      } else if (country === 'AU') {
+        // Fallback to US if AU fails
+        const usRes = await fetch(
+          `${API_BASE}/api/twilio/practices/${wizardPractice.id}/available-numbers?country=US&type=${formData.numberType}`
+        );
+        const usData = await usRes.json();
+        if (usRes.ok) setAvailableNumbers(usData);
+      }
+    } catch (err) {
+      console.error('Error searching numbers:', err);
+    } finally {
+      setSearchingNumbers(false);
+    }
+  };
+
+  // Purchase number
+  const handlePurchaseNumber = async () => {
+    if (!wizardPractice || !formData.selectedNumber) return;
+    setWizardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/phone-numbers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: formData.selectedNumber,
+          friendlyName: `${wizardPractice.practice_name} - Main`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to purchase number');
+      setWizardStep(5);
+      fetchPhoneNumbers();
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Step 6: Create Call Flow
+  const handleCreateCallFlow = async () => {
+    if (!wizardPractice) return;
+    setWizardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/call-flows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          practiceId: wizardPractice.id,
+          name: `${wizardPractice.practice_name} - Default`,
+          greetingText: formData.greetingText,
+          routeType: formData.routeType,
+          recordingEnabled: true,
+          transcriptionEnabled: false,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create call flow');
+      setShowWizard(false);
+      setWizardPractice(null);
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  // Render Wizard Stepper
+  const renderStepper = () => (
+    <div className="flex items-center justify-between mb-8 px-4">
+      {SETUP_STEPS.map((step, index) => {
+        const status = getStepStatus(index, wizardPractice);
+        const Icon = step.icon;
+        const isLast = index === SETUP_STEPS.length - 1;
+        
+        return (
+          <React.Fragment key={step.id}>
+            <div className="flex flex-col items-center">
+              <div className={`
+                w-10 h-10 rounded-full flex items-center justify-center transition-all
+                ${status === 'complete' ? 'bg-success-solid text-white' : ''}
+                ${status === 'current' ? 'bg-brand-solid text-white ring-4 ring-brand-solid/20' : ''}
+                ${status === 'pending' ? 'bg-secondary text-quaternary' : ''}
+              `}>
+                {status === 'complete' ? (
+                  <Check className="size-5" />
+                ) : (
+                  <Icon className="size-5" />
+                )}
+              </div>
+              <div className="mt-2 text-center">
+                <p className={`text-xs font-medium ${status === 'current' ? 'text-brand-secondary' : status === 'complete' ? 'text-success-primary' : 'text-quaternary'}`}>
+                  {step.label}
+                </p>
+              </div>
+            </div>
+            {!isLast && (
+              <div className={`flex-1 h-0.5 mx-2 ${index < wizardStep ? 'bg-success-solid' : 'bg-secondary'}`} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+
+  // Render current wizard step content
+  const renderWizardContent = () => {
+    switch (wizardStep) {
+      case 0: // Practice Details
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Register Your Practice</h3>
+              <p className="text-sm text-tertiary mt-1">Create a dedicated Twilio subaccount for your practice</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-secondary mb-1.5">Practice Name *</label>
+                <input
+                  type="text"
+                  value={formData.practiceName}
+                  onChange={e => setFormData(prev => ({ ...prev, practiceName: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="e.g. Axis Insurance Pty Ltd"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">Contact Name</label>
+                <input
+                  type="text"
+                  value={formData.contactName}
+                  onChange={e => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="John Smith"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">Contact Email *</label>
+                <input
+                  type="email"
+                  value={formData.contactEmail}
+                  onChange={e => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="john@practice.com.au"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">ABN</label>
+                <input
+                  type="text"
+                  value={formData.abn}
+                  onChange={e => setFormData(prev => ({ ...prev, abn: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="12 345 678 901"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">AFSL Number</label>
+                <input
+                  type="text"
+                  value={formData.afslNumber}
+                  onChange={e => setFormData(prev => ({ ...prev, afslNumber: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="123456"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-secondary">
+              <button
+                onClick={() => setShowWizard(false)}
+                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePractice}
+                disabled={!formData.practiceName || !formData.contactEmail || wizardLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                Create Practice
+              </button>
+            </div>
+          </div>
+        );
+
+      case 1: // Business Address
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Business Address</h3>
+              <p className="text-sm text-tertiary mt-1">Required for Australian phone number regulatory compliance</p>
+            </div>
+            <div className="p-4 rounded-lg bg-warning-secondary border border-warning">
+              <div className="flex gap-3">
+                <InfoCircle className="size-5 text-warning-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-warning-primary">AU Regulatory Requirement</p>
+                  <p className="text-xs text-warning-primary/80 mt-1">
+                    Australian phone numbers require a verified business address for regulatory compliance.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-secondary mb-1.5">Street Address *</label>
+                <input
+                  type="text"
+                  value={formData.street}
+                  onChange={e => setFormData(prev => ({ ...prev, street: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="123 George Street"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">City *</label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="Sydney"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">State *</label>
+                <select
+                  value={formData.region}
+                  onChange={e => setFormData(prev => ({ ...prev, region: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                >
+                  <option value="NSW">New South Wales</option>
+                  <option value="VIC">Victoria</option>
+                  <option value="QLD">Queensland</option>
+                  <option value="WA">Western Australia</option>
+                  <option value="SA">South Australia</option>
+                  <option value="TAS">Tasmania</option>
+                  <option value="ACT">Australian Capital Territory</option>
+                  <option value="NT">Northern Territory</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">Postcode *</label>
+                <input
+                  type="text"
+                  value={formData.postalCode}
+                  onChange={e => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  placeholder="2000"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between pt-4 border-t border-secondary">
+              <button
+                onClick={() => setWizardStep(0)}
+                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
+              >
+                <ArrowLeft className="size-4" /> Back
+              </button>
+              <button
+                onClick={handleCreateAddress}
+                disabled={!formData.street || !formData.city || !formData.postalCode || wizardLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                Save Address
+              </button>
+            </div>
+          </div>
+        );
+
+      case 2: // Regulatory Bundle
+        const bundleStatus = wizardPractice?.bundle_status;
+        const isPending = bundleStatus === 'pending-review';
+        const isApproved = bundleStatus === 'twilio-approved';
+        
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Regulatory Compliance</h3>
+              <p className="text-sm text-tertiary mt-1">Submit your regulatory bundle for Twilio approval</p>
+            </div>
+            
+            {!bundleStatus || bundleStatus === 'not_started' ? (
+              <>
+                <div className="p-4 rounded-lg bg-secondary_alt border border-secondary">
+                  <p className="text-sm text-secondary">
+                    A regulatory bundle links your business address to your identity for Australian phone number compliance.
+                    This is reviewed by Twilio and typically takes 1-3 business days.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Number Type</label>
+                  <select
+                    value={formData.numberType}
+                    onChange={e => setFormData(prev => ({ ...prev, numberType: e.target.value }))}
+                    className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                  >
+                    <option value="local">Local Numbers (+61 2/3/7/8)</option>
+                    <option value="mobile">Mobile Numbers (+61 4XX)</option>
+                    <option value="tollFree">Toll-Free (1800)</option>
+                  </select>
+                </div>
+              </>
+            ) : isPending ? (
+              <div className="p-6 rounded-xl bg-warning-secondary border border-warning text-center">
+                <Clock className="size-12 text-warning-primary mx-auto mb-3" />
+                <h4 className="font-semibold text-warning-primary">Pending Review</h4>
+                <p className="text-sm text-warning-primary/80 mt-1">
+                  Your regulatory bundle is being reviewed by Twilio. This typically takes 1-3 business days.
+                </p>
+                <button
+                  onClick={checkBundleStatus}
+                  disabled={wizardLoading}
+                  className="mt-4 px-4 py-2 text-sm font-medium text-warning-primary border border-warning rounded-lg hover:bg-warning/10 flex items-center gap-2 mx-auto"
+                >
+                  {wizardLoading ? <RefreshCw className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                  Check Status
+                </button>
+              </div>
+            ) : isApproved ? (
+              <div className="p-6 rounded-xl bg-success-secondary border border-success-primary text-center">
+                <CheckCircle className="size-12 text-success-primary mx-auto mb-3" />
+                <h4 className="font-semibold text-success-primary">Approved!</h4>
+                <p className="text-sm text-success-primary/80 mt-1">
+                  Your regulatory bundle has been approved. You can now purchase Australian phone numbers.
+                </p>
+              </div>
+            ) : (
+              <div className="p-6 rounded-xl bg-error-secondary border border-error text-center">
+                <AlertCircle className="size-12 text-error-primary mx-auto mb-3" />
+                <h4 className="font-semibold text-error-primary">Review Required</h4>
+                <p className="text-sm text-error-primary/80 mt-1">
+                  Your bundle requires attention. Please check your Twilio console for details.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-between pt-4 border-t border-secondary">
+              <button
+                onClick={() => setWizardStep(1)}
+                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
+              >
+                <ArrowLeft className="size-4" /> Back
+              </button>
+              {!bundleStatus || bundleStatus === 'not_started' ? (
+                <button
+                  onClick={handleCreateBundle}
+                  disabled={wizardLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                  Submit for Review
+                </button>
+              ) : (
+                <button
+                  onClick={() => setWizardStep(3)}
+                  disabled={!isApproved && isPending}
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isPending ? 'Waiting for Approval...' : 'Continue'}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+
+      case 3: // TwiML App
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Voice Configuration</h3>
+              <p className="text-sm text-tertiary mt-1">Create a TwiML Application for handling voice calls</p>
+            </div>
+            <div className="p-4 rounded-lg bg-secondary_alt border border-secondary">
+              <div className="flex gap-3">
+                <Settings01 className="size-5 text-tertiary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-primary">What is a TwiML App?</p>
+                  <p className="text-xs text-tertiary mt-1">
+                    A TwiML Application tells Twilio how to handle incoming and outgoing calls. 
+                    It connects your phone numbers to the Axis CRM call routing system.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {wizardPractice?.twiml_app_sid ? (
+              <div className="p-6 rounded-xl bg-success-secondary border border-success-primary text-center">
+                <CheckCircle className="size-12 text-success-primary mx-auto mb-3" />
+                <h4 className="font-semibold text-success-primary">Voice App Created!</h4>
+                <p className="text-sm text-success-primary/80 mt-1">
+                  Your TwiML Application has been configured and is ready to handle calls.
+                </p>
+                <p className="text-xs font-mono text-success-primary/60 mt-2">{wizardPractice.twiml_app_sid}</p>
+              </div>
+            ) : (
+              <div className="p-6 rounded-xl border border-dashed border-secondary text-center">
+                <PlayCircle className="size-12 text-quaternary mx-auto mb-3" />
+                <p className="text-sm text-tertiary">
+                  Click the button below to create your voice application
+                </p>
+              </div>
+            )}
+            <div className="flex justify-between pt-4 border-t border-secondary">
+              <button
+                onClick={() => setWizardStep(2)}
+                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
+              >
+                <ArrowLeft className="size-4" /> Back
+              </button>
+              {wizardPractice?.twiml_app_sid ? (
+                <button
+                  onClick={() => setWizardStep(4)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover"
+                >
+                  Continue to Phone Numbers
+                </button>
+              ) : (
+                <button
+                  onClick={handleCreateTwimlApp}
+                  disabled={wizardLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                  Create Voice App
+                </button>
+              )}
+            </div>
+          </div>
+        );
+
+      case 4: // Phone Number
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Purchase Phone Number</h3>
+              <p className="text-sm text-tertiary mt-1">Search and purchase a phone number for your practice</p>
+            </div>
+            <div className="flex gap-3">
+              <select
+                value={formData.numberType}
+                onChange={e => setFormData(prev => ({ ...prev, numberType: e.target.value, selectedNumber: '' }))}
+                className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="local">Local</option>
+                <option value="mobile">Mobile</option>
+                <option value="tollFree">Toll-Free</option>
+              </select>
+              <button
+                onClick={searchAvailableNumbers}
+                disabled={searchingNumbers}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 flex items-center gap-2"
+              >
+                {searchingNumbers ? <RefreshCw className="size-4 animate-spin" /> : <Search className="size-4" />}
+                Search Numbers
+              </button>
+            </div>
+            {availableNumbers.length > 0 && (
+              <div className="rounded-xl border border-secondary overflow-hidden max-h-64 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-secondary_alt border-b border-secondary sticky top-0">
+                    <tr>
+                      <th className="w-8 px-4 py-2"></th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-quaternary">Number</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-quaternary">Location</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-secondary">
+                    {availableNumbers.map(num => (
+                      <tr 
+                        key={num.phoneNumber} 
+                        onClick={() => setFormData(prev => ({ ...prev, selectedNumber: num.phoneNumber }))}
+                        className={`cursor-pointer transition-colors ${formData.selectedNumber === num.phoneNumber ? 'bg-brand-secondary' : 'hover:bg-secondary_alt'}`}
+                      >
+                        <td className="px-4 py-2">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.selectedNumber === num.phoneNumber ? 'border-brand-solid bg-brand-solid' : 'border-secondary'}`}>
+                            {formData.selectedNumber === num.phoneNumber && <Check className="size-2.5 text-white" />}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 font-mono text-primary">{num.friendlyName}</td>
+                        <td className="px-4 py-2 text-tertiary">{num.locality || num.region}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {formData.selectedNumber && (
+              <div className="p-4 rounded-lg bg-brand-secondary border border-brand">
+                <p className="text-sm font-medium text-brand-secondary">Selected: <span className="font-mono">{formData.selectedNumber}</span></p>
+              </div>
+            )}
+            <div className="flex justify-between pt-4 border-t border-secondary">
+              <button
+                onClick={() => setWizardStep(3)}
+                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
+              >
+                <ArrowLeft className="size-4" /> Back
+              </button>
+              <button
+                onClick={handlePurchaseNumber}
+                disabled={!formData.selectedNumber || wizardLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                Purchase Number
+              </button>
+            </div>
+          </div>
+        );
+
+      case 5: // Call Routing
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Call Routing</h3>
+              <p className="text-sm text-tertiary mt-1">Configure how incoming calls are handled</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1.5">Greeting Message</label>
+              <textarea
+                value={formData.greetingText}
+                onChange={e => setFormData(prev => ({ ...prev, greetingText: e.target.value }))}
+                rows={3}
+                className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                placeholder="Thank you for calling..."
+              />
+              <p className="text-xs text-tertiary mt-1">This message will be played when callers connect</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1.5">Routing Type</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'direct', label: 'Direct', desc: 'Ring directly to a number' },
+                  { id: 'ivr', label: 'IVR Menu', desc: 'Press 1 for Sales...' },
+                  { id: 'ring-group', label: 'Ring Group', desc: 'Ring multiple phones' },
+                ].map(option => (
+                  <button
+                    key={option.id}
+                    onClick={() => setFormData(prev => ({ ...prev, routeType: option.id }))}
+                    className={`p-4 rounded-xl border text-left transition-all ${formData.routeType === option.id ? 'border-brand bg-brand-secondary ring-1 ring-brand' : 'border-secondary hover:border-tertiary'}`}
+                  >
+                    <p className={`text-sm font-medium ${formData.routeType === option.id ? 'text-brand-secondary' : 'text-primary'}`}>{option.label}</p>
+                    <p className="text-xs text-tertiary mt-0.5">{option.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-between pt-4 border-t border-secondary">
+              <button
+                onClick={() => setWizardStep(4)}
+                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
+              >
+                <ArrowLeft className="size-4" /> Back
+              </button>
+              <button
+                onClick={handleCreateCallFlow}
+                disabled={wizardLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-success-solid rounded-lg hover:bg-success-solid/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {wizardLoading && <RefreshCw className="size-4 animate-spin" />}
+                <CheckCircle className="size-4" />
+                Complete Setup
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Wizard Modal
+  const WizardModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-primary rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-secondary">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-primary">Phone System Setup</h2>
+            <button onClick={() => setShowWizard(false)} className="text-quaternary hover:text-secondary">
+              <X className="size-5" />
+            </button>
+          </div>
+        </div>
+        <div className="p-6">
+          {renderStepper()}
+          {error && (
+            <div className="mb-6 p-4 rounded-lg bg-error-secondary border border-error">
+              <p className="text-sm text-error-primary flex items-center gap-2">
+                <AlertCircle className="size-4" />
+                {error}
+              </p>
+            </div>
+          )}
+          {renderWizardContent()}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Mock users for access tab
+  const MOCK_USERS_PHONE = [
+    { id: "1", name: "Isaac Dickman", email: "isaac@axis.com", softphoneEnabled: true, extension: "101" },
+    { id: "2", name: "Maysee Chang", email: "maysee@axis.com", softphoneEnabled: true, extension: "102" },
+    { id: "3", name: "John Rojas", email: "john@axis.com", softphoneEnabled: false, extension: "103" },
+    { id: "4", name: "Natasha Carlson", email: "natasha@axis.com", softphoneEnabled: true, extension: "104" },
+  ];
+
   return (
     <div className="p-4 sm:p-6">
+      {showWizard && <WizardModal />}
+      
       {/* Sub-tabs */}
       <div className="flex gap-1 mb-6 bg-secondary_alt rounded-lg p-1 w-fit">
         {subTabs.map(tab => (
@@ -1455,49 +2358,156 @@ function PhoneSettings() {
         ))}
       </div>
 
+      {/* Practices Tab */}
+      {subTab === "practices" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-primary">Practice Phone Systems</h3>
+              <p className="text-xs text-tertiary mt-0.5">Each practice has a dedicated Twilio subaccount</p>
+            </div>
+            <button 
+              onClick={() => startSetupWizard()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors"
+            >
+              <Plus className="size-3" />Setup New Practice
+            </button>
+          </div>
+          
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="size-6 text-tertiary animate-spin" />
+            </div>
+          ) : practices.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-secondary p-12 text-center">
+              <Building01 className="size-12 text-quaternary mx-auto mb-3" />
+              <h4 className="font-medium text-primary">No practices configured</h4>
+              <p className="text-sm text-tertiary mt-1">Get started by setting up your first practice phone system</p>
+              <button 
+                onClick={() => startSetupWizard()}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:bg-brand-solid_hover"
+              >
+                <Plus className="size-4" />Setup First Practice
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {practices.map(practice => {
+                const stepIndex = getStepIndexForPractice(practice);
+                const isComplete = practice.setup_status === 'complete';
+                const progress = Math.round((stepIndex / SETUP_STEPS.length) * 100);
+                
+                return (
+                  <div key={practice.id} className="rounded-xl border border-secondary p-4 hover:border-tertiary transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isComplete ? 'bg-success-secondary' : 'bg-brand-secondary'}`}>
+                          {isComplete ? (
+                            <CheckCircle className="size-5 text-success-primary" />
+                          ) : (
+                            <Building01 className="size-5 text-brand-secondary" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-primary">{practice.practice_name}</h4>
+                          <p className="text-xs text-tertiary">{practice.contact_email}</p>
+                          {practice.afsl_number && (
+                            <p className="text-xs text-quaternary mt-0.5">AFSL: {practice.afsl_number}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {isComplete ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-secondary text-success-primary">
+                            <span className="size-1.5 rounded-full bg-success-primary" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning-secondary text-warning-primary">
+                            <span className="size-1.5 rounded-full bg-warning-primary" />
+                            Setup in Progress
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {!isComplete && (
+                      <div className="mt-4 pt-4 border-t border-secondary">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-tertiary">Setup Progress</span>
+                          <span className="text-xs font-medium text-secondary">{progress}%</span>
+                        </div>
+                        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div className="h-full bg-brand-solid rounded-full transition-all" style={{ width: `${progress}%` }} />
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-xs text-tertiary">
+                            Next: {SETUP_STEPS[stepIndex]?.label || 'Complete'}
+                          </span>
+                          <button
+                            onClick={() => startSetupWizard(practice)}
+                            className="text-xs font-medium text-brand-secondary hover:text-brand-secondary/80"
+                          >
+                            Continue Setup →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Numbers Tab */}
       {subTab === "numbers" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-primary">Phone Numbers</h3>
-              <p className="text-xs text-tertiary mt-0.5">Manage your Twilio phone numbers</p>
+              <p className="text-xs text-tertiary mt-0.5">All purchased phone numbers across practices</p>
             </div>
-            <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors">
-              <Plus className="size-3" />Add Number
-            </button>
           </div>
-          <div className="rounded-xl border border-secondary overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary_alt border-b border-secondary">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Number</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Label</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Status</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Assigned To</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-secondary">
-                {MOCK_PHONE_NUMBERS.map(num => (
-                  <tr key={num.id} className="hover:bg-secondary_alt transition-colors">
-                    <td className="px-4 py-3 font-mono text-primary">{num.number}</td>
-                    <td className="px-4 py-3 text-secondary">{num.label}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${num.status === "active" ? "bg-success-secondary text-success-primary" : "bg-secondary text-quaternary"}`}>
-                        <span className={`size-1.5 rounded-full ${num.status === "active" ? "bg-success-primary" : "bg-quaternary"}`} />
-                        {num.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-tertiary">{num.assignedTo}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button className="text-tertiary hover:text-secondary text-xs">Edit</button>
-                    </td>
+          {phoneNumbers.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-secondary p-12 text-center">
+              <PhoneCall01 className="size-12 text-quaternary mx-auto mb-3" />
+              <h4 className="font-medium text-primary">No phone numbers</h4>
+              <p className="text-sm text-tertiary mt-1">Complete practice setup to purchase phone numbers</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-secondary overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary_alt border-b border-secondary">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Number</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Label</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Type</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Status</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-secondary">
+                  {phoneNumbers.map(num => (
+                    <tr key={num.id} className="hover:bg-secondary_alt transition-colors">
+                      <td className="px-4 py-3 font-mono text-primary">{num.phone_number}</td>
+                      <td className="px-4 py-3 text-secondary">{num.friendly_name}</td>
+                      <td className="px-4 py-3 text-tertiary capitalize">{num.number_type}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${num.is_active ? "bg-success-secondary text-success-primary" : "bg-secondary text-quaternary"}`}>
+                          <span className={`size-1.5 rounded-full ${num.is_active ? "bg-success-primary" : "bg-quaternary"}`} />
+                          {num.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button className="text-tertiary hover:text-secondary text-xs">Configure</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
