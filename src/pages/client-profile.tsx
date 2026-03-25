@@ -37,13 +37,7 @@ const CLIENT = {
   seventyPctSalary: "$66,500", marginaltaxRate: "30.00%",
 };
 
-const CALLS: CallEntry[] = [
-  { date: "18/12/2024 09:55 AM", phone: "0412 345 678", status: "Completed", duration: "0:00" },
-  { date: "01/11/2024 01:08 PM", phone: "0412 345 678", status: "Completed", duration: "0:00" },
-  { date: "31/10/2024 02:47 PM", phone: "0412 345 678", status: "Completed", duration: "0:00" },
-  { date: "31/10/2024 11:34 AM", phone: "0412 345 678", status: "Completed", duration: "0:00" },
-  { date: "25/10/2024 01:29 PM", phone: "0412 345 678", status: "Completed", duration: "0:00" },
-];
+const CALLS: CallEntry[] = [];
 const ACTIVITY: ActivityEntry[] = [
   { date: "17/03/2026 06:28", user: "James Nicholls", action: "Lead reassigned", note: "Lead reassigned to SLG Test T (Admin)" },
   { date: "16/03/2026 09:13", user: "James Nicholls", action: "Lead assigned",   note: "Lead assigned to James N" },
@@ -687,15 +681,18 @@ export function ClientProfilePage() {
               </SidebarSection>
 
               <SidebarSection title="Calls" defaultOpen={false}>
-                <div className="space-y-2">
-                  {CALLS.map((call, i) => (
-                    <div key={i} className="border-b border-secondary pb-2 last:border-0">
-                      <p className="text-[11px] text-tertiary flex items-center gap-1"><Phone01 className="size-3 text-quaternary" />{call.date} | {call.status} | {call.duration}</p>
-                      <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
-                      <button className="text-[11px] text-brand-secondary hover:underline">Call recording</button>
+                {CALLS.length === 0
+                  ? <p className="text-center text-xs text-quaternary py-3">No calls recorded</p>
+                  : <div className="space-y-2">
+                      {CALLS.map((call, i) => (
+                        <div key={i} className="border-b border-secondary pb-2 last:border-0">
+                          <p className="text-[11px] text-tertiary flex items-center gap-1"><Phone01 className="size-3 text-quaternary" />{call.date} | {call.status} | {call.duration}</p>
+                          <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
+                          <button className="text-[11px] text-brand-secondary hover:underline">Call recording</button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                }
               </SidebarSection>
 
               <SidebarSection title="Scheduled Actions" action={{ label:"New action", onClick:()=>{} }} defaultOpen={false}>
@@ -796,15 +793,18 @@ export function ClientProfilePage() {
               {/* Calls */}
               <div>
                 <p className="text-sm font-semibold text-primary mb-2">Calls</p>
-                <div className="space-y-2">
-                  {CALLS.map((call, i) => (
-                    <div key={i} className="border-b border-secondary pb-2 last:border-0">
-                      <p className="text-[11px] text-tertiary flex items-center gap-1"><Phone01 className="size-3 text-quaternary" />{call.date} | {call.status} | {call.duration}</p>
-                      <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
-                      <button className="text-[11px] text-brand-secondary hover:underline">Call recording</button>
+                {CALLS.length === 0
+                  ? <p className="text-center text-xs text-quaternary py-3">No calls recorded</p>
+                  : <div className="space-y-2">
+                      {CALLS.map((call, i) => (
+                        <div key={i} className="border-b border-secondary pb-2 last:border-0">
+                          <p className="text-[11px] text-tertiary flex items-center gap-1"><Phone01 className="size-3 text-quaternary" />{call.date} | {call.status} | {call.duration}</p>
+                          <p className="text-xs font-medium text-primary mt-0.5">{call.phone}</p>
+                          <button className="text-[11px] text-brand-secondary hover:underline">Call recording</button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                }
               </div>
 
               {/* Scheduled Actions */}
@@ -820,14 +820,17 @@ export function ClientProfilePage() {
               <div>
                 <p className="text-sm font-semibold text-primary mb-2">File Library</p>
                 <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs outline-none focus:border-brand mb-2" />
-                <div className="space-y-1.5">
-                  {FILE_LIBRARY.map((f, i) => (
-                    <button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5 transition-colors">
-                      <File01 className="size-3.5 text-quaternary shrink-0 mt-0.5" />
-                      <div className="min-w-0"><p className="text-[10px] text-quaternary">{f.date}</p><p className="text-xs text-brand-secondary hover:underline truncate">{f.name}</p></div>
-                    </button>
-                  ))}
-                </div>
+                {FILE_LIBRARY.length === 0
+                  ? <p className="text-center text-xs text-quaternary py-3">No files matching query found</p>
+                  : <div className="space-y-1.5">
+                      {FILE_LIBRARY.map((f, i) => (
+                        <button key={i} className="flex items-start gap-2 w-full text-left hover:bg-secondary_alt rounded-lg p-1.5 transition-colors">
+                          <File01 className="size-3.5 text-quaternary shrink-0 mt-0.5" />
+                          <div className="min-w-0"><p className="text-[10px] text-quaternary">{f.date}</p><p className="text-xs text-brand-secondary hover:underline truncate">{f.name}</p></div>
+                        </button>
+                      ))}
+                    </div>
+                }
               </div>
             </div>
           </div>

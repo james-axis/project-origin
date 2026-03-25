@@ -75,14 +75,6 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     ))}
                 </ul>
                 <div className="mt-auto flex flex-col gap-2 px-3 py-5">
-                    {/* + Create New Lead icon button */}
-                    <button
-                        onClick={() => setShowCreateLead(true)}
-                        title="Create New Lead"
-                        className="flex w-full items-center justify-center rounded-xl py-2 text-fg-quaternary hover:bg-secondary hover:text-secondary transition-colors"
-                    >
-                        <svg className="size-5" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/></svg>
-                    </button>
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
                     {footerItems.length > 0 && (
                         <ul className="flex flex-col gap-0.5">
@@ -144,36 +136,39 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                         !(hideBorder || hideRightBorder) && "box-content border-r-[1.5px]",
                     )}
                 >
-                    <div style={{ width: SECONDARY_SIDEBAR_WIDTH }} className="flex h-full flex-col px-4 pt-5">
-                        <h3 className="text-sm font-semibold text-brand-secondary mb-3">{currentItem.label}</h3>
-                        {/* Search bar */}
-                        <div className="relative mb-2">
-                            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                            <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-secondary_alt pl-7 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand transition-colors placeholder:text-quaternary"/>
-                        </div>
-                        <ul className="py-1">
-                            {currentItem.items?.map((item) => (
-                                <li key={item.label} className="py-0.5">
-                                    <NavItemBase current={activeUrl === item.href} href={item.href} icon={item.icon} badge={item.badge} type="link">
-                                        {item.label}
-                                    </NavItemBase>
-                                </li>
-                            ))}
-                        </ul>
-                        {/* Create New Lead button */}
-                        <div className="mt-4 mb-2">
-                            <button onClick={() => setShowCreateLead(true)}
-                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-solid text-white text-sm font-semibold py-2.5 px-4 hover:bg-brand-solid_hover transition-colors shadow-sm">
-                                <svg className="size-4" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/></svg>
-                                Create New Lead
-                            </button>
-                        </div>
-                        <div className="sticky bottom-0 mt-auto flex justify-between border-t border-secondary bg-primary px-2 py-5">
-                            <div>
-                                <p className="text-sm font-semibold text-primary">Olivia Rhye</p>
-                                <p className="text-sm text-tertiary">olivia@untitledui.com</p>
+                    <div style={{ width: SECONDARY_SIDEBAR_WIDTH }} className="flex h-full flex-col">
+                        {/* Scrollable nav content */}
+                        <div className="flex-1 overflow-y-auto px-4 pt-5 pb-2">
+                            <h3 className="text-sm font-semibold text-brand-secondary mb-3">{currentItem.label}</h3>
+                            {/* Search bar */}
+                            <div className="relative mb-2">
+                                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                <input placeholder="Search..." className="w-full rounded-lg border border-secondary bg-secondary_alt pl-7 pr-3 py-1.5 text-xs text-primary outline-none focus:border-brand transition-colors placeholder:text-quaternary"/>
                             </div>
-                            <div className="absolute top-2.5 right-0">
+                            <ul className="py-1">
+                                {currentItem.items?.map((item) => (
+                                    <li key={item.label} className="py-0.5">
+                                        <NavItemBase current={activeUrl === item.href} href={item.href} icon={item.icon} badge={item.badge} type="link">
+                                            {item.label}
+                                        </NavItemBase>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        {/* Fixed bottom: Create New Lead + user footer */}
+                        <div className="shrink-0 border-t border-secondary bg-primary">
+                            <div className="px-4 py-3">
+                                <button onClick={() => setShowCreateLead(true)}
+                                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-solid text-white text-sm font-semibold py-2.5 px-4 hover:bg-brand-solid_hover transition-colors shadow-sm">
+                                    <svg className="size-4" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/></svg>
+                                    Create New Lead
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between px-4 pb-5">
+                                <div>
+                                    <p className="text-sm font-semibold text-primary">Olivia Rhye</p>
+                                    <p className="text-sm text-tertiary">olivia@untitledui.com</p>
+                                </div>
                                 <ButtonUtility size="sm" color="tertiary" tooltip="Log out" icon={LogOut01} />
                             </div>
                         </div>
