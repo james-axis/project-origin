@@ -10,4 +10,18 @@ export default defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    server: {
+        proxy: {
+            // Proxy API requests to backend server
+            '/api': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+            },
+            // Proxy webhook endpoints
+            '/webhooks': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+            },
+        },
+    },
 });

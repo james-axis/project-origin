@@ -1,12 +1,14 @@
 {
-  "name": "untitledui-vite-starter-kit",
-  "version": "0.0.0",
+  "name": "axis-crm",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
     "dev": "vite",
+    "dev:server": "cd server && npm run dev",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate": "cd server && npm run db:migrate"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
