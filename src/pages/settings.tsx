@@ -1503,6 +1503,12 @@ function PhoneSettings() {
   const [recordingEnabled, setRecordingEnabled] = useState(true);
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(true);
   const [aiSummaryEnabled, setAiSummaryEnabled] = useState(false);
+  
+  // Edit/Delete practice state
+  const [editingPractice, setEditingPractice] = useState<Practice | null>(null);
+  const [deletingPractice, setDeletingPractice] = useState<Practice | null>(null);
+  const [editForm, setEditForm] = useState({ practiceName: '', contactName: '', contactEmail: '', abn: '', afslNumber: '' });
+  const [actionLoading, setActionLoading] = useState(false);
 
   const subTabs: { id: PhoneSubTab; label: string }[] = [
     { id: "practices", label: "Practices" },
@@ -1692,6 +1698,66 @@ function PhoneSettings() {
     } finally {
       setWizardLoading(false);
     }
+  };
+
+  // Edit practice
+  const handleEditPractice = async () => {
+    if (!editingPractice) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${editingPractice.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          practiceName: editForm.practiceName,
+          contactName: editForm.contactName,
+          contactEmail: editForm.contactEmail,
+          abn: editForm.abn,
+          afslNumber: editForm.afslNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update practice');
+      setEditingPractice(null);
+      fetchPractices();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete practice
+  const handleDeletePractice = async () => {
+    if (!deletingPractice) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/twilio/practices/${deletingPractice.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete practice');
+      setDeletingPractice(null);
+      fetchPractices();
+      fetchPhoneNumbers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Open edit modal
+  const openEditModal = (practice: Practice) => {
+    setError(null);
+    setEditForm({
+      practiceName: practice.practice_name || '',
+      contactName: practice.contact_name || '',
+      contactEmail: practice.contact_email || '',
+      abn: practice.abn || '',
+      afslNumber: practice.afsl_number || '',
+    });
+    setEditingPractice(practice);
   };
 
   // Render Wizard Stepper
@@ -2016,6 +2082,142 @@ function PhoneSettings() {
           </div>
         </div>
       )}
+
+      {/* Edit Practice Modal */}
+      {editingPractice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-primary rounded-2xl shadow-xl w-full max-w-md mx-4">
+            <div className="p-6 border-b border-secondary">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">Edit Practice</h2>
+                <button onClick={() => setEditingPractice(null)} className="text-quaternary hover:text-secondary">
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">Practice Name *</label>
+                <input
+                  type="text"
+                  value={editForm.practiceName}
+                  onInput={(e) => setEditForm(prev => ({ ...prev, practiceName: (e.target as HTMLInputElement).value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-secondary bg-primary text-primary text-sm focus:ring-2 focus:ring-brand-solid focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">Contact Name</label>
+                <input
+                  type="text"
+                  value={editForm.contactName}
+                  onInput={(e) => setEditForm(prev => ({ ...prev, contactName: (e.target as HTMLInputElement).value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-secondary bg-primary text-primary text-sm focus:ring-2 focus:ring-brand-solid focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1.5">Contact Email</label>
+                <input
+                  type="email"
+                  value={editForm.contactEmail}
+                  onInput={(e) => setEditForm(prev => ({ ...prev, contactEmail: (e.target as HTMLInputElement).value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-secondary bg-primary text-primary text-sm focus:ring-2 focus:ring-brand-solid focus:border-transparent"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">ABN</label>
+                  <input
+                    type="text"
+                    value={editForm.abn}
+                    onInput={(e) => setEditForm(prev => ({ ...prev, abn: (e.target as HTMLInputElement).value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-secondary bg-primary text-primary text-sm focus:ring-2 focus:ring-brand-solid focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">AFSL Number</label>
+                  <input
+                    type="text"
+                    value={editForm.afslNumber}
+                    onInput={(e) => setEditForm(prev => ({ ...prev, afslNumber: (e.target as HTMLInputElement).value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-secondary bg-primary text-primary text-sm focus:ring-2 focus:ring-brand-solid focus:border-transparent"
+                  />
+                </div>
+              </div>
+              {error && (
+                <div className="p-3 rounded-lg bg-error-secondary border border-error">
+                  <p className="text-sm text-error-primary">{error}</p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-secondary flex justify-end gap-3">
+              <button
+                onClick={() => setEditingPractice(null)}
+                className="px-4 py-2 text-sm font-medium text-tertiary hover:text-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditPractice}
+                disabled={actionLoading || !editForm.practiceName.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50"
+              >
+                {actionLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Practice Confirmation Modal */}
+      {deletingPractice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-primary rounded-2xl shadow-xl w-full max-w-md mx-4">
+            <div className="p-6 border-b border-secondary">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">Delete Practice</h2>
+                <button onClick={() => setDeletingPractice(null)} className="text-quaternary hover:text-secondary">
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-error-secondary flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="size-6 text-error-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-secondary">
+                    Are you sure you want to delete <strong className="text-primary">{deletingPractice.practice_name}</strong>?
+                  </p>
+                  <p className="text-sm text-tertiary mt-2">
+                    This will permanently delete the practice and release any associated phone numbers. This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              {error && (
+                <div className="mt-4 p-3 rounded-lg bg-error-secondary border border-error">
+                  <p className="text-sm text-error-primary">{error}</p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-secondary flex justify-end gap-3">
+              <button
+                onClick={() => setDeletingPractice(null)}
+                className="px-4 py-2 text-sm font-medium text-tertiary hover:text-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletePractice}
+                disabled={actionLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-error-primary rounded-lg hover:bg-error-primary/90 disabled:opacity-50"
+              >
+                {actionLoading ? 'Deleting...' : 'Delete Practice'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Sub-tabs */}
       <div className="flex gap-1 mb-6 bg-secondary_alt rounded-lg p-1 w-fit">
@@ -2085,7 +2287,7 @@ function PhoneSettings() {
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center gap-2">
                         {isComplete ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-secondary text-success-primary">
                             <span className="size-1.5 rounded-full bg-success-primary" />
@@ -2097,6 +2299,20 @@ function PhoneSettings() {
                             Setup in Progress
                           </span>
                         )}
+                        <button
+                          onClick={() => openEditModal(practice)}
+                          className="p-1.5 rounded-lg hover:bg-secondary text-tertiary hover:text-secondary transition-colors"
+                          title="Edit practice"
+                        >
+                          <Edit01 className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => { setError(null); setDeletingPractice(practice); }}
+                          className="p-1.5 rounded-lg hover:bg-error-secondary text-tertiary hover:text-error-primary transition-colors"
+                          title="Delete practice"
+                        >
+                          <Trash01 className="size-4" />
+                        </button>
                       </div>
                     </div>
                     {!isComplete && (
@@ -2117,6 +2333,24 @@ function PhoneSettings() {
                             className="text-xs font-medium text-brand-secondary hover:text-brand-secondary/80"
                           >
                             Continue Setup →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {isComplete && (
+                      <div className="mt-4 pt-4 border-t border-secondary">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-xs text-tertiary">
+                            <span className="flex items-center gap-1.5">
+                              <PhoneCall01 className="size-3.5" />
+                              {phoneNumbers.filter(n => n.practice_id === practice.id).length} number(s)
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => startSetupWizard(practice)}
+                            className="text-xs font-medium text-brand-secondary hover:text-brand-secondary/80"
+                          >
+                            Manage →
                           </button>
                         </div>
                       </div>
