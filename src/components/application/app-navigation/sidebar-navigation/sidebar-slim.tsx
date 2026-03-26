@@ -58,7 +58,12 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                 )}
             >
                 <div className="flex justify-center px-3">
-                    <Link to="/workbench" className="block rounded-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2" title="Go to Workbench">
+                    <Link 
+                        to="/workbench" 
+                        className="block rounded-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2" 
+                        title="Go to Workbench"
+                        onPointerEnter={() => setCurrentItem(items[0])}
+                    >
                         <svg className="size-8" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Axis"><defs><linearGradient id="axis-slim-lg" x1="16" y1="31.9" x2="16" y2="-0.1" gradientTransform="translate(0 31.9) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#fff"/><stop offset="1" stopColor="#0a0d12"/></linearGradient></defs><path fill="#D34108" d="M0,12.8C0,8.32,0,6.08.87,4.37c.77-1.51,1.99-2.73,3.5-3.5C6.08,0,8.32,0,12.8,0h6.4C23.68,0,25.92,0,27.63.87c1.51.77,2.73,1.99,3.5,3.5.87,1.71.87,3.95.87,8.43v6.4c0,4.48,0,6.72-.87,8.43-.77,1.51-1.99,2.73-3.5,3.5-1.71.87-3.95.87-8.43.87h-6.4c-4.48,0-6.72,0-8.43-.87-1.51-.77-2.73-1.99-3.5-3.5C0,25.92,0,23.68,0,19.2v-6.4Z"/><path fill="url(#axis-slim-lg)" fillOpacity=".2" d="M0,12.8C0,8.32,0,6.08.87,4.37c.77-1.51,1.99-2.73,3.5-3.5C6.08,0,8.32,0,12.8,0h6.4C23.68,0,25.92,0,27.63.87c1.51.77,2.73,1.99,3.5,3.5.87,1.71.87,3.95.87,8.43v6.4c0,4.48,0,6.72-.87,8.43-.77,1.51-1.99,2.73-3.5,3.5-1.71.87-3.95.87-8.43.87h-6.4c-4.48,0-6.72,0-8.43-.87-1.51-.77-2.73-1.99-3.5-3.5C0,25.92,0,23.68,0,19.2v-6.4Z"/><path fill="#fff" d="M13.43,15.89l-9.43,10.27h4.86L28,5.35h-4.99l-7.08,7.63-7.08-7.63h-4.86l9.43,10.54Z"/><path fill="#fff" d="M23.01,26.16h4.99l-9.16-9.85c-1.44,2.37-.88,4.23-.42,4.86l4.58,4.99Z"/></svg>
                     </Link>
                 </div>
@@ -79,6 +84,18 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                 </ul>
                 <div className="mt-auto flex flex-col gap-2 px-3 py-5">
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
+                    
+                    {/* Prominent Create New Lead button */}
+                    <button 
+                        onClick={() => setShowCreateLead(true)}
+                        title="Create New Lead"
+                        className="flex size-10 items-center justify-center rounded-xl bg-brand-solid text-white hover:bg-brand-solid_hover transition-colors shadow-md hover:shadow-lg"
+                    >
+                        <svg className="size-5" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+                    
                     {footerItems.length > 0 && (
                         <ul className="flex flex-col gap-0.5">
                             {footerItems.map((item) => (

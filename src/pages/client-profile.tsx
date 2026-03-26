@@ -8,6 +8,9 @@ import { navItems, footerNavItems } from "@/components/application/app-navigatio
 import {
   ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check,
   File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
+  Lightbulb02, FileSearch02, FileCheck02, Shield01, AlertTriangle, MessageSquare01,
+  MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, FilePlus02, Folder, BellOff,
+  BarChart01,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -176,8 +179,8 @@ function EditableGroupField({ value, compact = false }: { value: string; compact
 
 // ─── Dropdown button ──────────────────────────────────────────────────────────
 function DropdownButton({ label, icon, items, variant = "default", pinned, onPin }: {
-  label: string; icon?: string; variant?: "default"|"brand";
-  items: { label: string; icon?: string; danger?: boolean; onClick?: () => void }[];
+  label: string; icon?: string | React.FC<{ className?: string }>; variant?: "default"|"brand";
+  items: { label: string; icon?: string | React.FC<{ className?: string }>; danger?: boolean; onClick?: () => void }[];
   pinned?: string[]; onPin?: (label: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -188,11 +191,19 @@ function DropdownButton({ label, icon, items, variant = "default", pinned, onPin
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
+  
+  const renderIcon = (ic?: string | React.FC<{ className?: string }>) => {
+    if (!ic) return null;
+    if (typeof ic === "string") return <span>{ic}</span>;
+    const IconComp = ic;
+    return <IconComp className="size-3.5 text-quaternary" />;
+  };
+  
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)}
         className={"inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors " + (variant === "brand" ? "border-brand-solid bg-brand-solid text-white hover:bg-brand-solid_hover" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
-        {icon && <span>{icon}</span>}{label}
+        {renderIcon(icon)}{label}
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 z-50 w-52 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
@@ -201,7 +212,7 @@ function DropdownButton({ label, icon, items, variant = "default", pinned, onPin
             return (
               <div key={i} className="flex items-center group">
                 <button onClick={() => { setOpen(false); item.onClick?.(); }} className={"flex items-center gap-2 flex-1 px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger ? "text-error-primary" : "text-primary")}>
-                  {item.icon && <span>{item.icon}</span>}{item.label}
+                  {renderIcon(item.icon)}{item.label}
                 </button>
                 {onPin && (
                   <button onClick={e => { e.stopPropagation(); onPin(item.label); }}
@@ -565,27 +576,27 @@ export function ClientProfilePage() {
             </div>
             {/* Toolbar + Edit — all inline */}
             <div className="flex items-center gap-1.5 flex-wrap ml-auto">
-              <DropdownButton label="New" icon="✚" pinned={pinnedActions} onPin={togglePin} items={[
-                { label: "Quote",          icon: "💡" },
-                { label: "Pre-Assessment", icon: "🩺" },
-                { label: "Application",    icon: "📝", onClick: () => setShowNewApp(true) },
-                { label: "Claim",          icon: "🛡️" },
-                { label: "Dishonour",      icon: "⚠️" },
-                { label: "Complaint",      icon: "💬" },
+              <DropdownButton label="New" icon={Plus} pinned={pinnedActions} onPin={togglePin} items={[
+                { label: "Quote",          icon: Lightbulb02 },
+                { label: "Pre-Assessment", icon: FileSearch02 },
+                { label: "Application",    icon: FileCheck02, onClick: () => setShowNewApp(true) },
+                { label: "Claim",          icon: Shield01 },
+                { label: "Dishonour",      icon: AlertTriangle },
+                { label: "Complaint",      icon: MessageSquare01 },
               ]} />
               <DropdownButton label="Actions" icon="⚡" pinned={pinnedActions} onPin={togglePin} items={[
-                { label: "SMS",          icon: "💬" },
-                { label: "Email",        icon: "✉️" },
-                { label: "Form",         icon: "📋" },
-                { label: "Schedule",     icon: "📅" },
-                { label: "Upload Files", icon: "📎" },
-                { label: "Set Status",   icon: "🔄" },
+                { label: "SMS",          icon: MessageChatSquare },
+                { label: "Email",        icon: Send01 },
+                { label: "Form",         icon: FilePlus02 },
+                { label: "Schedule",     icon: Calendar },
+                { label: "Upload Files", icon: Upload01 },
+                { label: "Set Status",   icon: RefreshCw01 },
               ]} />
               <DropdownButton label="Other" icon="⋯" pinned={pinnedActions} onPin={togglePin} items={[
-                { label: "PDF",              icon: "📄" },
-                { label: "Docs",             icon: "📁" },
-                { label: "Off APL",          icon: "🔕" },
-                { label: "Marketing List",   icon: "📊" },
+                { label: "PDF",              icon: File01 },
+                { label: "Docs",             icon: Folder },
+                { label: "Off APL",          icon: BellOff },
+                { label: "Marketing List",   icon: BarChart01 },
               ]} />
               {pinnedActions.map(label => (
                 <div key={label} className="inline-flex items-center rounded-lg border border-secondary bg-primary overflow-hidden">

@@ -2022,7 +2022,7 @@ function PhoneSettings() {
             {availableNumbers.length > 0 && (
               <div className="rounded-xl border border-secondary overflow-hidden max-h-64 overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-secondary_alt border-b border-secondary sticky top-0">
+                  <thead className="bg-tertiary border-b border-secondary sticky top-0">
                     <tr>
                       <th className="w-8 px-4 py-2"></th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-quaternary">Number</th>

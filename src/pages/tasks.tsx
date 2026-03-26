@@ -289,7 +289,7 @@ export function TasksPage() {
   }
 
   // ── Column header with sort ──
-  const Th = ({ col }: { col: ColDef }) => (
+  const Th = ({ col, isFirst, hasCheckbox }: { col: ColDef; isFirst?: boolean; hasCheckbox?: boolean }) => (
     <th onClick={() => toggleSort(col.key)}
       style={{ minWidth: col.minWidth }}
       draggable
@@ -305,7 +305,7 @@ export function TasksPage() {
         order.splice(fi, 1); order.splice(ti, 0, fromKey);
         reorderCols(order);
       }}
-      className="cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th">
+      className={"cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th" + (isFirst ? ` sticky ${hasCheckbox ? "left-10" : "left-0"} bg-tertiary z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]` : "")}>
       <span className="inline-flex items-center gap-1.5">
         {/* Drag grip hint */}
         <svg className="size-3 text-fg-quaternary opacity-0 group-hover/th:opacity-60 transition-opacity cursor-grab shrink-0" viewBox="0 0 16 16" fill="currentColor">
@@ -476,19 +476,21 @@ export function TasksPage() {
 
         {/* ── Table ── */}
         <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="rounded-xl border border-secondary overflow-hidden">
+          <div className="rounded-xl border border-secondary overflow-hidden overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-tertiary border-b border-secondary">
                 <tr>
                   {tab === "all" && (
-                    <th className="px-3 py-3 w-10">
+                    <th className="px-3 py-3 w-10 sticky left-0 bg-tertiary z-10">
                       <input type="checkbox"
                         checked={selectedRows.size === filteredAll.length && filteredAll.length > 0}
                         onChange={toggleAll}
                         className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                     </th>
                   )}
-                  {visibleCols.map(col => <Th key={col.key} col={col} />)}
+                  {visibleCols.map((col, idx) => (
+                    <Th key={col.key} col={col} isFirst={idx === 0} hasCheckbox={tab === "all"} />
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary bg-primary">
@@ -498,12 +500,12 @@ export function TasksPage() {
                     : filteredAll.map(row => (
                         <tr key={row.id}
                           className={"group transition-colors hover:bg-secondary_alt cursor-pointer " + (row.overdue ? "bg-[#FFFAF9]" : "")}>
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 sticky left-0 bg-primary group-hover:bg-secondary_alt z-10">
                             <input type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleRow(row.id)}
                               className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                           </td>
-                          {visibleCols.map(col => (
-                            <td key={col.key} className="px-3 py-3">{renderAllCell(row, col.key)}</td>
+                          {visibleCols.map((col, idx) => (
+                            <td key={col.key} className={"px-3 py-3 " + (idx === 0 ? "sticky left-10 bg-primary group-hover:bg-secondary_alt z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" : "")}>{renderAllCell(row, col.key)}</td>
                           ))}
                         </tr>
                       ))
@@ -512,8 +514,8 @@ export function TasksPage() {
                     ? <tr><td colSpan={visibleCols.length} className="px-4 py-16 text-center text-sm text-quaternary">No scheduled tasks found</td></tr>
                     : filteredScheduled.map(row => (
                         <tr key={row.id} className="group hover:bg-secondary_alt cursor-pointer transition-colors">
-                          {visibleCols.map(col => (
-                            <td key={col.key} className="px-3 py-3">{renderSchedCell(row, col.key)}</td>
+                          {visibleCols.map((col, idx) => (
+                            <td key={col.key} className={"px-3 py-3 " + (idx === 0 ? "sticky left-0 bg-primary group-hover:bg-secondary_alt z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" : "")}>{renderSchedCell(row, col.key)}</td>
                           ))}
                         </tr>
                       ))
