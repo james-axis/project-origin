@@ -586,8 +586,8 @@ router.post('/account/regulatory-bundle', async (req, res) => {
 
 /**
  * POST /api/twilio/account/setup-au-bundle
- * Combined one-click AU regulatory setup (creates address + bundle + submits)
- * Pass Axis business address details, creates everything needed for AU numbers
+ * Combined one-click AU regulatory setup
+ * Creates End-User + assigns to bundle for AU number compliance
  */
 router.post('/account/setup-au-bundle', async (req, res) => {
   try {
@@ -645,20 +645,7 @@ router.post('/account/setup-au-bundle', async (req, res) => {
       });
     }
 
-    // Step 2: Create address
-    console.log('📍 Creating business address...');
-    const address = await twilioClient.addresses.create({
-      customerName,
-      street,
-      city,
-      region,
-      postalCode,
-      isoCountry: 'AU',
-      friendlyName: 'Axis - Business Address',
-    });
-    console.log(`✅ Address created: ${address.sid}`);
-
-    // Step 3: Get regulation SID
+    // Step 2: Get regulation requirements
     console.log('📋 Looking up AU regulations...');
     const regulations = await twilioClient.numbers.v2.regulatoryCompliance
       .regulations.list({ isoCountry: 'AU', numberType });
@@ -669,7 +656,40 @@ router.post('/account/setup-au-bundle', async (req, res) => {
     const regulationSid = regulations[0].sid;
     console.log(`✅ Regulation found: ${regulationSid}`);
 
-    // Step 4: Create bundle
+    // Step 3: Create End-User (business entity)
+    console.log('👤 Creating End-User...');
+    const endUser = await twilioClient.numbers.v2.regulatoryCompliance.endUsers.create({
+      friendlyName: customerName,
+      type: 'business',
+      attributes: {
+        business_name: customerName,
+        business_registration_number: '', // ABN - optional for now
+        business_type: 'Corporation',
+        business_industry: 'Insurance',
+        business_registration_authority: 'ASIC',
+        business_registration_identifier: '',
+      },
+    });
+    console.log(`✅ End-User created: ${endUser.sid}`);
+
+    // Step 4: Create Supporting Document (Address)
+    console.log('📄 Creating Supporting Document (Address)...');
+    const supportingDoc = await twilioClient.numbers.v2.regulatoryCompliance.supportingDocuments.create({
+      friendlyName: `${customerName} - Business Address`,
+      type: 'business_address',
+      attributes: {
+        address_sids: '', // Will link after creating address if needed
+        business_name: customerName,
+        street: street,
+        city: city,
+        region: region,
+        postal_code: postalCode,
+        iso_country: 'AU',
+      },
+    });
+    console.log(`✅ Supporting Document created: ${supportingDoc.sid}`);
+
+    // Step 5: Create bundle
     console.log('📦 Creating regulatory bundle...');
     const bundle = await twilioClient.numbers.v2.regulatoryCompliance.bundles.create({
       friendlyName: `Axis - AU ${numberType} Numbers`,
@@ -680,16 +700,25 @@ router.post('/account/setup-au-bundle', async (req, res) => {
     });
     console.log(`✅ Bundle created: ${bundle.sid}`);
 
-    // Step 5: Assign address to bundle
-    console.log('🔗 Assigning address to bundle...');
+    // Step 6: Assign End-User to bundle
+    console.log('🔗 Assigning End-User to bundle...');
     await twilioClient.numbers.v2.regulatoryCompliance
       .bundles(bundle.sid)
       .itemAssignments.create({
-        objectSid: address.sid,
+        objectSid: endUser.sid,
       });
-    console.log('✅ Address assigned to bundle');
+    console.log('✅ End-User assigned to bundle');
 
-    // Step 6: Submit for review
+    // Step 7: Assign Supporting Document to bundle
+    console.log('🔗 Assigning Supporting Document to bundle...');
+    await twilioClient.numbers.v2.regulatoryCompliance
+      .bundles(bundle.sid)
+      .itemAssignments.create({
+        objectSid: supportingDoc.sid,
+      });
+    console.log('✅ Supporting Document assigned to bundle');
+
+    // Step 8: Submit for review
     console.log('📤 Submitting bundle for review...');
     const updatedBundle = await twilioClient.numbers.v2.regulatoryCompliance
       .bundles(bundle.sid)
@@ -698,20 +727,15 @@ router.post('/account/setup-au-bundle', async (req, res) => {
 
     // Store in database for reference
     await db.query(`
-      INSERT INTO twilio_addresses (address_sid, friendly_name, customer_name, street, city, region, postal_code, iso_country, validated)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      ON CONFLICT (address_sid) DO NOTHING
-    `, [address.sid, 'Axis - Business Address', customerName, street, city, region, postalCode, 'AU', true]);
-
-    await db.query(`
-      INSERT INTO twilio_regulatory_bundles (bundle_sid, friendly_name, status, regulation_sid, iso_country, number_type, address_sid)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO twilio_regulatory_bundles (bundle_sid, friendly_name, status, regulation_sid, iso_country, number_type)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (bundle_sid) DO NOTHING
-    `, [bundle.sid, `Axis - AU ${numberType} Numbers`, updatedBundle.status, regulationSid, 'AU', numberType, address.sid]);
+    `, [bundle.sid, `Axis - AU ${numberType} Numbers`, updatedBundle.status, regulationSid, 'AU', numberType]);
 
     res.json({
       success: true,
-      addressSid: address.sid,
+      endUserSid: endUser.sid,
+      supportingDocSid: supportingDoc.sid,
       bundleSid: bundle.sid,
       status: updatedBundle.status,
       message: 'AU regulatory bundle created and submitted for review. Approval typically takes 1-3 business days. You will be able to purchase AU numbers once approved.',
