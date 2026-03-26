@@ -1,8 +1,8 @@
 import { useState, useMemo, useRef } from "react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { X, Lock01, SearchMd, Download01, Settings04, CheckCircle, AlertCircle } from "@untitledui/icons";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { X, Lock01, SearchMd, Download01, Settings04, CheckCircle, AlertCircle, Calendar } from "@untitledui/icons";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 
@@ -152,6 +152,7 @@ export function InsuranceProductsPage() {
   const [insurerFilter, setInsurerFilter] = useState("All");
   const [productFilter, setProductFilter] = useState("All");
   const [adviserGroupFilter, setAdviserGroupFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState("All");
   const [reconciledFilter, setReconciledFilter] = useState<"all" | "reconciled" | "unreconciled">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -179,6 +180,20 @@ export function InsuranceProductsPage() {
     if (adviserGroupFilter !== "All") rows = rows.filter(r => r.adviserGroup === adviserGroupFilter);
     if (reconciledFilter === "reconciled") rows = rows.filter(r => r.reconciled);
     if (reconciledFilter === "unreconciled") rows = rows.filter(r => !r.reconciled);
+    // Date filter
+    if (dateFilter !== "All") {
+      const now = new Date();
+      rows = rows.filter(r => {
+        const commenced = new Date(r.commenced);
+        switch (dateFilter) {
+          case "last30": return now.getTime() - commenced.getTime() <= 30 * 24 * 60 * 60 * 1000;
+          case "last90": return now.getTime() - commenced.getTime() <= 90 * 24 * 60 * 60 * 1000;
+          case "thisYear": return commenced.getFullYear() === now.getFullYear();
+          case "lastYear": return commenced.getFullYear() === now.getFullYear() - 1;
+          default: return true;
+        }
+      });
+    }
     if (search) {
       const s = search.toLowerCase();
       rows = rows.filter(r => r.clientName.toLowerCase().includes(s) || r.policyId.toLowerCase().includes(s) || r.adviser.toLowerCase().includes(s));
@@ -188,7 +203,7 @@ export function InsuranceProductsPage() {
       const vb = String((b as unknown as Record<string, unknown>)[sortKey] ?? "");
       return sortDir === "asc" ? va.localeCompare(vb, undefined, { numeric: true }) : vb.localeCompare(va, undefined, { numeric: true });
     });
-  }, [insurerFilter, productFilter, adviserGroupFilter, reconciledFilter, search, sortKey, sortDir]);
+  }, [insurerFilter, productFilter, adviserGroupFilter, dateFilter, reconciledFilter, search, sortKey, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -217,7 +232,7 @@ export function InsuranceProductsPage() {
     return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, []);
 
-  const hasFilters = search || insurerFilter !== "All" || productFilter !== "All" || adviserGroupFilter !== "All" || reconciledFilter !== "all";
+  const hasFilters = search || insurerFilter !== "All" || productFilter !== "All" || adviserGroupFilter !== "All" || dateFilter !== "All" || reconciledFilter !== "all";
 
   // Unique values for filters
   const uniqueInsurers = [...new Set(MOCK_PRODUCTS.map(r => r.insurer))].sort();
@@ -315,6 +330,14 @@ export function InsuranceProductsPage() {
                 <option value="All">All Adviser Groups</option>
                 {uniqueAdviserGroups.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
+              <select value={dateFilter} onChange={e => { setDateFilter(e.target.value); setPage(1); }} 
+                className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-secondary outline-none focus:border-brand-primary cursor-pointer">
+                <option value="All">All Dates</option>
+                <option value="last30">Last 30 days</option>
+                <option value="last90">Last 90 days</option>
+                <option value="thisYear">This year</option>
+                <option value="lastYear">Last year</option>
+              </select>
             </div>
           </div>
 
@@ -379,8 +402,9 @@ export function InsuranceProductsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Insurer Split - Donut Chart */}
             <div className="rounded-xl border border-secondary bg-primary p-5">
-              <h3 className="text-sm font-semibold text-primary mb-4">Insurer Split</h3>
-              <div className="h-52">
+              <h3 className="text-sm font-semibold text-primary mb-2">Insurer Split</h3>
+              <p className="text-xs text-tertiary mb-4">Distribution of policies by insurer</p>
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie 
@@ -388,16 +412,26 @@ export function InsuranceProductsPage() {
                       dataKey="value" 
                       nameKey="name" 
                       cx="50%" 
-                      cy="50%" 
-                      outerRadius={80} 
-                      innerRadius={50}
+                      cy="45%" 
+                      outerRadius={70} 
+                      innerRadius={45}
                       paddingAngle={2}
-                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      labelLine={false}
                     >
                       {insurerData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(value) => [Number(value).toLocaleString(), "Policies"]} />
+                    <Tooltip 
+                      formatter={(value) => [Number(value).toLocaleString() + " policies", ""]} 
+                      contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend 
+                      layout="horizontal" 
+                      verticalAlign="bottom" 
+                      align="center"
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ paddingTop: 16, fontSize: 11 }}
+                      formatter={(value) => <span style={{ color: '#374151' }}>{value}</span>}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -405,14 +439,19 @@ export function InsuranceProductsPage() {
 
             {/* Product Split - Bar Chart */}
             <div className="rounded-xl border border-secondary bg-primary p-5">
-              <h3 className="text-sm font-semibold text-primary mb-4">Product Split</h3>
-              <div className="h-52">
+              <h3 className="text-sm font-semibold text-primary mb-2">Product Split</h3>
+              <p className="text-xs text-tertiary mb-4">Policies by product type</p>
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={productData} layout="vertical" margin={{ left: 100, right: 30 }}>
-                    <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#374151' }} width={100} axisLine={false} tickLine={false} />
-                    <Tooltip formatter={(value) => [Number(value).toLocaleString(), "Policies"]} />
-                    <Bar dataKey="value" fill="#D34108" radius={[0, 4, 4, 0]} />
+                  <BarChart data={productData} layout="vertical" margin={{ left: 20, right: 30, top: 10, bottom: 10 }}>
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#374151' }} width={110} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      formatter={(value) => [Number(value).toLocaleString() + " policies", ""]} 
+                      contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      cursor={{ fill: 'rgba(211, 65, 8, 0.05)' }}
+                    />
+                    <Bar dataKey="value" fill="#D34108" radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -439,7 +478,7 @@ export function InsuranceProductsPage() {
           <div className="ml-auto flex items-center gap-2">
             {hasFilters && (
               <button 
-                onClick={() => { setSearch(""); setInsurerFilter("All"); setProductFilter("All"); setAdviserGroupFilter("All"); setReconciledFilter("all"); setPage(1); }} 
+                onClick={() => { setSearch(""); setInsurerFilter("All"); setProductFilter("All"); setAdviserGroupFilter("All"); setDateFilter("All"); setReconciledFilter("all"); setPage(1); }} 
                 className="text-sm text-brand-secondary hover:underline"
               >
                 Clear filters
