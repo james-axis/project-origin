@@ -1444,6 +1444,7 @@ interface PhoneNumber {
   number_type: string;
   is_active: boolean;
   practice_id: string;
+  call_flow_id?: string;
 }
 
 interface AvailableNumber {

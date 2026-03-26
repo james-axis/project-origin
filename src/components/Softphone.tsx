@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Phone01, PhoneHangUp, Microphone01, MicrophoneOff01, VolumeMax, VolumeX, X, Minimize02, Clock, ChevronUp, User01, PhoneIncoming01, Pause, Play } from '@untitledui/icons';
+import { Phone01, PhoneHangUp, Microphone01, MicrophoneOff01, VolumeMax, VolumeX, X, Minimize02, Clock, ChevronUp, User01, PhoneIncoming01, PauseCircle, PlayCircle } from '@untitledui/icons';
 import { TelnyxRTC } from '@telnyx/webrtc';
 
 const API_BASE = 'https://project-origin-production-1216.up.railway.app';
@@ -413,7 +413,7 @@ export function Softphone({ onClose }: { onClose: () => void }) {
               }`}
               title={isHeld ? 'Resume' : 'Hold'}
             >
-              {isHeld ? <Play className="size-5" /> : <Pause className="size-5" />}
+              {isHeld ? <PlayCircle className="size-5" /> : <PauseCircle className="size-5" />}
             </button>
           </div>
 
