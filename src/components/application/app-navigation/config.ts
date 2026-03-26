@@ -13,6 +13,7 @@ import {
     Settings01,
     Users01,
     UserPlus01,
+    Shield01,
 } from "@untitledui/icons";
 
 export type NavItemType = {
@@ -84,6 +85,16 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "In Progress", href: "/applications/in-progress" },
             { label: "Submitted", href: "/applications/submitted" },
             { label: "Approved", href: "/applications/approved" },
+        ],
+    },
+    {
+        label: "Insurance",
+        href: "/insurance",
+        icon: Shield01,
+        items: [
+            { label: "Products", href: "/insurance" },
+            { label: "Policies", href: "/insurance/policies" },
+            { label: "Reconciliation", href: "/insurance/reconciliation" },
         ],
     },
     {
