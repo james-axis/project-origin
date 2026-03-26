@@ -1553,10 +1553,15 @@ function PhoneSettings() {
       const res = await fetch(`${API_BASE}/api/telnyx/practices`);
       if (res.ok) {
         const data = await res.json();
-        setPractices(data);
+        // Ensure data is an array before setting state
+        setPractices(Array.isArray(data) ? data : []);
+      } else {
+        // API returned an error, set empty array
+        setPractices([]);
       }
     } catch (err) {
       console.error('Error fetching practices:', err);
+      setPractices([]);
     } finally {
       setLoading(false);
     }
@@ -1567,10 +1572,14 @@ function PhoneSettings() {
       const res = await fetch(`${API_BASE}/api/telnyx/phone-numbers`);
       if (res.ok) {
         const data = await res.json();
-        setPhoneNumbers(data);
+        // Ensure data is an array before setting state
+        setPhoneNumbers(Array.isArray(data) ? data : []);
+      } else {
+        setPhoneNumbers([]);
       }
     } catch (err) {
       console.error('Error fetching phone numbers:', err);
+      setPhoneNumbers([]);
     }
   };
 
