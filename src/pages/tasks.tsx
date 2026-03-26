@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { Download01, X, Settings01 } from "@untitledui/icons";
+import { Download01, X, Settings01, Lock01 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TaskTab = "all" | "scheduled";
@@ -212,12 +212,14 @@ export function TasksPage() {
   const colDefs   = tab === "all" ? ALL_TASK_COLS : SCHED_COLS;
   const storeKey  = tab === "all" ? STORE_KEY_ALL : STORE_KEY_SCHED;
   const setCols   = tab === "all" ? setAllCols : setSchedCols;
+  const LOCKED_COL = tab === "all" ? "name" : "task"; // Task name always first
 
   function updateCols(next: typeof allCols) {
     setCols(next);
     saveColState(storeKey, next);
   }
   function toggleCol(key: string) {
+    if (key === LOCKED_COL) return; // Can't toggle locked column
     const next = { ...colState, visible: { ...colState.visible, [key]: !colState.visible[key] } };
     updateCols(next);
   }
@@ -225,10 +227,15 @@ export function TasksPage() {
     updateCols({ ...colState, order });
   }
 
-  // Active ordered visible columns
-  const visibleCols = colState.order
-    .map(k => colDefs.find(d => d.key === k))
-    .filter((d): d is ColDef => !!d && colState.visible[d.key]);
+  // Active ordered visible columns (locked column always first)
+  const lockedCol = colDefs.find(d => d.key === LOCKED_COL);
+  const visibleCols: ColDef[] = [];
+  if (lockedCol) visibleCols.push(lockedCol);
+  for (const k of colState.order) {
+    if (k === LOCKED_COL) continue;
+    const col = colDefs.find(d => d.key === k);
+    if (col && colState.visible[col.key]) visibleCols.push(col);
+  }
 
   // ── Filtered rows ──
   const filteredAll = useMemo(() => {
@@ -289,30 +296,34 @@ export function TasksPage() {
   }
 
   // ── Column header with sort ──
-  const Th = ({ col, isFirst, hasCheckbox }: { col: ColDef; isFirst?: boolean; hasCheckbox?: boolean }) => (
+  const Th = ({ col, isLocked, hasCheckbox }: { col: ColDef; isLocked?: boolean; hasCheckbox?: boolean }) => (
     <th onClick={() => toggleSort(col.key)}
       style={{ minWidth: col.minWidth }}
-      draggable
-      onDragStart={e => { e.dataTransfer.setData("text/plain", col.key); e.dataTransfer.effectAllowed = "move"; }}
+      draggable={!isLocked}
+      onDragStart={e => { if (isLocked) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", col.key); e.dataTransfer.effectAllowed = "move"; }}
       onDragOver={e => e.preventDefault()}
       onDrop={e => {
         e.preventDefault();
+        if (isLocked) return;
         const fromKey = e.dataTransfer.getData("text/plain");
-        if (!fromKey || fromKey === col.key) return;
+        if (!fromKey || fromKey === col.key || fromKey === LOCKED_COL) return;
         const order = [...colState.order];
         const fi = order.indexOf(fromKey); const ti = order.indexOf(col.key);
         if (fi < 0 || ti < 0) return;
         order.splice(fi, 1); order.splice(ti, 0, fromKey);
         reorderCols(order);
       }}
-      className={"cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th" + (isFirst ? ` sticky ${hasCheckbox ? "left-10" : "left-0"} bg-tertiary z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]` : "")}>
+      className={"cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th" + (isLocked ? ` sticky ${hasCheckbox ? "left-10" : "left-0"} bg-tertiary z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]` : "")}>
       <span className="inline-flex items-center gap-1.5">
-        {/* Drag grip hint */}
-        <svg className="size-3 text-fg-quaternary opacity-0 group-hover/th:opacity-60 transition-opacity cursor-grab shrink-0" viewBox="0 0 16 16" fill="currentColor">
-          <rect x="3" y="4" width="10" height="1.5" rx="0.75"/>
-          <rect x="3" y="7.25" width="10" height="1.5" rx="0.75"/>
-          <rect x="3" y="10.5" width="10" height="1.5" rx="0.75"/>
-        </svg>
+        {isLocked ? (
+          <Lock01 className="size-3 text-fg-quaternary shrink-0" />
+        ) : (
+          <svg className="size-3 text-fg-quaternary opacity-0 group-hover/th:opacity-60 transition-opacity cursor-grab shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <rect x="3" y="4" width="10" height="1.5" rx="0.75"/>
+            <rect x="3" y="7.25" width="10" height="1.5" rx="0.75"/>
+            <rect x="3" y="10.5" width="10" height="1.5" rx="0.75"/>
+          </svg>
+        )}
         {col.label}
         <svg className={"size-3 transition-opacity " + (sortKey === col.key ? "opacity-100" : "opacity-20")} viewBox="0 0 10 12" fill="currentColor">
           <path d="M5 1l4 5H1z" opacity={sortDir === "asc" && sortKey === col.key ? "1" : "0.5"}/>
@@ -489,7 +500,7 @@ export function TasksPage() {
                     </th>
                   )}
                   {visibleCols.map((col, idx) => (
-                    <Th key={col.key} col={col} isFirst={idx === 0} hasCheckbox={tab === "all"} />
+                    <Th key={col.key} col={col} isLocked={idx === 0} hasCheckbox={tab === "all"} />
                   ))}
                 </tr>
               </thead>

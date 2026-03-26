@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { Download01, X, Settings01, Plus, Check, FilterLines, ChevronDown } from "@untitledui/icons";
+import { Download01, X, Settings01, Plus, Check, FilterLines, ChevronDown, Lock01 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ClientStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -211,13 +211,18 @@ export function ClientsPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const navigate = useNavigate();
   const [colState, setColStateRaw] = useState(() => loadColState(CLIENT_COLS));
+  const LOCKED_COL = "customer"; // Always first, not draggable
 
   function updateCols(next: typeof colState) { setColStateRaw(next); saveColState(next); }
-  function toggleCol(key: string) { updateCols({ ...colState, visible: { ...colState.visible, [key]: !colState.visible[key] } }); }
+  function toggleCol(key: string) { if (key === LOCKED_COL) return; updateCols({ ...colState, visible: { ...colState.visible, [key]: !colState.visible[key] } }); }
   function reorderCols(order: string[]) { updateCols({ ...colState, order }); }
 
+  // Build visibleCols with locked column always first
   const visibleCols: ColDef[] = [];
+  const lockedCol = CLIENT_COLS.find((c: ColDef) => c.key === LOCKED_COL);
+  if (lockedCol) visibleCols.push(lockedCol);
   for (const k of colState.order) {
+    if (k === LOCKED_COL) continue; // Skip locked col, already added
     const col = CLIENT_COLS.find((c: ColDef) => c.key === k);
     if (col && colState.visible[col.key]) visibleCols.push(col);
   }
@@ -275,25 +280,30 @@ export function ClientsPage() {
   }
 
   // Column header with sort + drag-to-reorder
-  const Th = ({ col }: { col: ColDef }) => (
+  const Th = ({ col, isLocked }: { col: ColDef; isLocked?: boolean }) => (
     <th onClick={() => toggleSort(col.key)}
       style={{ minWidth: col.minWidth }}
-      draggable
-      onDragStart={e => e.dataTransfer.setData("text/plain", col.key)}
+      draggable={!isLocked}
+      onDragStart={e => { if (isLocked) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain", col.key); }}
       onDragOver={e => e.preventDefault()}
       onDrop={e => {
         e.preventDefault();
+        if (isLocked) return;
         const from = e.dataTransfer.getData("text/plain");
-        if (!from || from === col.key) return;
+        if (!from || from === col.key || from === LOCKED_COL) return;
         const o = [...colState.order]; const fi = o.indexOf(from); const ti = o.indexOf(col.key);
         if (fi < 0 || ti < 0) return;
         o.splice(fi, 1); o.splice(ti, 0, from); reorderCols(o);
       }}
-      className="cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th">
+      className={"cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th" + (isLocked ? " sticky left-10 bg-tertiary z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" : "")}>
       <span className="inline-flex items-center gap-1.5">
-        <svg className="size-3 text-fg-quaternary opacity-0 group-hover/th:opacity-50 transition-opacity cursor-grab shrink-0" viewBox="0 0 16 16" fill="currentColor">
-          <rect x="3" y="4" width="10" height="1.5" rx="0.75"/><rect x="3" y="7.25" width="10" height="1.5" rx="0.75"/><rect x="3" y="10.5" width="10" height="1.5" rx="0.75"/>
-        </svg>
+        {isLocked ? (
+          <Lock01 className="size-3 text-fg-quaternary shrink-0" />
+        ) : (
+          <svg className="size-3 text-fg-quaternary opacity-0 group-hover/th:opacity-50 transition-opacity cursor-grab shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <rect x="3" y="4" width="10" height="1.5" rx="0.75"/><rect x="3" y="7.25" width="10" height="1.5" rx="0.75"/><rect x="3" y="10.5" width="10" height="1.5" rx="0.75"/>
+          </svg>
+        )}
         {col.label}
         <svg className={"size-3 " + (sortKey === col.key ? "opacity-100" : "opacity-20")} viewBox="0 0 10 12" fill="currentColor">
           <path d="M5 1l4 5H1z" opacity={sortDir === "asc" && sortKey === col.key ? "1" : "0.4"}/>
@@ -573,17 +583,17 @@ export function ClientsPage() {
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden lg:block rounded-xl border border-secondary overflow-hidden">
+          <div className="hidden lg:block rounded-xl border border-secondary overflow-hidden overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-tertiary border-b border-secondary">
                 <tr>
-                  <th className="px-3 py-3 w-10">
+                  <th className="px-3 py-3 w-10 sticky left-0 bg-tertiary z-10">
                     <input type="checkbox"
                       checked={selectedRows.size === pageRows.length && pageRows.length > 0}
                       onChange={toggleAll}
                       className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                   </th>
-                  {visibleCols.map((col: ColDef) => <Th key={col.key} col={col} />)}
+                  {visibleCols.map((col: ColDef, idx: number) => <Th key={col.key} col={col} isLocked={idx === 0} />)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary bg-primary">
@@ -593,12 +603,12 @@ export function ClientsPage() {
                   <tr key={row.id}
                     onClick={() => navigate(`/client/${row.id}`)}
                     className="group hover:bg-secondary_alt cursor-pointer transition-colors">
-                    <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                    <td className="px-3 py-2.5 sticky left-0 bg-primary group-hover:bg-secondary_alt z-10" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleRow(row.id)}
                         className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
                     </td>
-                    {visibleCols.map((col: ColDef) => (
-                      <td key={col.key} className="px-3 py-2.5">{renderCell(row, col.key)}</td>
+                    {visibleCols.map((col: ColDef, idx: number) => (
+                      <td key={col.key} className={"px-3 py-2.5" + (idx === 0 ? " sticky left-10 bg-primary group-hover:bg-secondary_alt z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" : "")}>{renderCell(row, col.key)}</td>
                     ))}
                   </tr>
                 ))}

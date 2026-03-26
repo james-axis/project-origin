@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { Download01, X, Settings01, DotsGrid, Check } from "@untitledui/icons";
+import { Download01, X, Settings01, DotsGrid, Check, Lock01 } from "@untitledui/icons";
 
 interface Claim {
   id: number; customer: string; company: string; policyId: string;
@@ -96,9 +96,14 @@ export function ClaimsPage() {
   const [page, setPage] = useState(1);
   const [colPanelOpen, setColPanelOpen] = useState(false);
   const [colState, setColStateRaw] = useState(()=>loadCols(COLS));
+  const LOCKED_COL = "customer";
   function updateCols(n:typeof colState){setColStateRaw(n);saveCols(n);}
+  function toggleCol(key:string){if(key===LOCKED_COL)return;updateCols({...colState,visible:{...colState.visible,[key]:!colState.visible[key]}});}
+  // Build visibleCols with locked column first
   const visibleCols: ColDef[] = [];
-  for (const k of colState.order) { const c=COLS.find((d:ColDef)=>d.key===k); if(c&&colState.visible[c.key]) visibleCols.push(c); }
+  const lockedCol = COLS.find((c:ColDef)=>c.key===LOCKED_COL);
+  if(lockedCol) visibleCols.push(lockedCol);
+  for (const k of colState.order) { if(k===LOCKED_COL) continue; const c=COLS.find((d:ColDef)=>d.key===k); if(c&&colState.visible[c.key]) visibleCols.push(c); }
 
   const filtered = useMemo(()=>{
     let rows = MOCK.filter(r=>tab==="active"?r.status===0:r.status!==0);
@@ -125,10 +130,10 @@ export function ClaimsPage() {
     return <span className="text-xs text-secondary">{String((row as any)[key]??"—")}</span>;
   }
 
-  const Th=({col}:{col:ColDef})=>(
-    <th onClick={()=>toggleSort(col.key)} style={{minWidth:col.minWidth}} draggable onDragStart={e=>e.dataTransfer.setData("text/plain",col.key)} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain");if(!from||from===col.key)return;const o=[...colState.order];const fi=o.indexOf(from);const ti=o.indexOf(col.key);if(fi<0||ti<0)return;o.splice(fi,1);o.splice(ti,0,from);updateCols({...colState,order:o});}}
-      className="cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th">
-      <span className="inline-flex items-center gap-1.5"><DotsGrid className="size-3 opacity-0 group-hover/th:opacity-50 cursor-grab shrink-0"/>{col.label}
+  const Th=({col,isLocked}:{col:ColDef;isLocked?:boolean})=>(
+    <th onClick={()=>toggleSort(col.key)} style={{minWidth:col.minWidth}} draggable={!isLocked} onDragStart={e=>{if(isLocked){e.preventDefault();return;}e.dataTransfer.setData("text/plain",col.key);}} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(isLocked)return;const from=e.dataTransfer.getData("text/plain");if(!from||from===col.key||from===LOCKED_COL)return;const o=[...colState.order];const fi=o.indexOf(from);const ti=o.indexOf(col.key);if(fi<0||ti<0)return;o.splice(fi,1);o.splice(ti,0,from);updateCols({...colState,order:o});}}
+      className={"cursor-pointer select-none px-3 py-3 text-left text-xs font-medium text-quaternary hover:text-tertiary whitespace-nowrap group/th"+(isLocked?" sticky left-10 bg-tertiary z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]":"")}>
+      <span className="inline-flex items-center gap-1.5">{isLocked?<Lock01 className="size-3 text-fg-quaternary shrink-0"/>:<DotsGrid className="size-3 opacity-0 group-hover/th:opacity-50 cursor-grab shrink-0"/>}{col.label}
         <svg className={"size-3 "+(sortKey===col.key?"opacity-100":"opacity-20")} viewBox="0 0 10 12" fill="currentColor"><path d="M5 1l4 5H1z" opacity={sortDir==="asc"&&sortKey===col.key?"1":"0.4"}/><path d="M5 11l-4-5h8z" opacity={sortDir==="desc"&&sortKey===col.key?"1":"0.4"}/></svg>
       </span>
     </th>
@@ -174,25 +179,25 @@ export function ClaimsPage() {
               <button onClick={()=>setColPanelOpen(v=>!v)} className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors "+(colPanelOpen?"border-brand bg-brand-secondary text-brand-secondary":"border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4"/>Columns <span className="rounded-full bg-brand-secondary text-brand-secondary text-[10px] font-semibold px-1.5 py-0.5">{visibleCols.length}/{COLS.length}</span>
               </button>
-              {colPanelOpen&&<ColPanel defs={COLS} order={colState.order} visible={colState.visible} onToggle={k=>updateCols({...colState,visible:{...colState.visible,[k]:!colState.visible[k]}})} onReorder={o=>updateCols({...colState,order:o})} onClose={()=>setColPanelOpen(false)}/>}
+              {colPanelOpen&&<ColPanel defs={COLS} order={colState.order} visible={colState.visible} onToggle={toggleCol} onReorder={o=>updateCols({...colState,order:o})} onClose={()=>setColPanelOpen(false)}/>}
             </div>
           </div>
         </div>
         <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="rounded-xl border border-secondary overflow-hidden">
+          <div className="rounded-xl border border-secondary overflow-hidden overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-tertiary border-b border-secondary">
                 <tr>
-                  <th className="px-3 py-3 w-10"><input type="checkbox" checked={selectedRows.size===pageRows.length&&pageRows.length>0} onChange={toggleAll} className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer"/></th>
-                  {visibleCols.map((col:ColDef)=><Th key={col.key} col={col}/>)}
+                  <th className="px-3 py-3 w-10 sticky left-0 bg-tertiary z-10"><input type="checkbox" checked={selectedRows.size===pageRows.length&&pageRows.length>0} onChange={toggleAll} className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer"/></th>
+                  {visibleCols.map((col:ColDef,idx:number)=><Th key={col.key} col={col} isLocked={idx===0}/>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary bg-primary">
                 {pageRows.length===0?<tr><td colSpan={visibleCols.length+1} className="px-4 py-16 text-center text-sm text-quaternary">No claims found</td></tr>
                   :pageRows.map(row=>(
-                  <tr key={row.id} onClick={()=>navigate(`/claim/${row.id}`)} className="hover:bg-secondary_alt cursor-pointer transition-colors">
-                    <td className="px-3 py-2.5" onClick={e=>e.stopPropagation()}><input type="checkbox" checked={selectedRows.has(row.id)} onChange={()=>toggleRow(row.id)} className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer"/></td>
-                    {visibleCols.map((col:ColDef)=><td key={col.key} className="px-3 py-2.5">{renderCell(row,col.key)}</td>)}
+                  <tr key={row.id} onClick={()=>navigate(`/claim/${row.id}`)} className="group hover:bg-secondary_alt cursor-pointer transition-colors">
+                    <td className="px-3 py-2.5 sticky left-0 bg-primary group-hover:bg-secondary_alt z-10" onClick={e=>e.stopPropagation()}><input type="checkbox" checked={selectedRows.has(row.id)} onChange={()=>toggleRow(row.id)} className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer"/></td>
+                    {visibleCols.map((col:ColDef,idx:number)=><td key={col.key} className={"px-3 py-2.5"+(idx===0?" sticky left-10 bg-primary group-hover:bg-secondary_alt z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]":"")}>{renderCell(row,col.key)}</td>)}
                   </tr>
                 ))}
               </tbody>
