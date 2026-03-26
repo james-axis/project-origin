@@ -1465,7 +1465,6 @@ interface SetupStep {
 const SETUP_STEPS: SetupStep[] = [
   { id: 'practice', label: 'Practice Details', description: 'Register your practice', icon: Building01 },
   { id: 'number', label: 'Phone Number', description: 'Purchase a number', icon: PhoneCall01 },
-  { id: 'routing', label: 'Call Routing', description: 'Set up IVR', icon: Zap },
 ];
 
 type PhoneSubTab = "practices" | "numbers" | "flows" | "recording" | "transcription" | "access" | "usage";
@@ -1495,8 +1494,6 @@ function PhoneSettings() {
     numberType: 'local',
     numberCountry: 'US', // Default to US for instant purchase (no regulatory bundle needed)
     selectedNumber: '',
-    greetingText: 'Thank you for calling. Please hold while we connect you.',
-    routeType: 'direct',
   });
   
   // Available numbers for purchase
@@ -1697,30 +1694,27 @@ function PhoneSettings() {
         numberType: 'local',
         numberCountry: 'US',
         selectedNumber: '',
-        greetingText: 'Thank you for calling. Please hold while we connect you.',
-        routeType: 'direct',
       });
     }
     setShowWizard(true);
   };
 
-  // Simplified step tracking for 3-step wizard
+  // Simplified step tracking for 2-step wizard
   const getStepIndexForPractice = (practice: Practice): number => {
     // Map setup_step to wizard step index
-    // Backend values: 'practice_created' -> 'number_purchased' -> 'routing_complete' -> 'complete'
+    // Backend values: 'practice_created' -> 'number_purchased' -> 'complete'
     switch (practice.setup_step) {
       case 'practice_created':
         return 1; // Completed practice details, now needs phone number
       case 'number_purchased':
-        return 2; // Completed number purchase, now needs call routing
       case 'routing_complete':
       case 'complete':
-        return 2; // Fully complete - show routing for review/edit
+        return 1; // Fully complete - on number step (for review)
       default:
         // Fallback: check phone numbers to determine step
         const practiceNumbers = phoneNumbers.filter(n => n.practice_id === practice.id);
         if (practiceNumbers.length > 0) {
-          return 2; // Has numbers, should be on routing
+          return 1; // Has numbers, complete
         }
         return 1; // Has practice details (since practice exists), needs number
     }
@@ -1803,9 +1797,12 @@ function PhoneSettings() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to purchase number');
-      setWizardStep(2); // Go to step 3 (call routing)
+      // Complete the wizard
+      setShowWizard(false);
+      setWizardPractice(null);
       fetchPhoneNumbers();
       fetchPractices();
+      fetchCallFlows();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -1813,33 +1810,19 @@ function PhoneSettings() {
     }
   };
 
-  // Step 3: Create Call Flow
-  const handleCreateCallFlow = async () => {
-    if (!wizardPractice) return;
-    setWizardLoading(true);
-    setError(null);
+  // Assign call flow to a phone number
+  const assignFlowToNumber = async (numberId: string, flowId: string | null) => {
     try {
-      const res = await fetch(`${API_BASE}/api/call-flows`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE}/api/telnyx/phone-numbers/${numberId}/assign-flow`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          practiceId: wizardPractice.id,
-          name: `${wizardPractice.practice_name} - Default`,
-          greetingText: formData.greetingText,
-          routeType: formData.routeType,
-          recordingEnabled: true,
-          transcriptionEnabled: false,
-        }),
+        body: JSON.stringify({ callFlowId: flowId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create call flow');
-      setShowWizard(false);
-      setWizardPractice(null);
-      fetchPractices();
+      if (!res.ok) throw new Error('Failed to assign flow');
+      fetchPhoneNumbers();
     } catch (err: any) {
+      console.error('Error assigning flow:', err);
       setError(err.message);
-    } finally {
-      setWizardLoading(false);
     }
   };
 
@@ -2172,63 +2155,6 @@ function PhoneSettings() {
               <button
                 onClick={handlePurchaseNumber}
                 disabled={!formData.selectedNumber || wizardLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-brand-solid rounded-lg hover:bg-brand-solid_hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
-                Purchase Number
-              </button>
-            </div>
-          </div>
-        );
-
-      case 2: // Call Routing
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-primary">Call Routing</h3>
-              <p className="text-sm text-tertiary mt-1">Configure how incoming calls are handled</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-1.5">Greeting Message</label>
-              <textarea
-                value={formData.greetingText}
-                onChange={e => setFormData(prev => ({ ...prev, greetingText: e.target.value }))}
-                onInput={e => setFormData(prev => ({ ...prev, greetingText: (e.target as HTMLTextAreaElement).value }))}
-                rows={3}
-                className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
-                placeholder="Thank you for calling..."
-              />
-              <p className="text-xs text-tertiary mt-1">This message will be played when callers connect</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-1.5">Routing Type</label>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { id: 'direct', label: 'Direct', desc: 'Ring directly to a number' },
-                  { id: 'ivr', label: 'IVR Menu', desc: 'Press 1 for Sales...' },
-                  { id: 'ring-group', label: 'Ring Group', desc: 'Ring multiple phones' },
-                ].map(option => (
-                  <button
-                    key={option.id}
-                    onClick={() => setFormData(prev => ({ ...prev, routeType: option.id }))}
-                    className={`p-4 rounded-xl border text-left transition-all ${formData.routeType === option.id ? 'border-brand bg-brand-secondary ring-1 ring-brand' : 'border-secondary hover:border-tertiary'}`}
-                  >
-                    <p className={`text-sm font-medium ${formData.routeType === option.id ? 'text-brand-secondary' : 'text-primary'}`}>{option.label}</p>
-                    <p className="text-xs text-tertiary mt-0.5">{option.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-between pt-4 border-t border-secondary">
-              <button
-                onClick={() => setWizardStep(1)}
-                className="px-4 py-2 text-sm font-medium text-secondary hover:text-primary flex items-center gap-2"
-              >
-                <ArrowLeft className="size-4" /> Back
-              </button>
-              <button
-                onClick={handleCreateCallFlow}
-                disabled={wizardLoading}
                 className="px-4 py-2 text-sm font-medium text-white bg-success-solid rounded-lg hover:bg-success-solid/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {wizardLoading && <RefreshCw01 className="size-4 animate-spin" />}
@@ -2646,7 +2572,7 @@ function PhoneSettings() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-primary">Phone Numbers</h3>
-              <p className="text-xs text-tertiary mt-0.5">All purchased phone numbers across practices</p>
+              <p className="text-xs text-tertiary mt-0.5">All purchased phone numbers across practices — assign call flows to configure routing</p>
             </div>
           </div>
           {phoneNumbers.length === 0 ? (
@@ -2662,25 +2588,35 @@ function PhoneSettings() {
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Number</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Label</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Type</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Call Flow</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Status</th>
-                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-secondary">
                   {phoneNumbers.map(num => (
                     <tr key={num.id} className="hover:bg-secondary_alt transition-colors">
-                      <td className="px-4 py-3 font-mono text-primary">{num.phone_number}</td>
-                      <td className="px-4 py-3 text-secondary">{num.friendly_name}</td>
-                      <td className="px-4 py-3 text-tertiary capitalize">{num.number_type}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-mono text-primary">{num.phone_number}</div>
+                        <div className="text-xs text-tertiary capitalize">{num.number_type}</div>
+                      </td>
+                      <td className="px-4 py-3 text-secondary">{num.friendly_name || '—'}</td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={num.call_flow_id || ''}
+                          onChange={(e) => assignFlowToNumber(num.id, e.target.value || null)}
+                          className="w-full max-w-[200px] px-2 py-1.5 rounded-lg border border-secondary bg-primary text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
+                        >
+                          <option value="">No flow assigned</option>
+                          {callFlows.map(flow => (
+                            <option key={flow.id} value={flow.id}>{flow.name}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${num.is_active ? "bg-success-secondary text-success-primary" : "bg-secondary text-quaternary"}`}>
                           <span className={`size-1.5 rounded-full ${num.is_active ? "bg-success-primary" : "bg-quaternary"}`} />
                           {num.is_active ? 'Active' : 'Inactive'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button className="text-tertiary hover:text-secondary text-xs">Configure</button>
                       </td>
                     </tr>
                   ))}
