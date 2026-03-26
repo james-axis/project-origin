@@ -80,13 +80,7 @@ CREATE TABLE IF NOT EXISTS call_flows (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Add FK constraint after call_flows exists
-ALTER TABLE phone_numbers 
-    DROP CONSTRAINT IF EXISTS fk_phone_call_flow;
-ALTER TABLE phone_numbers 
-    ADD CONSTRAINT fk_phone_call_flow 
-    FOREIGN KEY (call_flow_id) 
-    REFERENCES call_flows(id) ON DELETE SET NULL;
+-- FK constraint will be added after migration helpers ensure columns exist
 
 -- =====================================================
 -- STAGE 3-5: Call Logs
@@ -264,11 +258,49 @@ END $$;
 -- INDEXES
 -- =====================================================
 
-CREATE INDEX IF NOT EXISTS idx_call_logs_call_control_id ON call_logs(call_control_id);
+-- =====================================================
+-- INDEXES (safe - only create if column exists)
+-- =====================================================
+
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'call_logs' AND column_name = 'call_control_id') THEN
+        CREATE INDEX IF NOT EXISTS idx_call_logs_call_control_id ON call_logs(call_control_id);
+    END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_call_logs_from ON call_logs(from_number);
 CREATE INDEX IF NOT EXISTS idx_call_logs_to ON call_logs(to_number);
 CREATE INDEX IF NOT EXISTS idx_call_logs_created ON call_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_call_logs_phone_number ON call_logs(phone_number_id);
-CREATE INDEX IF NOT EXISTS idx_transcript_chunks_call ON transcript_chunks(call_control_id, sequence_id);
+
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'call_logs' AND column_name = 'phone_number_id') THEN
+        CREATE INDEX IF NOT EXISTS idx_call_logs_phone_number ON call_logs(phone_number_id);
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'transcript_chunks' AND column_name = 'call_control_id') THEN
+        CREATE INDEX IF NOT EXISTS idx_transcript_chunks_call ON transcript_chunks(call_control_id, sequence_id);
+    END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_phone_numbers_number ON phone_numbers(phone_number);
 CREATE INDEX IF NOT EXISTS idx_sms_messages_created ON sms_messages(created_at DESC);
+
+-- =====================================================
+-- FK CONSTRAINTS (after migration helpers ensure columns exist)
+-- =====================================================
+
+-- Add call_flow FK to phone_numbers (safe - checks column exists)
+DO $$ 
+BEGIN 
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'phone_numbers' AND column_name = 'call_flow_id') THEN
+        ALTER TABLE phone_numbers DROP CONSTRAINT IF EXISTS fk_phone_call_flow;
+        ALTER TABLE phone_numbers ADD CONSTRAINT fk_phone_call_flow 
+            FOREIGN KEY (call_flow_id) REFERENCES call_flows(id) ON DELETE SET NULL;
+    END IF;
+END $$;
