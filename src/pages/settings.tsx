@@ -1510,8 +1510,12 @@ function PhoneSettings() {
   // Edit/Delete practice state
   const [editingPractice, setEditingPractice] = useState<Practice | null>(null);
   const [deletingPractice, setDeletingPractice] = useState<Practice | null>(null);
-  const [editForm, setEditForm] = useState({ practiceName: '', contactName: '', contactEmail: '', abn: '', afslNumber: '' });
+  const [editForm, setEditForm] = useState({ practiceName: '', contactName: '', contactEmail: '', abn: '', afslNumber: '', useSubaccount: false });
   const [actionLoading, setActionLoading] = useState(false);
+  const [convertingToSubaccount, setConvertingToSubaccount] = useState(false);
+  
+  // Filter state
+  const [orgFilter, setOrgFilter] = useState<'all' | 'axis' | 'separate'>('all');
 
   const subTabs: { id: PhoneSubTab; label: string }[] = [
     { id: "practices", label: "Practices" },
@@ -1736,6 +1740,9 @@ function PhoneSettings() {
     if (!editingPractice) return;
     setActionLoading(true);
     try {
+      // Check if converting to subaccount
+      const isConverting = editForm.useSubaccount && !editingPractice.is_subaccount;
+      
       const res = await fetch(`${API_BASE}/api/twilio/practices/${editingPractice.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1745,11 +1752,13 @@ function PhoneSettings() {
           contactEmail: editForm.contactEmail,
           abn: editForm.abn,
           afslNumber: editForm.afslNumber,
+          convertToSubaccount: isConverting,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update practice');
       setEditingPractice(null);
+      setConvertingToSubaccount(false);
       fetchPractices();
     } catch (err: any) {
       setError(err.message);
@@ -1787,7 +1796,9 @@ function PhoneSettings() {
       contactEmail: practice.contact_email || '',
       abn: practice.abn || '',
       afslNumber: practice.afsl_number || '',
+      useSubaccount: practice.is_subaccount || false,
     });
+    setConvertingToSubaccount(false);
     setEditingPractice(practice);
   };
 
@@ -2224,6 +2235,54 @@ function PhoneSettings() {
                   />
                 </div>
               </div>
+              
+              {/* Organisation Type */}
+              <div className="pt-4 border-t border-secondary">
+                <label className="block text-sm font-medium text-secondary mb-2">Organisation Type</label>
+                <div className="p-3 rounded-lg bg-secondary/50 border border-secondary">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                        editingPractice.is_subaccount 
+                          ? 'bg-warning-secondary text-warning-primary' 
+                          : 'bg-secondary text-tertiary'
+                      }`}>
+                        {editingPractice.is_subaccount ? 'Separate Organisation' : 'Axis Organisation'}
+                      </span>
+                      {editingPractice.twilio_account_sid && (
+                        <p className="text-xs text-quaternary mt-1 font-mono">{editingPractice.twilio_account_sid}</p>
+                      )}
+                    </div>
+                    {!editingPractice.is_subaccount && (
+                      <button
+                        type="button"
+                        onClick={() => setConvertingToSubaccount(!convertingToSubaccount)}
+                        className="text-xs text-brand-secondary hover:text-brand-primary font-medium"
+                      >
+                        {convertingToSubaccount ? 'Cancel' : 'Convert to Separate'}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {convertingToSubaccount && !editingPractice.is_subaccount && (
+                    <div className="mt-3 pt-3 border-t border-secondary">
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          id="confirmConvert"
+                          checked={editForm.useSubaccount}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, useSubaccount: e.target.checked }))}
+                          className="mt-0.5"
+                        />
+                        <label htmlFor="confirmConvert" className="text-xs text-secondary leading-relaxed">
+                          <strong>Convert to Separate Organisation.</strong> This will create a new Twilio subaccount 
+                          for isolated billing and risk management. This action cannot be undone.
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
               {error && (
                 <div className="p-3 rounded-lg bg-error-secondary border border-error">
                   <p className="text-sm text-error-primary">{error}</p>
@@ -2316,14 +2375,25 @@ function PhoneSettings() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-primary">Practice Phone Systems</h3>
-              <p className="text-xs text-tertiary mt-0.5">Each practice has a dedicated Twilio subaccount</p>
+              <p className="text-xs text-tertiary mt-0.5">Manage phone systems for each practice</p>
             </div>
-            <button 
-              onClick={() => startSetupWizard()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors"
-            >
-              <Plus className="size-3" />Setup New Practice
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={orgFilter}
+                onChange={(e) => setOrgFilter(e.target.value as 'all' | 'axis' | 'separate')}
+                className="rounded-lg border border-secondary bg-primary px-3 py-1.5 text-xs text-secondary focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="all">All Organisations</option>
+                <option value="axis">Axis Org only</option>
+                <option value="separate">Separate Org only</option>
+              </select>
+              <button 
+                onClick={() => startSetupWizard()}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors"
+              >
+                <Plus className="size-3" />Setup New Practice
+              </button>
+            </div>
           </div>
           
           {loading ? (
@@ -2344,7 +2414,14 @@ function PhoneSettings() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {practices.map(practice => {
+              {practices
+                .filter(p => {
+                  if (orgFilter === 'all') return true;
+                  if (orgFilter === 'axis') return !p.is_subaccount;
+                  if (orgFilter === 'separate') return p.is_subaccount;
+                  return true;
+                })
+                .map(practice => {
                 const stepIndex = getStepIndexForPractice(practice);
                 const isComplete = practice.setup_status === 'complete';
                 const progress = Math.round((stepIndex / SETUP_STEPS.length) * 100);

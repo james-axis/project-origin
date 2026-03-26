@@ -174,12 +174,72 @@ router.post('/practices', async (req, res) => {
 /**
  * PATCH /api/twilio/practices/:id
  * Update practice details
+ * - Can also convert an Axis Org practice to a Separate Org (subaccount)
  */
 router.patch('/practices/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { practiceName, contactName, contactEmail, abn, afslNumber } = req.body;
+    const { practiceName, contactName, contactEmail, abn, afslNumber, convertToSubaccount } = req.body;
 
+    // Check if converting to subaccount
+    if (convertToSubaccount) {
+      // First check if already a subaccount
+      const existingResult = await db.query(
+        'SELECT is_subaccount, practice_name FROM twilio_practices WHERE id = $1',
+        [id]
+      );
+      
+      if (existingResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Practice not found' });
+      }
+      
+      if (existingResult.rows[0].is_subaccount) {
+        return res.status(400).json({ error: 'Practice is already a separate organisation' });
+      }
+
+      const currentPracticeName = practiceName || existingResult.rows[0].practice_name;
+      console.log(`🔄 Converting practice to subaccount: ${currentPracticeName}`);
+
+      // Create Twilio subaccount
+      try {
+        const subaccount = await twilioClient.api.accounts.create({
+          friendlyName: currentPracticeName,
+        });
+        
+        // Update practice with subaccount details
+        const result = await db.query(`
+          UPDATE twilio_practices 
+          SET practice_name = COALESCE($1, practice_name),
+              contact_name = COALESCE($2, contact_name),
+              contact_email = COALESCE($3, contact_email),
+              abn = COALESCE($4, abn),
+              afsl_number = COALESCE($5, afsl_number),
+              is_subaccount = TRUE,
+              twilio_account_sid = $6,
+              twilio_auth_token = $7,
+              updated_at = NOW()
+          WHERE id = $8
+          RETURNING *
+        `, [practiceName, contactName, contactEmail, abn, afslNumber, 
+            subaccount.sid, subaccount.authToken, id]);
+
+        console.log(`✅ Converted to subaccount: ${subaccount.sid}`);
+        
+        return res.json({ 
+          success: true, 
+          practice: result.rows[0],
+          converted: true,
+          message: 'Practice converted to separate organisation',
+        });
+      } catch (twilioError) {
+        console.error('Twilio subaccount creation failed:', twilioError);
+        return res.status(400).json({ 
+          error: `Failed to create Twilio subaccount: ${twilioError.message}`,
+        });
+      }
+    }
+
+    // Regular update (no conversion)
     const result = await db.query(`
       UPDATE twilio_practices 
       SET practice_name = COALESCE($1, practice_name),
