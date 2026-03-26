@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { LifeBuoy01, LogOut01, Settings01 } from "@untitledui/icons";
 import { CreateLeadModal } from "@/components/modals/create-lead-modal";
 import { AnimatePresence, motion } from "motion/react";
