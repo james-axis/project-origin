@@ -13,7 +13,7 @@ const router = Router();
 
 // Initialize Telnyx client
 const telnyx = Telnyx(process.env.TELNYX_API_KEY);
-const BASE_URL = process.env.BASE_URL || 'https://api.axiscrm.com.au';
+const BASE_URL = process.env.BASE_URL || 'https://project-origin-production-1216.up.railway.app';
 
 // =====================================================
 // GET /api/telnyx/applications
