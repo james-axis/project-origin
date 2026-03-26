@@ -153,7 +153,7 @@ export function ComplaintsPage() {
         <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="rounded-xl border border-secondary overflow-hidden">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-secondary_alt border-b border-secondary"><tr>
+              <thead className="bg-tertiary border-b border-secondary"><tr>
                 <th className="px-3 py-3 w-10"><input type="checkbox" checked={selectedRows.size===pageRows.length&&pageRows.length>0} onChange={toggleAll} className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer"/></th>
                 {visibleCols.map((col:ColDef)=><Th key={col.key} col={col}/>)}
               </tr></thead>

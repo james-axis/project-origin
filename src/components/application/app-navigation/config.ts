@@ -11,8 +11,8 @@ import {
     HomeLine,
     LifeBuoy01,
     Settings01,
-    ShieldTick,
     Users01,
+    UserPlus01,
 } from "@untitledui/icons";
 
 export type NavItemType = {
@@ -47,6 +47,16 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
+        label: "Leads",
+        href: "/leads",
+        icon: UserPlus01,
+        items: [
+            { label: "All Leads", href: "/leads" },
+            { label: "New Leads", href: "/leads/new" },
+            { label: "In Progress", href: "/leads/in-progress" },
+        ],
+    },
+    {
         label: "Clients",
         href: "/clients",
         icon: Users01,
@@ -74,16 +84,6 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "In Progress", href: "/applications/in-progress" },
             { label: "Submitted", href: "/applications/submitted" },
             { label: "Approved", href: "/applications/approved" },
-        ],
-    },
-    {
-        label: "Compliance",
-        href: "/compliance",
-        icon: ShieldTick,
-        items: [
-            { label: "All Items", href: "/compliance" },
-            { label: "Awaiting Review", href: "/compliance/pending" },
-            { label: "Completed", href: "/compliance/completed" },
         ],
     },
     {

@@ -133,7 +133,7 @@ const TableHeader = <T extends object>({ columns, children, bordered = true, cla
             {...props}
             className={(state) =>
                 cx(
-                    "relative bg-secondary",
+                    "relative bg-tertiary",
                     size === "sm" ? "h-9" : "h-11",
 
                     // Row border—using an "after" pseudo-element to avoid the border taking up space.

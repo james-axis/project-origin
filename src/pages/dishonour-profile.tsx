@@ -137,7 +137,7 @@ export function DishonourProfilePage() {
       );
       case "tasks": return (
         <SectionCard key={id} id={id} title="Tasks" actionLabel="New Task" action={()=>{}} {...dp(id)}>
-          <div className="overflow-x-auto"><table className="w-full border-collapse text-sm"><thead className="bg-secondary_alt border-b border-secondary"><tr>{["Task","Assigned To","Scheduled","Requested","Completed"].map(h=><th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-quaternary whitespace-nowrap">{h}</th>)}</tr></thead>
+          <div className="overflow-x-auto"><table className="w-full border-collapse text-sm"><thead className="bg-tertiary border-b border-secondary"><tr>{["Task","Assigned To","Scheduled","Requested","Completed"].map(h=><th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-quaternary whitespace-nowrap">{h}</th>)}</tr></thead>
             <tbody className="divide-y divide-secondary">
               <tr className="hover:bg-secondary_alt"><td className="px-4 py-2.5 text-xs text-primary">SUPPORT ACTION - Call / Email</td><td className="px-4 py-2.5 text-xs text-secondary">SLG Support</td><td className="px-4 py-2.5 text-xs text-tertiary">24/03/2026</td><td className="px-4 py-2.5 text-xs text-tertiary">24/03/2026 10:39 (today)</td><td className="px-4 py-2.5 text-xs text-tertiary">—</td></tr>
               <tr className="hover:bg-secondary_alt"><td className="px-4 py-2.5 text-xs text-primary">Initial follow up</td><td className="px-4 py-2.5 text-xs text-secondary">SLG Support</td><td className="px-4 py-2.5 text-xs text-tertiary">25/03/2026</td><td className="px-4 py-2.5 text-xs text-tertiary">24/03/2026 10:39 (today)</td><td className="px-4 py-2.5 text-xs text-tertiary">—</td></tr>

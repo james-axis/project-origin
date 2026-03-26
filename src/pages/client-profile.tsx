@@ -515,7 +515,7 @@ export function ClientProfilePage() {
         <SectionCard key={id} id={id} title="Activity Log" defaultOpen={false} {...dragProps}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-secondary_alt border-b border-secondary">
+              <thead className="bg-tertiary border-b border-secondary">
                 <tr>{["Date","User","Action","Note"].map(h => <th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-quaternary whitespace-nowrap">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-secondary">

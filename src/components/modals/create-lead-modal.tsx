@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Check, ChevronRight, User01, Phone01, Mail01, Briefcase01, Users01 } from "@untitledui/icons";
+import { X, Check, ChevronRight } from "@untitledui/icons";
 import { createPortal } from "react-dom";
 
 const USERS = ["Auto assign","Adam Cowburn","Adrian Ranieri","Advice Team","Ben Tutton","Caitlin Gardiner","Dean Hines","Hope Lake","James Nicholls","John Rojas","Justin Turtle","Kam Rowshan","Katie Hally","Maysee Chang","Natasha Carlson","Nathaniel Elston","Rebel Servante","SLG Support","SLG Test Training","Sonny Lowe","Sumeet Wadhwa","Toni Smilevski","Wilson Chen"];
@@ -25,7 +25,7 @@ export function CreateLeadModal({ onClose }: Props) {
     dob:"", gender:"Male", state:"NSW", smoker:"No",
     phone:"", phone2:"", email:"", email2:"", contactTime:"",
     salary:"", employment:"Employed full-time", occupation:"",
-    campaign:"No Campaign", group:"", assignedTo:"Auto assign", notes:"",
+    campaign:"No Campaign", group:"", assignedTo:"", notes:"",
   });
 
   useEffect(() => {
@@ -42,7 +42,8 @@ export function CreateLeadModal({ onClose }: Props) {
 
   const isPersonalComplete = !!(form.firstName && form.lastName);
   const isContactComplete  = !!(form.phone && form.email);
-  const canSubmit = isPersonalComplete && isContactComplete;
+  const isAssignmentComplete = !!form.assignedTo;
+  const canSubmit = isPersonalComplete && isContactComplete && isAssignmentComplete;
 
   function SectionTab({ id, label, complete }: { id:string; label:string; complete?:boolean }) {
     const active = activeSection === id;
@@ -86,7 +87,7 @@ export function CreateLeadModal({ onClose }: Props) {
           <SectionTab id="personal"   label="Personal"   complete={isPersonalComplete}/>
           <SectionTab id="contact"    label="Contact"    complete={isContactComplete}/>
           <SectionTab id="employment" label="Employment"/>
-          <SectionTab id="assignment" label="Assignment"/>
+          <SectionTab id="assignment" label="Assignment" complete={isAssignmentComplete}/>
         </div>
 
         {/* Section content */}
@@ -190,8 +191,9 @@ export function CreateLeadModal({ onClose }: Props) {
 
           {activeSection === "assignment" && (
             <div className="space-y-4">
-              <Field label="Assign To">
+              <Field label="Assign To" required>
                 <select value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)} className={sel}>
+                  <option value="">Select assignee...</option>
                   {USERS.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
               </Field>

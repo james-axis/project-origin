@@ -455,7 +455,7 @@ export function TasksPage() {
                 className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors " +
                   (colPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4" />
-                Columns
+                Edit Columns
                 <span className="rounded-full bg-brand-secondary text-brand-secondary text-[10px] font-semibold px-1.5 py-0.5">
                   {visibleCols.length}/{colDefs.length}
                 </span>
@@ -478,7 +478,7 @@ export function TasksPage() {
         <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="rounded-xl border border-secondary overflow-hidden">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-secondary_alt border-b border-secondary">
+              <thead className="bg-tertiary border-b border-secondary">
                 <tr>
                   {tab === "all" && (
                     <th className="px-3 py-3 w-10">

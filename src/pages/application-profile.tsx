@@ -511,7 +511,7 @@ export function ApplicationProfilePage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
-                <thead className="bg-secondary_alt border-b border-secondary">
+                <thead className="bg-tertiary border-b border-secondary">
                   <tr>{["Cover","Exclusions","Status","Date",""].map(h => <th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-quaternary whitespace-nowrap">{h}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-secondary">
@@ -539,7 +539,7 @@ export function ApplicationProfilePage() {
         <SectionCard key={id} id={id} title="Tasks" actionLabel="New Task" action={() => {}} {...dragProps(id)}>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-secondary_alt border-b border-secondary">
+              <thead className="bg-tertiary border-b border-secondary">
                 <tr>{["Task","Assigned To","Scheduled","Requested","Completed"].map(h => <th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-quaternary whitespace-nowrap">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-secondary">
@@ -567,7 +567,7 @@ export function ApplicationProfilePage() {
         <SectionCard key={id} id={id} title="Activity Log" defaultOpen={false} {...dragProps(id)}>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-secondary_alt border-b border-secondary">
+              <thead className="bg-tertiary border-b border-secondary">
                 <tr>{["Date","User","Action"].map(h => <th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-quaternary whitespace-nowrap">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-secondary">

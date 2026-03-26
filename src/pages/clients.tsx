@@ -575,7 +575,7 @@ export function ClientsPage() {
           {/* Desktop Table View */}
           <div className="hidden lg:block rounded-xl border border-secondary overflow-hidden">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-secondary_alt border-b border-secondary">
+              <thead className="bg-tertiary border-b border-secondary">
                 <tr>
                   <th className="px-3 py-3 w-10">
                     <input type="checkbox"
