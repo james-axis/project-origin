@@ -88,7 +88,9 @@ router.get('/practices/:id', async (req, res) => {
 
 /**
  * POST /api/twilio/practices
- * Create a new practice (database record only - no Twilio subaccount)
+ * Create a new practice
+ * - useSubaccount=false: Database record only (uses main Axis account)
+ * - useSubaccount=true: Creates Twilio subaccount for isolated billing/risk
  */
 router.post('/practices', async (req, res) => {
   try {
@@ -98,6 +100,7 @@ router.post('/practices', async (req, res) => {
       contactEmail,
       abn,
       afslNumber,
+      useSubaccount = false,
     } = req.body;
 
     if (!practiceName || !contactEmail) {
@@ -106,14 +109,37 @@ router.post('/practices', async (req, res) => {
       });
     }
 
-    console.log(`📋 Creating practice: ${practiceName}`);
+    console.log(`📋 Creating practice: ${practiceName} (subaccount: ${useSubaccount})`);
 
-    // Just create database record - no Twilio subaccount
+    let twilioAccountSid = null;
+    let twilioAuthToken = null;
+
+    // Create Twilio subaccount if requested (Separate Organisation)
+    if (useSubaccount) {
+      console.log('🔧 Creating Twilio subaccount...');
+      try {
+        const subaccount = await twilioClient.api.accounts.create({
+          friendlyName: practiceName,
+        });
+        twilioAccountSid = subaccount.sid;
+        twilioAuthToken = subaccount.authToken;
+        console.log(`✅ Subaccount created: ${twilioAccountSid}`);
+      } catch (twilioError) {
+        console.error('Twilio subaccount creation failed:', twilioError);
+        return res.status(400).json({ 
+          error: `Failed to create Twilio subaccount: ${twilioError.message}`,
+          details: 'This may be due to account limits. Try upgrading from trial or contact Twilio support.',
+        });
+      }
+    }
+
+    // Create database record
     const result = await db.query(`
       INSERT INTO twilio_practices (
         practice_name, contact_name, contact_email, abn, afsl_number,
+        is_subaccount, twilio_account_sid, twilio_auth_token,
         setup_step, setup_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `, [
       practiceName,
@@ -121,6 +147,9 @@ router.post('/practices', async (req, res) => {
       contactEmail,
       abn,
       afslNumber,
+      useSubaccount,
+      twilioAccountSid,
+      twilioAuthToken,
       'practice_created',
       'in_progress'
     ]);
@@ -130,8 +159,11 @@ router.post('/practices', async (req, res) => {
     res.json({
       success: true,
       practice: result.rows[0],
+      isSubaccount: useSubaccount,
       nextStep: 'phone_number',
-      message: 'Practice created. Next: Select a phone number.',
+      message: useSubaccount 
+        ? 'Practice created with separate Twilio subaccount. Next: Select a phone number.'
+        : 'Practice created under Axis organisation. Next: Select a phone number.',
     });
   } catch (error) {
     console.error('Error creating practice:', error);

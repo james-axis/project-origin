@@ -150,6 +150,7 @@ app.post('/migrate-stage0', async (req, res) => {
         contact_email VARCHAR(255) NOT NULL,
         abn VARCHAR(20),
         afsl_number VARCHAR(20),
+        is_subaccount BOOLEAN DEFAULT FALSE,
         twilio_account_sid VARCHAR(34) UNIQUE,
         twilio_auth_token VARCHAR(100),
         address_sid VARCHAR(34),
@@ -163,6 +164,13 @@ app.post('/migrate-stage0', async (req, res) => {
       )
     `);
     console.log('✅ twilio_practices created');
+    
+    // Add is_subaccount column if missing (for existing tables)
+    await db.query(`
+      ALTER TABLE twilio_practices 
+      ADD COLUMN IF NOT EXISTS is_subaccount BOOLEAN DEFAULT FALSE
+    `);
+    console.log('✅ is_subaccount column ensured');
     
     // Create twilio_twiml_apps table
     await db.query(`

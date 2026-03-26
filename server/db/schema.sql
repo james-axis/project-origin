@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS twilio_practices (
     contact_email VARCHAR(255) NOT NULL,
     abn VARCHAR(20),
     afsl_number VARCHAR(20),
-    -- Twilio subaccount
+    -- Organisation type
+    is_subaccount BOOLEAN DEFAULT FALSE, -- false = Axis Org, true = Separate Org (subaccount)
+    -- Twilio subaccount (only used when is_subaccount = true)
     twilio_account_sid VARCHAR(34) UNIQUE,
     twilio_auth_token VARCHAR(100),
     -- Regulatory compliance
