@@ -351,9 +351,9 @@ export function InsuranceProductsPage() {
               
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} margin={{ left: 0, right: 0 }}>
+                  <BarChart data={monthlyData} margin={{ left: -20, right: 0 }}>
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                    <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: '#fff', 
@@ -362,9 +362,9 @@ export function InsuranceProductsPage() {
                         fontSize: '12px'
                       }} 
                     />
-                    <Bar dataKey="active" stackId="a" fill="#D34108" name="Active" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="pending" stackId="a" fill="#3B485B" name="Pending" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="lapsed" stackId="a" fill="#E5E7EB" name="Lapsed" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="lapsed" stackId="a" fill="#E5E7EB" name="Lapsed" />
+                    <Bar dataKey="pending" stackId="a" fill="#3B485B" name="Pending" />
+                    <Bar dataKey="active" stackId="a" fill="#D34108" name="Active" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
