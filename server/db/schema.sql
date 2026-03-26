@@ -203,6 +203,64 @@ INSERT INTO phone_settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- =====================================================
+-- MIGRATIONS - Add columns if they don't exist
+-- =====================================================
+
+-- Add call_control_id to call_logs if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'call_logs' AND column_name = 'call_control_id') THEN
+        ALTER TABLE call_logs ADD COLUMN call_control_id VARCHAR(100) UNIQUE;
+    END IF;
+END $$;
+
+-- Add phone_number_id to call_logs if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'call_logs' AND column_name = 'phone_number_id') THEN
+        ALTER TABLE call_logs ADD COLUMN phone_number_id UUID REFERENCES phone_numbers(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- Add call_flow_id to call_logs if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'call_logs' AND column_name = 'call_flow_id') THEN
+        ALTER TABLE call_logs ADD COLUMN call_flow_id UUID REFERENCES call_flows(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- Add call_flow_id to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'call_flow_id') THEN
+        ALTER TABLE phone_numbers ADD COLUMN call_flow_id UUID;
+    END IF;
+END $$;
+
+-- Add practice_id to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'practice_id') THEN
+        ALTER TABLE phone_numbers ADD COLUMN practice_id UUID REFERENCES practices(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- Add friendly_name to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'friendly_name') THEN
+        ALTER TABLE phone_numbers ADD COLUMN friendly_name VARCHAR(255);
+    END IF;
+END $$;
+
+-- =====================================================
 -- INDEXES
 -- =====================================================
 

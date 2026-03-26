@@ -1583,10 +1583,15 @@ function PhoneSettings() {
       const res = await fetch(`${API_BASE}/api/call-flows`);
       if (res.ok) {
         const data = await res.json();
-        setCallFlows(data);
+        // Ensure data is an array before setting state
+        setCallFlows(Array.isArray(data) ? data : []);
+      } else {
+        // API returned an error, set empty array
+        setCallFlows([]);
       }
     } catch (err) {
       console.error('Error fetching call flows:', err);
+      setCallFlows([]);
     } finally {
       setLoadingFlows(false);
     }
