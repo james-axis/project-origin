@@ -3,7 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { ChevronDown, ChevronRight, Plus, X, Edit01, Check, File01, User01, Users01, Settings01, DotsGrid, Pin01, Pin02 } from "@untitledui/icons";
+import type { FC } from "react";
+import { ChevronDown, ChevronRight, Plus, X, Edit01, Check, File01, User01, Users01, Settings01, DotsGrid, Pin01, Pin02, MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01 } from "@untitledui/icons";
 
 interface NoteEntry { id: number; text: string; author: string; date: string; }
 interface FieldDef  { key: string; label: string; defaultVisible: boolean; }
@@ -52,10 +53,10 @@ function EditableSelect({ value, options }: { value: string; options: string[] }
   return <button onClick={()=>setEditing(true)} className="flex items-center gap-1 group hover:text-brand-secondary text-sm text-primary font-medium">{val}<Edit01 className="size-3 text-quaternary opacity-0 group-hover:opacity-100"/></button>;
 }
 
-function DropdownButton({ label, icon, items }: { label:string;icon?:string;items:{label:string;icon?:string;danger?:boolean}[] }) {
+function DropdownButton({ label, icon: Icon, items }: { label:string;icon?:FC<{className?:string}>;items:{label:string;icon?:FC<{className?:string}>;danger?:boolean;onClick?:()=>void}[] }) {
   const [open, setOpen] = useState(false); const ref = useRef<HTMLDivElement>(null);
   useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[open]);
-  return <div ref={ref} className="relative"><button onClick={()=>setOpen(o=>!o)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">{icon&&<span>{icon}</span>}{label}</button>{open&&<div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">{items.map((item,i)=><button key={i} onClick={()=>setOpen(false)} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt "+(item.danger?"text-error-primary":"text-primary")}>{item.icon&&<span>{item.icon}</span>}{item.label}</button>)}</div>}</div>;
+  return <div ref={ref} className="relative"><button onClick={()=>setOpen(o=>!o)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">{Icon&&<Icon className="size-3.5"/>}{label}</button>{open&&<div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">{items.map((item,i)=>{const ItemIcon=item.icon;return <button key={i} onClick={()=>{item.onClick?.();setOpen(false);}} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt "+(item.danger?"text-error-primary":"text-primary")}>{ItemIcon&&<ItemIcon className="size-3.5"/>}{item.label}</button>;})}</div>}</div>;
 }
 
 function StatusButton() {
@@ -196,26 +197,29 @@ export function DishonourProfilePage() {
       <SidebarNavigationSlim items={navItems} footerItems={footerNavItems}/><div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block"/>
       <main className="flex-1 min-h-screen flex flex-col overflow-hidden">
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
-          <div className="flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full text-white text-base font-bold" style={{background:DIS.statusColor}}>{DIS.customer.firstName[0]}{DIS.customer.lastName[0]}</div>
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap"><h1 className="text-lg font-semibold text-primary" style={{fontFamily:"'Metrophobic', sans-serif"}}>Initial Dishonour #{DIS.id}</h1><span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold" style={{borderColor:DIS.statusColor,color:DIS.statusColor,background:"#FFF4F0"}}>{DIS.statusLabel}</span></div>
-              <div className="flex items-center gap-2 mt-0.5"><span className="text-xs text-brand-secondary font-medium cursor-pointer hover:underline">{DIS.customer.title} {DIS.customer.firstName} {DIS.customer.lastName}</span><span className="text-xs text-quaternary">—</span><span className="text-xs text-tertiary">{DIS.info.company} · {DIS.info.policyId}</span></div>
+              <h1 className="text-lg font-semibold text-primary" style={{fontFamily:"'Metrophobic', sans-serif"}}>{DIS.customer.title} {DIS.customer.firstName} {DIS.customer.lastName}</h1>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary">
+                <span>{DIS.statusLabel}</span>
+                <span className="text-quaternary">|</span>
+                <span>{DIS.info.company}</span>
+                <span className="text-quaternary">|</span>
+                <span>Created {DIS.info.createdOn}</span>
+              </div>
             </div>
-            <button title="Edit" className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand text-quaternary hover:text-brand-secondary"><Edit01 className="size-4"/></button>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <StatusButton/>
-            <DropdownButton label="Actions" icon="⚡" items={[
-              {label:"SMS",      icon:"💬"},
-              {label:"Email",    icon:"✉️"},
-              {label:"Form",     icon:"📋"},
-              {label:"Saved by", icon:"✅"},
-              {label:"Schedule", icon:"📅"},
-              {label:"Upload Files",icon:"📎"},
-              {label:"PDF",      icon:"📄"},
-            ]}/>
-            <button onClick={()=>setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary"><Users01 className="size-3.5"/> More Info</button>
+            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+              <StatusButton/>
+              <DropdownButton label="Actions" icon={RefreshCw01} items={[
+                {label:"SMS",      icon:MessageChatSquare},
+                {label:"Email",    icon:Send01},
+                {label:"Schedule", icon:Calendar},
+                {label:"Upload Files",icon:Upload01},
+                {label:"PDF",      icon:File01},
+              ]}/>
+              <button onClick={()=>setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary"><Users01 className="size-3.5"/> More Info</button>
+              <button title="Edit" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand text-quaternary hover:text-brand-secondary"><Edit01 className="size-4"/></button>
+            </div>
           </div>
         </div>
         <div className="flex flex-1 min-h-0 overflow-y-auto">

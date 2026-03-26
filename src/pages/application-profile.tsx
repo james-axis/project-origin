@@ -4,9 +4,13 @@ import { CreateApplicationModal } from "@/components/modals/create-application-m
 import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
+import type { FC } from "react";
 import {
   ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check,
   File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
+  FileCheck02, FileSearch02, Shield01, AlertTriangle, Key01,
+  MessageChatSquare, Send01, FilePlus02, Calendar, Upload01, RefreshCw01,
+  Folder, BarChart01,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -225,7 +229,7 @@ function StatusButton() {
   );
 }
 
-function DropdownButton({ label, icon, items }: { label: string; icon?: string; items: { label: string; icon?: string; danger?: boolean }[] }) {
+function DropdownButton({ label, icon: Icon, items }: { label: string; icon?: FC<{className?:string}>; items: { label: string; icon?: FC<{className?:string}>; danger?: boolean; onClick?: () => void }[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -236,15 +240,18 @@ function DropdownButton({ label, icon, items }: { label: string; icon?: string; 
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
-        {icon && <span>{icon}</span>}{label}
+        {Icon && <Icon className="size-3.5" />}{label}
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 z-50 w-44 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">
-          {items.map((item, i) => (
-            <button key={i} onClick={() => setOpen(false)} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger?"text-error-primary":"text-primary")}>
-              {item.icon && <span>{item.icon}</span>}{item.label}
-            </button>
-          ))}
+          {items.map((item, i) => {
+            const ItemIcon = item.icon;
+            return (
+              <button key={i} onClick={() => { item.onClick?.(); setOpen(false); }} className={"flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-secondary_alt transition-colors " + (item.danger?"text-error-primary":"text-primary")}>
+                {ItemIcon && <ItemIcon className="size-3.5" />}{item.label}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -692,60 +699,52 @@ export function ApplicationProfilePage() {
       <main className="flex-1 min-h-screen flex flex-col overflow-hidden">
         {/* Header */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
-          <div className="flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full text-white text-base font-bold" style={{ background:APP.statusColor }}>
-              {APP.customer.firstName[0]}{APP.customer.lastName[0]}
-            </div>
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
-                  {APP.title} #{APP.id}
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold" style={{ borderColor:APP.statusColor, color:APP.statusColor, background:"#FFF4F0" }}>
-                  {APP.statusLabel}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-xs text-brand-secondary font-medium hover:underline cursor-pointer">{APP.customer.title} {APP.customer.firstName} {APP.customer.lastName}</span>
-                <span className="text-xs text-quaternary">—</span>
-                <EditableSelect value={APP.info.insurer} options={INSURERS} />
+              <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
+                {APP.customer.title} {APP.customer.firstName} {APP.customer.lastName}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary">
+                <span>{APP.statusLabel}</span>
+                <span className="text-quaternary">|</span>
+                <span>{APP.info.insurer}</span>
+                <span className="text-quaternary">|</span>
+                <span>Created {APP.info.createdOn}</span>
               </div>
             </div>
-            <button title="Edit application" className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
-              <Edit01 className="size-4" />
-            </button>
-          </div>
-          {/* Toolbar */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <StatusButton />
-            <div className="relative">
-              <DropdownButton label="New" icon="✚" items={[
-                { label:"New Application", icon:"📝" },
-                { label:"Pre-Assessment",  icon:"🩺" },
-                { label:"Claim",           icon:"🛡️" },
-                { label:"Dishonour",       icon:"⚠️" },
-                { label:"Policy ID",       icon:"🔑" },
+            {/* Action buttons - inline with title */}
+            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+              <StatusButton />
+              <DropdownButton label="New" icon={Plus} items={[
+                { label:"New Application", icon: FileCheck02, onClick: () => setShowNewApp(true) },
+                { label:"Pre-Assessment",  icon: FileSearch02 },
+                { label:"Claim",           icon: Shield01 },
+                { label:"Dishonour",       icon: AlertTriangle },
+                { label:"Policy ID",       icon: Key01 },
               ]} />
+              {showNewApp && <CreateApplicationModal clientName={`${APP.customer.title} ${APP.customer.firstName} ${APP.customer.lastName}`} onClose={() => setShowNewApp(false)}/>}
+              <DropdownButton label="Actions" icon={RefreshCw01} items={[
+                { label:"SMS",          icon: MessageChatSquare },
+                { label:"Email",        icon: Send01 },
+                { label:"Form",         icon: FilePlus02 },
+                { label:"Schedule",     icon: Calendar },
+                { label:"Upload Files", icon: Upload01 },
+                { label:"Complete",     icon: Check },
+                { label:"Change Dates", icon: Calendar },
+              ]} />
+              <DropdownButton label="Other" icon={DotsGrid} items={[
+                { label:"PDF",            icon: File01 },
+                { label:"Pre-Assessment", icon: FileSearch02 },
+                { label:"Marketing List", icon: BarChart01 },
+                { label:"Close",          icon: X, danger:true },
+              ]} />
+              <button onClick={() => setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">
+                <Users01 className="size-3.5" /> More Info
+              </button>
+              <button title="Edit application" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
+                <Edit01 className="size-4" />
+              </button>
             </div>
-            {showNewApp && <CreateApplicationModal clientName={`${APP.customer.title} ${APP.customer.firstName} ${APP.customer.lastName}`} onClose={() => setShowNewApp(false)}/>}
-            <DropdownButton label="Actions" icon="⚡" items={[
-              { label:"SMS",          icon:"💬" },
-              { label:"Email",        icon:"✉️" },
-              { label:"Form",         icon:"📋" },
-              { label:"Schedule",     icon:"📅" },
-              { label:"Upload Files", icon:"📎" },
-              { label:"Complete",     icon:"✅" },
-              { label:"Change Dates", icon:"📆" },
-            ]} />
-            <DropdownButton label="Other" icon="⋯" items={[
-              { label:"PDF",            icon:"📄" },
-              { label:"Pre-Assessment", icon:"🩺" },
-              { label:"Marketing List", icon:"📊" },
-              { label:"Close", icon:"✕", danger:true },
-            ]} />
-            <button onClick={() => setMobileSidebarOpen(true)} className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">
-              <Users01 className="size-3.5" /> More Info
-            </button>
           </div>
         </div>
 

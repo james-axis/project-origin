@@ -557,21 +557,16 @@ export function ClientProfilePage() {
         {/* ── Header ── */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full text-white text-base font-bold" style={{ background: statusColor }}>
-              {CLIENT.firstName[0]}{CLIENT.lastName[0]}
-            </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
-                  Client #{CLIENT.id} — {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold" style={{ borderColor: statusColor, color: statusColor, background: "#FFF4F0" }}>
-                  {CLIENT.statusLabel}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 mt-0.5">
-                <EditableGroupField value={CLIENT.group} compact />
-                <span className="text-xs text-quaternary">· Created {CLIENT.createdOn}</span>
+              <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
+                {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary">
+                <span>{CLIENT.statusLabel}</span>
+                <span className="text-quaternary">|</span>
+                <span>{CLIENT.group}</span>
+                <span className="text-quaternary">|</span>
+                <span>Created {CLIENT.createdOn}</span>
               </div>
             </div>
             {/* Toolbar + Edit — all inline */}
@@ -584,7 +579,7 @@ export function ClientProfilePage() {
                 { label: "Dishonour",      icon: AlertTriangle },
                 { label: "Complaint",      icon: MessageSquare01 },
               ]} />
-              <DropdownButton label="Actions" icon="⚡" pinned={pinnedActions} onPin={togglePin} items={[
+              <DropdownButton label="Actions" icon={RefreshCw01} pinned={pinnedActions} onPin={togglePin} items={[
                 { label: "SMS",          icon: MessageChatSquare },
                 { label: "Email",        icon: Send01 },
                 { label: "Form",         icon: FilePlus02 },
@@ -592,7 +587,7 @@ export function ClientProfilePage() {
                 { label: "Upload Files", icon: Upload01 },
                 { label: "Set Status",   icon: RefreshCw01 },
               ]} />
-              <DropdownButton label="Other" icon="⋯" pinned={pinnedActions} onPin={togglePin} items={[
+              <DropdownButton label="Other" icon={DotsGrid} pinned={pinnedActions} onPin={togglePin} items={[
                 { label: "PDF",              icon: File01 },
                 { label: "Docs",             icon: Folder },
                 { label: "Off APL",          icon: BellOff01 },
