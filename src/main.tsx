@@ -15,6 +15,7 @@ import { ComplaintsPage } from "@/pages/complaints";
 import { ComplaintProfilePage } from "@/pages/complaint-profile";
 import { CampaignsPage } from "@/pages/campaigns";
 import { InsuranceProductsPage } from "@/pages/insurance-products";
+import { Settings } from "@/pages/settings";
 import { NotFound } from "@/pages/not-found";
 import { Login } from "@/pages/login";
 import { RouteProvider } from "@/providers/router-provider";
@@ -69,8 +70,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/insurance" element={<RequireAuth><InsuranceProductsPage /></RequireAuth>} />
               <Route path="/insurance/*" element={<RequireAuth><InsuranceProductsPage /></RequireAuth>} />
               <Route path="/client/:id" element={<RequireAuth><ClientProfilePage /></RequireAuth>} />
-              <Route path="/settings" element={<RequireAuth><HomeScreen /></RequireAuth>} />
-              <Route path="/settings/*" element={<RequireAuth><HomeScreen /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+              <Route path="/settings/*" element={<RequireAuth><Settings /></RequireAuth>} />
               <Route path="/login" element={<Login />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

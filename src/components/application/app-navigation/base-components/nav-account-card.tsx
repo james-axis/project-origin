@@ -5,6 +5,7 @@ import { BookOpen01, ChevronSelectorVertical, LogOut01, Plus, Settings01, User01
 import { useFocusManager } from "react-aria";
 import type { DialogProps as AriaDialogProps } from "react-aria-components";
 import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
+import { useNavigate } from "react-router";
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { Button } from "@/components/base/buttons/button";
 import { RadioButtonBase } from "@/components/base/radio-buttons/radio-buttons";
@@ -48,6 +49,7 @@ export const NavAccountMenu = ({
 }: AriaDialogProps & { className?: string; accounts?: NavAccountType[]; selectedAccountId?: string }) => {
     const focusManager = useFocusManager();
     const dialogRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const onKeyDown = useCallback(
         (e: KeyboardEvent) => {
@@ -85,7 +87,7 @@ export const NavAccountMenu = ({
             <div className="rounded-xl bg-primary ring-1 ring-secondary">
                 <div className="flex flex-col gap-0.5 py-1.5">
                     <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K->P" />
-                    <NavAccountCardMenuItem label="Account settings" icon={Settings01} shortcut="⌘S" />
+                    <NavAccountCardMenuItem label="Account settings" icon={Settings01} shortcut="⌘S" onClick={() => navigate('/settings')} />
                     <NavAccountCardMenuItem label="Documentation" icon={BookOpen01} />
                 </div>
                 <div className="flex flex-col gap-0.5 border-t border-secondary py-1.5">

@@ -1467,7 +1467,7 @@ const SETUP_STEPS: SetupStep[] = [
   { id: 'routing', label: 'Call Routing', description: 'Set up IVR', icon: Zap },
 ];
 
-type PhoneSubTab = "practices" | "numbers" | "recording" | "transcription" | "access" | "usage";
+type PhoneSubTab = "practices" | "numbers" | "flows" | "recording" | "transcription" | "access" | "usage";
 type WizardStepId = 'practice' | 'number' | 'routing';
 
 function PhoneSettings() {
@@ -1517,9 +1517,26 @@ function PhoneSettings() {
   // Filter state
   const [orgFilter, setOrgFilter] = useState<'all' | 'axis' | 'separate'>('all');
 
+  // Call flows state
+  const [callFlows, setCallFlows] = useState<any[]>([]);
+  const [loadingFlows, setLoadingFlows] = useState(false);
+  const [editingFlow, setEditingFlow] = useState<any | null>(null);
+  const [showFlowModal, setShowFlowModal] = useState(false);
+  const [flowForm, setFlowForm] = useState({
+    name: '',
+    greetingText: 'Thank you for calling. Please hold while we connect you.',
+    routeType: 'direct',
+    routeDestination: '',
+    recordingEnabled: true,
+    transcriptionEnabled: false,
+    timeoutSeconds: 30,
+    fallbackAction: 'voicemail',
+  });
+
   const subTabs: { id: PhoneSubTab; label: string }[] = [
     { id: "practices", label: "Practices" },
     { id: "numbers", label: "Numbers" },
+    { id: "flows", label: "Call Flows" },
     { id: "recording", label: "Recording" },
     { id: "transcription", label: "Transcription" },
     { id: "access", label: "Access" },
@@ -1530,6 +1547,7 @@ function PhoneSettings() {
   useEffect(() => {
     fetchPractices();
     fetchPhoneNumbers();
+    fetchCallFlows();
   }, []);
 
   const fetchPractices = async () => {
@@ -1556,6 +1574,90 @@ function PhoneSettings() {
     } catch (err) {
       console.error('Error fetching phone numbers:', err);
     }
+  };
+
+  const fetchCallFlows = async () => {
+    setLoadingFlows(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/call-flows`);
+      if (res.ok) {
+        const data = await res.json();
+        setCallFlows(data);
+      }
+    } catch (err) {
+      console.error('Error fetching call flows:', err);
+    } finally {
+      setLoadingFlows(false);
+    }
+  };
+
+  const saveCallFlow = async () => {
+    try {
+      const method = editingFlow ? 'PUT' : 'POST';
+      const url = editingFlow 
+        ? `${API_BASE}/api/call-flows/${editingFlow.id}` 
+        : `${API_BASE}/api/call-flows`;
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: flowForm.name,
+          greeting_text: flowForm.greetingText,
+          route_type: flowForm.routeType,
+          route_destination: flowForm.routeDestination,
+          recording_enabled: flowForm.recordingEnabled,
+          transcription_enabled: flowForm.transcriptionEnabled,
+          timeout_seconds: flowForm.timeoutSeconds,
+          fallback_action: flowForm.fallbackAction,
+        }),
+      });
+      
+      if (res.ok) {
+        fetchCallFlows();
+        setShowFlowModal(false);
+        setEditingFlow(null);
+        setFlowForm({
+          name: '',
+          greetingText: 'Thank you for calling. Please hold while we connect you.',
+          routeType: 'direct',
+          routeDestination: '',
+          recordingEnabled: true,
+          transcriptionEnabled: false,
+          timeoutSeconds: 30,
+          fallbackAction: 'voicemail',
+        });
+      }
+    } catch (err) {
+      console.error('Error saving call flow:', err);
+    }
+  };
+
+  const deleteCallFlow = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this call flow?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/call-flows/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchCallFlows();
+      }
+    } catch (err) {
+      console.error('Error deleting call flow:', err);
+    }
+  };
+
+  const openEditFlow = (flow: any) => {
+    setEditingFlow(flow);
+    setFlowForm({
+      name: flow.name || '',
+      greetingText: flow.greeting_text || '',
+      routeType: flow.route_type || 'direct',
+      routeDestination: flow.route_destination || '',
+      recordingEnabled: flow.recording_enabled ?? true,
+      transcriptionEnabled: flow.transcription_enabled ?? false,
+      timeoutSeconds: flow.timeout_seconds || 30,
+      fallbackAction: flow.fallback_action || 'voicemail',
+    });
+    setShowFlowModal(true);
   };
 
   // Wizard handlers
@@ -2580,6 +2682,286 @@ function PhoneSettings() {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Call Flows Tab */}
+      {subTab === "flows" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-primary">Call Flows</h3>
+              <p className="text-xs text-tertiary mt-0.5">Configure how incoming calls are routed and handled</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingFlow(null);
+                setFlowForm({
+                  name: '',
+                  greetingText: 'Thank you for calling. Please hold while we connect you.',
+                  routeType: 'direct',
+                  routeDestination: '',
+                  recordingEnabled: true,
+                  transcriptionEnabled: false,
+                  timeoutSeconds: 30,
+                  fallbackAction: 'voicemail',
+                });
+                setShowFlowModal(true);
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-solid text-white text-sm font-medium hover:bg-brand-solid/90 transition-colors"
+            >
+              <Plus className="size-4" />
+              New Call Flow
+            </button>
+          </div>
+
+          {loadingFlows ? (
+            <div className="py-12 text-center text-sm text-quaternary">Loading call flows...</div>
+          ) : callFlows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-secondary p-12 text-center">
+              <Zap className="size-12 text-quaternary mx-auto mb-3" />
+              <h4 className="font-medium text-primary">No call flows configured</h4>
+              <p className="text-sm text-tertiary mt-1">Create a call flow to define how incoming calls are handled</p>
+              <button
+                onClick={() => setShowFlowModal(true)}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-solid text-white text-sm font-medium hover:bg-brand-solid/90"
+              >
+                <Plus className="size-4" />
+                Create Call Flow
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {callFlows.map(flow => (
+                <div key={flow.id} className="rounded-xl border border-secondary p-4 hover:border-brand/30 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-primary">{flow.name}</h4>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          flow.route_type === 'direct' ? 'bg-blue-100 text-blue-700' :
+                          flow.route_type === 'ivr' ? 'bg-purple-100 text-purple-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {flow.route_type === 'direct' ? 'Direct' : flow.route_type === 'ivr' ? 'IVR Menu' : 'Ring Group'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-tertiary mt-1 line-clamp-1">{flow.greeting_text || 'No greeting configured'}</p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-quaternary">
+                        {flow.route_destination && (
+                          <span className="flex items-center gap-1">
+                            <PhoneCall01 className="size-3.5" />
+                            Routes to: {flow.route_destination}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3.5" />
+                          {flow.timeout_seconds}s timeout
+                        </span>
+                        {flow.recording_enabled && (
+                          <span className="flex items-center gap-1">
+                            <PlayCircle className="size-3.5" />
+                            Recording on
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEditFlow(flow)}
+                        className="p-1.5 rounded-lg hover:bg-secondary text-tertiary hover:text-secondary transition-colors"
+                        title="Edit flow"
+                      >
+                        <Edit01 className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteCallFlow(flow.id)}
+                        className="p-1.5 rounded-lg hover:bg-error-secondary text-tertiary hover:text-error-primary transition-colors"
+                        title="Delete flow"
+                      >
+                        <Trash01 className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Assign Flow to Number */}
+          {callFlows.length > 0 && phoneNumbers.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-secondary">
+              <h4 className="text-sm font-semibold text-primary mb-3">Assign Flows to Numbers</h4>
+              <div className="rounded-xl border border-secondary overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-tertiary border-b border-secondary">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Phone Number</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-quaternary">Assigned Flow</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-secondary">
+                    {phoneNumbers.map(num => (
+                      <tr key={num.id} className="hover:bg-secondary_alt transition-colors">
+                        <td className="px-4 py-3 font-mono text-primary">{num.phone_number}</td>
+                        <td className="px-4 py-3">
+                          <select 
+                            className="rounded-lg border border-secondary bg-primary px-3 py-1.5 text-sm text-primary w-full max-w-xs"
+                            value={num.call_flow_id || ''}
+                            onChange={async (e) => {
+                              try {
+                                await fetch(`${API_BASE}/api/telnyx/phone-numbers/${num.id}/assign-flow`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ call_flow_id: e.target.value || null }),
+                                });
+                                fetchPhoneNumbers();
+                              } catch (err) {
+                                console.error('Error assigning flow:', err);
+                              }
+                            }}
+                          >
+                            <option value="">No flow assigned</option>
+                            {callFlows.map(flow => (
+                              <option key={flow.id} value={flow.id}>{flow.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Call Flow Modal */}
+      {showFlowModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-primary rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-secondary">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-primary">
+                  {editingFlow ? 'Edit Call Flow' : 'New Call Flow'}
+                </h3>
+                <button onClick={() => setShowFlowModal(false)} className="text-quaternary hover:text-secondary">
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1.5">Flow Name</label>
+                <input
+                  type="text"
+                  value={flowForm.name}
+                  onChange={(e) => setFlowForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Main Line, Support Queue"
+                  className="w-full rounded-lg border border-secondary px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1.5">Greeting Message</label>
+                <textarea
+                  value={flowForm.greetingText}
+                  onChange={(e) => setFlowForm(prev => ({ ...prev, greetingText: e.target.value }))}
+                  placeholder="Text-to-speech greeting for callers"
+                  rows={3}
+                  className="w-full rounded-lg border border-secondary px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1.5">Routing Type</label>
+                <select
+                  value={flowForm.routeType}
+                  onChange={(e) => setFlowForm(prev => ({ ...prev, routeType: e.target.value }))}
+                  className="w-full rounded-lg border border-secondary px-3 py-2 text-sm"
+                >
+                  <option value="direct">Direct - Route to single destination</option>
+                  <option value="ring-group">Ring Group - Ring multiple users</option>
+                  <option value="ivr">IVR Menu - Interactive menu</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1.5">Route Destination</label>
+                <input
+                  type="text"
+                  value={flowForm.routeDestination}
+                  onChange={(e) => setFlowForm(prev => ({ ...prev, routeDestination: e.target.value }))}
+                  placeholder="Phone number or SIP URI"
+                  className="w-full rounded-lg border border-secondary px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1.5">Ring Timeout</label>
+                  <select
+                    value={flowForm.timeoutSeconds}
+                    onChange={(e) => setFlowForm(prev => ({ ...prev, timeoutSeconds: parseInt(e.target.value) }))}
+                    className="w-full rounded-lg border border-secondary px-3 py-2 text-sm"
+                  >
+                    <option value={15}>15 seconds</option>
+                    <option value={30}>30 seconds</option>
+                    <option value={45}>45 seconds</option>
+                    <option value={60}>60 seconds</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1.5">If No Answer</label>
+                  <select
+                    value={flowForm.fallbackAction}
+                    onChange={(e) => setFlowForm(prev => ({ ...prev, fallbackAction: e.target.value }))}
+                    className="w-full rounded-lg border border-secondary px-3 py-2 text-sm"
+                  >
+                    <option value="voicemail">Go to Voicemail</option>
+                    <option value="hangup">Hang Up</option>
+                    <option value="forward">Forward to Another Number</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border border-secondary">
+                <div>
+                  <p className="text-sm font-medium text-primary">Call Recording</p>
+                  <p className="text-xs text-tertiary">Record calls using this flow</p>
+                </div>
+                <button
+                  onClick={() => setFlowForm(prev => ({ ...prev, recordingEnabled: !prev.recordingEnabled }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${flowForm.recordingEnabled ? "bg-brand-solid" : "bg-secondary"}`}
+                >
+                  <span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-transform ${flowForm.recordingEnabled ? "left-6" : "left-1"}`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border border-secondary">
+                <div>
+                  <p className="text-sm font-medium text-primary">Transcription</p>
+                  <p className="text-xs text-tertiary">Auto-transcribe recorded calls</p>
+                </div>
+                <button
+                  onClick={() => setFlowForm(prev => ({ ...prev, transcriptionEnabled: !prev.transcriptionEnabled }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${flowForm.transcriptionEnabled ? "bg-brand-solid" : "bg-secondary"}`}
+                >
+                  <span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-transform ${flowForm.transcriptionEnabled ? "left-6" : "left-1"}`} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 border-t border-secondary flex justify-end gap-3">
+              <button
+                onClick={() => setShowFlowModal(false)}
+                className="px-4 py-2 rounded-lg border border-secondary text-sm font-medium text-secondary hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveCallFlow}
+                disabled={!flowForm.name}
+                className="px-4 py-2 rounded-lg bg-brand-solid text-white text-sm font-medium hover:bg-brand-solid/90 disabled:opacity-50 transition-colors"
+              >
+                {editingFlow ? 'Save Changes' : 'Create Flow'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

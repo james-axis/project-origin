@@ -272,4 +272,31 @@ router.delete('/phone-numbers/:id', async (req, res) => {
   }
 });
 
+// =====================================================
+// PUT /api/telnyx/phone-numbers/:id/assign-flow
+// Assign a call flow to a phone number
+// =====================================================
+router.put('/phone-numbers/:id/assign-flow', async (req, res) => {
+  const { id } = req.params;
+  const { call_flow_id } = req.body;
+  
+  try {
+    const result = await db.query(`
+      UPDATE phone_numbers 
+      SET call_flow_id = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [call_flow_id || null, id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Phone number not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error assigning flow:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
