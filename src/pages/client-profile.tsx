@@ -9,7 +9,7 @@ import {
   ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check,
   File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
   Lightbulb02, FileSearch02, FileCheck02, Shield01, AlertTriangle, MessageSquare01,
-  MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, FilePlus02, Folder, BellOff,
+  MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, FilePlus02, Folder, BellOff01,
   BarChart01,
 } from "@untitledui/icons";
 
@@ -595,7 +595,7 @@ export function ClientProfilePage() {
               <DropdownButton label="Other" icon="⋯" pinned={pinnedActions} onPin={togglePin} items={[
                 { label: "PDF",              icon: File01 },
                 { label: "Docs",             icon: Folder },
-                { label: "Off APL",          icon: BellOff },
+                { label: "Off APL",          icon: BellOff01 },
                 { label: "Marketing List",   icon: BarChart01 },
               ]} />
               {pinnedActions.map(label => (
