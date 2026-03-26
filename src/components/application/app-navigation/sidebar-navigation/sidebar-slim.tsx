@@ -84,34 +84,6 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                 </ul>
                 <div className="mt-auto flex flex-col gap-2 px-3 py-5">
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
-                    
-                    {/* Prominent Create New Lead button */}
-                    <button 
-                        onClick={() => setShowCreateLead(true)}
-                        title="Create New Lead"
-                        className="flex size-10 items-center justify-center rounded-xl bg-brand-solid text-white hover:bg-brand-solid_hover transition-colors shadow-md hover:shadow-lg"
-                    >
-                        <svg className="size-5" viewBox="0 0 20 20" fill="none">
-                            <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                    </button>
-                    
-                    {footerItems.length > 0 && (
-                        <ul className="flex flex-col gap-0.5">
-                            {footerItems.map((item) => (
-                                <li key={item.label} title={item.label}>
-                                    <NavItemButton
-                                        size="md"
-                                        current={currentItem.href === item.href}
-                                        label={item.label || ""}
-                                        href={item.href}
-                                        icon={item.icon}
-                                        onClick={() => setCurrentItem(item)}
-                                    />
-                                </li>
-                            ))}
-                        </ul>
-                    )}
 
                     <AriaDialogTrigger>
                         <AriaButton

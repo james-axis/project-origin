@@ -222,11 +222,11 @@ function TaskActionModal({ task, lead, onClose, onAction, onToast, onOpenTask, o
             {/* Actions */}
             <div className="flex gap-3 border-t border-secondary mx-0 mt-4 px-5 py-4">
               <button onClick={handleAttempted}
-                className="flex-1 rounded-lg border border-warning-solid bg-warning-secondary px-3 py-2.5 text-sm font-medium text-warning-primary hover:bg-warning-primary hover:text-white transition-colors">
+                className="flex-1 rounded-lg border border-[#3B485B] bg-white px-3 py-2.5 text-sm font-medium text-[#3B485B] hover:bg-[#3B485B] hover:text-white transition-colors">
                 <span className="flex items-center justify-center gap-1.5"><RefreshCcw01 className="size-3.5" />Attempted</span>
               </button>
               <button onClick={handleComplete}
-                className="flex-1 rounded-lg bg-success-solid px-3 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-colors">
+                className="flex-1 rounded-lg bg-[#D34108] px-3 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-colors">
                 <span className="flex items-center justify-center gap-1.5"><Check className="size-3.5" />Complete</span>
               </button>
             </div>

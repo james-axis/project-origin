@@ -338,22 +338,18 @@ export function TasksPage() {
     switch (key) {
       case "name": return (
         <div className="flex items-center gap-2">
-          {row.overdue && <span className="size-1.5 rounded-full bg-error-primary shrink-0" />}
+          {row.overdue && <span className="size-1.5 rounded-full bg-[#D34108] shrink-0" />}
           <span className="font-medium text-primary group-hover:text-brand-secondary transition-colors truncate max-w-[200px]">{row.name}</span>
         </div>
       );
-      case "object": return (
-        <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold " + OBJECT_BADGE[row.object].cls}>
-          {OBJECT_BADGE[row.object].label}
-        </span>
-      );
+      case "object": return <span className="text-secondary text-xs">{OBJECT_BADGE[row.object].label}</span>;
       case "scheduled": return row.scheduled
-        ? <span className={isOverdue(row.scheduled) ? "text-error-primary font-medium text-xs" : "text-tertiary text-xs"}>{formatDateTime(row.scheduled)}</span>
+        ? <span className="text-secondary text-xs">{formatDateTime(row.scheduled)}</span>
         : <span className="text-quaternary text-xs">—</span>;
-      case "requested":  return <span className="text-tertiary text-xs">{formatDateTime(row.requested)}</span>;
-      case "lastAction": return <span className="text-tertiary text-xs">{formatDateTime(row.lastAction)}</span>;
-      case "lastNote":   return <p className="text-xs text-tertiary truncate max-w-[200px]">{row.lastNote}</p>;
-      default:           return <span className="text-tertiary text-xs">{String((row as any)[key] ?? "—")}</span>;
+      case "requested":  return <span className="text-secondary text-xs">{formatDateTime(row.requested)}</span>;
+      case "lastAction": return <span className="text-secondary text-xs">{formatDateTime(row.lastAction)}</span>;
+      case "lastNote":   return <p className="text-xs text-secondary truncate max-w-[200px]">{row.lastNote}</p>;
+      default:           return <span className="text-secondary text-xs">{String((row as any)[key] ?? "—")}</span>;
     }
   }
 
@@ -361,15 +357,11 @@ export function TasksPage() {
   function renderSchedCell(row: ScheduledTask, key: string) {
     switch (key) {
       case "task": return <span className="font-medium text-primary group-hover:text-brand-secondary transition-colors truncate max-w-[200px]">{row.task}</span>;
-      case "object": return (
-        <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold " + OBJECT_BADGE[row.object].cls}>
-          {OBJECT_BADGE[row.object].label}
-        </span>
-      );
-      case "scheduled": return <span className={isOverdue(row.scheduled) ? "text-error-primary font-medium text-xs" : "text-tertiary text-xs"}>{formatDateTime(row.scheduled)}</span>;
-      case "requested": return <span className="text-tertiary text-xs">{formatDateTime(row.requested)}</span>;
-      case "note":      return <p className="text-xs text-tertiary truncate max-w-[240px]">{row.note}</p>;
-      default:          return <span className="text-tertiary text-xs">{String((row as any)[key] ?? "—")}</span>;
+      case "object": return <span className="text-secondary text-xs">{OBJECT_BADGE[row.object].label}</span>;
+      case "scheduled": return <span className="text-secondary text-xs">{formatDateTime(row.scheduled)}</span>;
+      case "requested": return <span className="text-secondary text-xs">{formatDateTime(row.requested)}</span>;
+      case "note":      return <p className="text-xs text-secondary truncate max-w-[240px]">{row.note}</p>;
+      default:          return <span className="text-secondary text-xs">{String((row as any)[key] ?? "—")}</span>;
     }
   }
 

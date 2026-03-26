@@ -13,7 +13,7 @@ export function SidebarSection({ title, action, children, defaultOpen = true, no
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2.5 bg-secondary_alt border-b border-secondary">
+      <div className="flex items-center justify-between px-3 py-2.5 bg-primary hover:bg-secondary_alt transition-colors border-b border-secondary">
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
           {open
             ? <ChevronDown className="size-3.5 text-quaternary shrink-0" />
