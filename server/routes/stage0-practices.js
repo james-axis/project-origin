@@ -584,4 +584,146 @@ router.post('/account/regulatory-bundle', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/twilio/account/setup-au-bundle
+ * Combined one-click AU regulatory setup (creates address + bundle + submits)
+ * Pass Axis business address details, creates everything needed for AU numbers
+ */
+router.post('/account/setup-au-bundle', async (req, res) => {
+  try {
+    const {
+      customerName = 'Axis Insurance Pty Ltd',
+      street,
+      city,
+      region,
+      postalCode,
+      numberType = 'local',
+      email,
+    } = req.body;
+
+    if (!street || !city || !region || !postalCode) {
+      return res.status(400).json({ 
+        error: 'street, city, region, and postalCode are required',
+        example: {
+          customerName: 'Axis Insurance Pty Ltd',
+          street: '123 George Street',
+          city: 'Sydney',
+          region: 'NSW',
+          postalCode: '2000',
+          numberType: 'local',
+          email: 'compliance@axisinsurance.com.au'
+        }
+      });
+    }
+
+    console.log('🚀 Starting AU regulatory bundle setup...');
+
+    // Step 1: Check if we already have an approved bundle
+    const existingBundles = await twilioClient.numbers.v2.regulatoryCompliance.bundles.list({
+      isoCountry: 'AU',
+    });
+    
+    const approvedBundle = existingBundles.find(b => b.status === 'twilio-approved');
+    if (approvedBundle) {
+      return res.json({
+        success: true,
+        alreadySetup: true,
+        bundleSid: approvedBundle.sid,
+        status: approvedBundle.status,
+        message: 'AU regulatory bundle already approved. Ready to purchase AU numbers.',
+      });
+    }
+
+    const pendingBundle = existingBundles.find(b => b.status === 'pending-review');
+    if (pendingBundle) {
+      return res.json({
+        success: true,
+        alreadySetup: true,
+        bundleSid: pendingBundle.sid,
+        status: pendingBundle.status,
+        message: 'AU regulatory bundle already submitted and pending review.',
+      });
+    }
+
+    // Step 2: Create address
+    console.log('📍 Creating business address...');
+    const address = await twilioClient.addresses.create({
+      customerName,
+      street,
+      city,
+      region,
+      postalCode,
+      isoCountry: 'AU',
+      friendlyName: 'Axis - Business Address',
+    });
+    console.log(`✅ Address created: ${address.sid}`);
+
+    // Step 3: Get regulation SID
+    console.log('📋 Looking up AU regulations...');
+    const regulations = await twilioClient.numbers.v2.regulatoryCompliance
+      .regulations.list({ isoCountry: 'AU', numberType });
+    
+    if (regulations.length === 0) {
+      return res.status(400).json({ error: 'No regulations found for AU ' + numberType + ' numbers' });
+    }
+    const regulationSid = regulations[0].sid;
+    console.log(`✅ Regulation found: ${regulationSid}`);
+
+    // Step 4: Create bundle
+    console.log('📦 Creating regulatory bundle...');
+    const bundle = await twilioClient.numbers.v2.regulatoryCompliance.bundles.create({
+      friendlyName: `Axis - AU ${numberType} Numbers`,
+      email: email || process.env.AXIS_COMPLIANCE_EMAIL || 'compliance@axis.com.au',
+      isoCountry: 'AU',
+      numberType,
+      regulationSid,
+    });
+    console.log(`✅ Bundle created: ${bundle.sid}`);
+
+    // Step 5: Assign address to bundle
+    console.log('🔗 Assigning address to bundle...');
+    await twilioClient.numbers.v2.regulatoryCompliance
+      .bundles(bundle.sid)
+      .itemAssignments.create({
+        objectSid: address.sid,
+      });
+    console.log('✅ Address assigned to bundle');
+
+    // Step 6: Submit for review
+    console.log('📤 Submitting bundle for review...');
+    const updatedBundle = await twilioClient.numbers.v2.regulatoryCompliance
+      .bundles(bundle.sid)
+      .update({ status: 'pending-review' });
+    console.log(`✅ Bundle submitted: ${updatedBundle.status}`);
+
+    // Store in database for reference
+    await db.query(`
+      INSERT INTO twilio_addresses (address_sid, friendly_name, customer_name, street, city, region, postal_code, iso_country, validated)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ON CONFLICT (address_sid) DO NOTHING
+    `, [address.sid, 'Axis - Business Address', customerName, street, city, region, postalCode, 'AU', true]);
+
+    await db.query(`
+      INSERT INTO twilio_regulatory_bundles (bundle_sid, friendly_name, status, regulation_sid, iso_country, number_type, address_sid)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (bundle_sid) DO NOTHING
+    `, [bundle.sid, `Axis - AU ${numberType} Numbers`, updatedBundle.status, regulationSid, 'AU', numberType, address.sid]);
+
+    res.json({
+      success: true,
+      addressSid: address.sid,
+      bundleSid: bundle.sid,
+      status: updatedBundle.status,
+      message: 'AU regulatory bundle created and submitted for review. Approval typically takes 1-3 business days. You will be able to purchase AU numbers once approved.',
+      nextSteps: [
+        'Wait for Twilio to approve the bundle (check email)',
+        'Once approved, AU numbers will be available for purchase in the wizard',
+      ],
+    });
+  } catch (error) {
+    console.error('Error setting up AU bundle:', error);
+    res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
 export default router;
