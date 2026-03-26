@@ -534,56 +534,9 @@ export function ClientsPage() {
           </div>
         </div>
 
-        {/* ── Content ── */}
+        {/* ── Table ── */}
         <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-4">
-          
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-3">
-            {pageRows.length === 0 ? (
-              <div className="text-center py-16 text-sm text-quaternary">No clients found</div>
-            ) : pageRows.map(row => (
-              <div key={row.id}
-                onClick={() => navigate(`/client/${row.id}`)}
-                className="border border-secondary rounded-xl p-4 bg-primary active:bg-secondary_alt transition-colors cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" 
-                      checked={selectedRows.has(row.id)} 
-                      onChange={(e) => { e.stopPropagation(); toggleRow(row.id); }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer shrink-0" />
-                    <div>
-                      <p className="font-semibold" style={{ color: STATUS_MAP[row.status].color }}>{row.customer}</p>
-                      <p className="text-xs text-quaternary font-mono">#{row.id}</p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: STATUS_MAP[row.status].color + "15", color: STATUS_MAP[row.status].color }}>
-                    {STATUS_MAP[row.status].label}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mt-3">
-                  <div>
-                    <span className="text-quaternary">Assigned: </span>
-                    <span className="text-secondary">{row.user}</span>
-                  </div>
-                  <div>
-                    <span className="text-quaternary">State: </span>
-                    <span className="text-secondary">{row.state || "—"}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-quaternary">Group: </span>
-                    <span className="text-secondary">{row.group}</span>
-                  </div>
-                  {row.lastNote && (
-                    <p className="col-span-2 text-tertiary line-clamp-2 mt-1">{row.lastNote}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden lg:block rounded-xl border border-secondary overflow-hidden overflow-x-auto">
+          <div className="rounded-xl border border-secondary overflow-hidden overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-tertiary border-b border-secondary">
                 <tr>
