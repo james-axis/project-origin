@@ -373,10 +373,11 @@ export function ClientsPage() {
   const activeFilterCount = [assignedFilter !== "All", statusFilter !== "All", stateFilter !== "All", groupFilter !== "All", dateFilter !== "all"].filter(Boolean).length;
 
   return (
-    <div className="flex min-h-screen bg-primary">
-      <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} activeUrl="/clients" />
+    <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
+      <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
+      <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
 
-      <main className="flex-1 flex flex-col overflow-hidden lg:pl-[68px]">
+      <main className="min-h-screen overflow-x-hidden lg:flex-1 flex flex-col">
 
         {/* ── Header ── */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-0">
