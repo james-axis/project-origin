@@ -206,10 +206,26 @@ router.patch('/practices/:id', async (req, res) => {
 /**
  * DELETE /api/twilio/practices/:id
  * Delete a practice (and release associated numbers)
+ * For subaccounts, also closes the Twilio subaccount
  */
 router.delete('/practices/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Get practice details
+    const practiceResult = await db.query(
+      'SELECT * FROM twilio_practices WHERE id = $1',
+      [id]
+    );
+
+    if (practiceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Practice not found' });
+    }
+
+    const practice = practiceResult.rows[0];
+    const isSubaccount = practice.is_subaccount && practice.twilio_account_sid;
+
+    console.log(`🗑️ Deleting practice: ${practice.practice_name} (subaccount: ${isSubaccount})`);
 
     // Get associated phone numbers to release
     const numbersResult = await db.query(
@@ -217,20 +233,43 @@ router.delete('/practices/:id', async (req, res) => {
       [id]
     );
 
+    // Use subaccount client if applicable
+    const client = isSubaccount
+      ? twilio(practice.twilio_account_sid, practice.twilio_auth_token)
+      : twilioClient;
+
     // Release numbers from Twilio
     for (const num of numbersResult.rows) {
       try {
-        await twilioClient.incomingPhoneNumbers(num.phone_number_sid).remove();
-        console.log(`Released number: ${num.phone_number_sid}`);
+        await client.incomingPhoneNumbers(num.phone_number_sid).remove();
+        console.log(`✅ Released number: ${num.phone_number_sid}`);
       } catch (err) {
-        console.error(`Failed to release ${num.phone_number_sid}:`, err.message);
+        console.error(`⚠️ Failed to release ${num.phone_number_sid}:`, err.message);
+      }
+    }
+
+    // Close the subaccount if applicable
+    if (isSubaccount) {
+      try {
+        // Setting status to 'closed' permanently closes the subaccount
+        await twilioClient.api.accounts(practice.twilio_account_sid)
+          .update({ status: 'closed' });
+        console.log(`✅ Closed subaccount: ${practice.twilio_account_sid}`);
+      } catch (err) {
+        console.error(`⚠️ Failed to close subaccount:`, err.message);
+        // Continue with deletion even if subaccount close fails
       }
     }
 
     // Delete practice (cascades to phone_numbers, call_flows)
     await db.query('DELETE FROM twilio_practices WHERE id = $1', [id]);
 
-    res.json({ success: true, message: 'Practice deleted' });
+    res.json({ 
+      success: true, 
+      message: isSubaccount 
+        ? 'Practice and Twilio subaccount deleted' 
+        : 'Practice deleted',
+    });
   } catch (error) {
     console.error('Error deleting practice:', error);
     res.status(500).json({ error: error.message });
@@ -292,7 +331,14 @@ router.get('/practices/:id/available-numbers', async (req, res) => {
 
 /**
  * POST /api/twilio/practices/:id/phone-numbers
- * Purchase a phone number for the practice (from main account)
+ * Purchase a phone number for the practice
+ * 
+ * For Axis Organisation (is_subaccount=false):
+ *   - Purchase and keep in main Axis account
+ * 
+ * For Separate Organisation (is_subaccount=true):
+ *   - Purchase from main account (uses Axis regulatory bundle)
+ *   - Transfer number to practice's Twilio subaccount (for billing/risk isolation)
  */
 router.post('/practices/:id/phone-numbers', async (req, res) => {
   try {
@@ -314,8 +360,11 @@ router.post('/practices/:id/phone-numbers', async (req, res) => {
     }
 
     const practice = practiceResult.rows[0];
+    const isSubaccount = practice.is_subaccount && practice.twilio_account_sid;
 
-    // Purchase number from main Axis account
+    console.log(`📞 Purchasing number for practice: ${practice.practice_name} (subaccount: ${isSubaccount})`);
+
+    // Step 1: Purchase number from main Axis account
     const purchaseOptions = {
       phoneNumber,
       friendlyName: friendlyName || `${practice.practice_name} - ${phoneNumber}`,
@@ -325,9 +374,46 @@ router.post('/practices/:id/phone-numbers', async (req, res) => {
       statusCallbackMethod: 'POST',
     };
 
-    const purchased = await twilioClient.incomingPhoneNumbers.create(purchaseOptions);
+    let purchased = await twilioClient.incomingPhoneNumbers.create(purchaseOptions);
+    console.log(`✅ Number purchased from main account: ${purchased.phoneNumber}`);
 
-    console.log(`✅ Number purchased: ${purchased.phoneNumber} for practice ${practice.practice_name}`);
+    let finalNumberSid = purchased.sid;
+
+    // Step 2: If practice is a subaccount, transfer the number
+    if (isSubaccount) {
+      console.log(`🔄 Transferring number to subaccount: ${practice.twilio_account_sid}`);
+      try {
+        // Transfer number to subaccount
+        const transferred = await twilioClient.incomingPhoneNumbers(purchased.sid)
+          .update({
+            accountSid: practice.twilio_account_sid,
+          });
+        
+        finalNumberSid = transferred.sid;
+        console.log(`✅ Number transferred to subaccount: ${transferred.sid}`);
+
+        // Update webhook URLs to use subaccount credentials
+        // The number is now owned by the subaccount, so webhooks will authenticate against it
+        const subaccountClient = twilio(practice.twilio_account_sid, practice.twilio_auth_token);
+        await subaccountClient.incomingPhoneNumbers(transferred.sid).update({
+          voiceUrl: `${BASE_URL}/webhooks/twiml?practice=${id}`,
+          voiceMethod: 'POST',
+          statusCallback: `${BASE_URL}/webhooks/status-callback?practice=${id}`,
+          statusCallbackMethod: 'POST',
+        });
+        console.log(`✅ Webhook URLs configured on subaccount number`);
+      } catch (transferError) {
+        console.error('❌ Number transfer failed:', transferError.message);
+        // Rollback: release the number from main account
+        try {
+          await twilioClient.incomingPhoneNumbers(purchased.sid).remove();
+          console.log('🔄 Rolled back: number released from main account');
+        } catch (rollbackError) {
+          console.error('⚠️ Rollback failed:', rollbackError.message);
+        }
+        throw new Error(`Failed to transfer number to subaccount: ${transferError.message}`);
+      }
+    }
 
     // Store in database with practice_id
     const result = await db.query(`
@@ -338,7 +424,7 @@ router.post('/practices/:id/phone-numbers', async (req, res) => {
       RETURNING *
     `, [
       id,
-      purchased.sid,
+      finalNumberSid,
       purchased.phoneNumber,
       purchased.friendlyName,
       phoneNumber.startsWith('+614') ? 'mobile' : 'local',
@@ -357,8 +443,12 @@ router.post('/practices/:id/phone-numbers', async (req, res) => {
     res.json({
       success: true,
       phoneNumber: result.rows[0],
+      isSubaccount,
+      transferredToSubaccount: isSubaccount,
       nextStep: 'call_routing',
-      message: 'Phone number purchased. Next: Set up call routing.',
+      message: isSubaccount 
+        ? 'Phone number purchased and transferred to practice subaccount. Next: Set up call routing.'
+        : 'Phone number purchased. Next: Set up call routing.',
     });
   } catch (error) {
     console.error('Error purchasing number:', error);
@@ -374,6 +464,19 @@ router.delete('/practices/:id/phone-numbers/:numberId', async (req, res) => {
   try {
     const { id, numberId } = req.params;
 
+    // Get the practice
+    const practiceResult = await db.query(
+      'SELECT * FROM twilio_practices WHERE id = $1',
+      [id]
+    );
+
+    if (practiceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Practice not found' });
+    }
+
+    const practice = practiceResult.rows[0];
+    const isSubaccount = practice.is_subaccount && practice.twilio_account_sid;
+
     // Get the number
     const numResult = await db.query(
       'SELECT * FROM phone_numbers WHERE id = $1 AND practice_id = $2',
@@ -386,8 +489,14 @@ router.delete('/practices/:id/phone-numbers/:numberId', async (req, res) => {
 
     const num = numResult.rows[0];
 
+    // Use subaccount client if applicable
+    const client = isSubaccount
+      ? twilio(practice.twilio_account_sid, practice.twilio_auth_token)
+      : twilioClient;
+
     // Release from Twilio
-    await twilioClient.incomingPhoneNumbers(num.phone_number_sid).remove();
+    await client.incomingPhoneNumbers(num.phone_number_sid).remove();
+    console.log(`✅ Number released: ${num.phone_number} (subaccount: ${isSubaccount})`);
 
     // Delete from database
     await db.query('DELETE FROM phone_numbers WHERE id = $1', [numberId]);
