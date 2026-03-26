@@ -30,6 +30,7 @@ import stage6Routes from './routes/stage6-softphone.js';     // WebRTC Softphone
 import stage7Routes from './routes/stage7-sms.js';           // SMS Integration
 import reportingRoutes from './routes/reporting.js';         // Call History & Reports
 import practicesRoutes from './routes/practices.js';         // Practices Management
+import callFlowsRoutes from './routes/call-flows.js';        // Call Flows Configuration
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -179,6 +180,9 @@ app.use('/webhooks', stage7Routes);  // SMS webhook at /webhooks/telnyx/sms
 
 // Practices Management
 app.use('/api/telnyx/practices', practicesRoutes);
+
+// Call Flows Configuration
+app.use('/api/call-flows', callFlowsRoutes);
 
 // Reporting & Call History
 app.use('/api', reportingRoutes);
