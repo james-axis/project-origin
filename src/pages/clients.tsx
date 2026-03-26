@@ -470,7 +470,7 @@ export function ClientsPage() {
                   (activeTab === key ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
                 <span className="hidden sm:inline">{label}</span>
                 <span className="sm:hidden">{label.split(" ")[0]}</span>
-                <span className={"rounded-full px-1.5 py-0.5 text-[10px] font-semibold " + (activeTab === key ? "bg-brand-secondary text-brand-secondary" : "bg-secondary text-quaternary")}>
+                <span className={"rounded-full px-2 py-0.5 text-[11px] font-semibold " + (activeTab === key ? "bg-brand-solid text-white" : "bg-secondary text-quaternary")}>
                   {tabCount(key)}
                 </span>
               </button>
@@ -522,7 +522,7 @@ export function ClientsPage() {
                   (colPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4" />
                 Columns
-                <span className="rounded-full bg-brand-secondary text-brand-secondary text-[10px] font-semibold px-1.5 py-0.5">
+                <span className="rounded-full bg-brand-solid text-white text-[10px] font-semibold px-1.5 py-0.5">
                   {visibleCols.length}/{CLIENT_COLS.length}
                 </span>
               </button>

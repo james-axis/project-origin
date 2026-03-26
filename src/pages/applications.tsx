@@ -272,7 +272,7 @@ export function ApplicationsPage() {
               <button key={key} onClick={() => { setTab(key); setPage(1); setSelectedRows(new Set()); }}
                 className={"flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (tab===key ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
                 {label}
-                <span className={"rounded-full px-1.5 py-0.5 text-[10px] font-semibold " + (tab===key ? "bg-brand-secondary text-brand-secondary" : "bg-secondary text-quaternary")}>{count}</span>
+                <span className={"rounded-full px-2 py-0.5 text-[11px] font-semibold " + (tab===key ? "bg-brand-solid text-white" : "bg-secondary text-quaternary")}>{count}</span>
               </button>
             ))}
           </div>
@@ -302,7 +302,7 @@ export function ApplicationsPage() {
               <button onClick={() => setColPanelOpen(v => !v)}
                 className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors " + (colPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4" />Columns
-                <span className="rounded-full bg-brand-secondary text-brand-secondary text-[10px] font-semibold px-1.5 py-0.5">{visibleCols.length}/{APP_COLS.length}</span>
+                <span className="rounded-full bg-brand-solid text-white text-[10px] font-semibold px-1.5 py-0.5">{visibleCols.length}/{APP_COLS.length}</span>
               </button>
               {colPanelOpen && <ColumnPanel defs={APP_COLS} order={colState.order} visible={colState.visible} onToggle={toggleCol} onReorder={reorderCols} onClose={() => setColPanelOpen(false)} />}
             </div>

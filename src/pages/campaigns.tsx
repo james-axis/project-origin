@@ -253,7 +253,7 @@ export function CampaignsPage() {
               <button onClick={() => setColPanelOpen(v => !v)}
                 className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors " + (colPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4"/>Columns
-                <span className="rounded-full bg-brand-secondary text-brand-secondary text-[10px] font-semibold px-1.5 py-0.5">{visibleCols.length}/{COLS.length}</span>
+                <span className="rounded-full bg-brand-solid text-white text-[10px] font-semibold px-1.5 py-0.5">{visibleCols.length}/{COLS.length}</span>
               </button>
               {colPanelOpen && <ColPanel defs={COLS} order={colState.order} visible={colState.visible}
                 onToggle={toggleCol}
