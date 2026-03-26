@@ -78,6 +78,17 @@ router.post('/call-flows', async (req, res) => {
 
     const flow = result.rows[0];
 
+    // If practiceId is provided, mark the practice setup as complete
+    if (practiceId) {
+      await db.query(
+        `UPDATE twilio_practices 
+         SET setup_step = 'complete', setup_status = 'complete'
+         WHERE id = $1`,
+        [practiceId]
+      );
+      console.log(`✅ Practice ${practiceId} setup marked complete`);
+    }
+
     res.status(201).json({
       id: flow.id,
       practiceId: flow.practice_id,

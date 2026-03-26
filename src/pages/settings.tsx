@@ -1553,8 +1553,18 @@ function PhoneSettings() {
 
   // Wizard handlers
   const startSetupWizard = (practice?: Practice) => {
+    setError(null);
     if (practice) {
       setWizardPractice(practice);
+      // Populate form data from existing practice
+      setFormData(prev => ({
+        ...prev,
+        practiceName: practice.practice_name || '',
+        contactName: practice.contact_name || '',
+        contactEmail: practice.contact_email || '',
+        abn: practice.abn || '',
+        afslNumber: practice.afsl_number || '',
+      }));
       // Determine which step to continue from
       const stepIndex = getStepIndexForPractice(practice);
       setWizardStep(stepIndex);
@@ -1579,9 +1589,24 @@ function PhoneSettings() {
 
   // Simplified step tracking for 3-step wizard
   const getStepIndexForPractice = (practice: Practice): number => {
-    // Check if practice has phone numbers
-    // For now, always start at step 0 when resuming
-    return 0;
+    // Map setup_step to wizard step index
+    // Backend values: 'practice_created' -> 'number_purchased' -> 'routing_complete' -> 'complete'
+    switch (practice.setup_step) {
+      case 'practice_created':
+        return 1; // Completed practice details, now needs phone number
+      case 'number_purchased':
+        return 2; // Completed number purchase, now needs call routing
+      case 'routing_complete':
+      case 'complete':
+        return 2; // Fully complete - show routing for review/edit
+      default:
+        // Fallback: check phone numbers to determine step
+        const practiceNumbers = phoneNumbers.filter(n => n.practice_id === practice.id);
+        if (practiceNumbers.length > 0) {
+          return 2; // Has numbers, should be on routing
+        }
+        return 1; // Has practice details (since practice exists), needs number
+    }
   };
 
   const getStepStatus = (stepIndex: number, practice: Practice | null): 'complete' | 'current' | 'pending' => {
