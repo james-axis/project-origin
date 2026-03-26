@@ -7,6 +7,25 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
+-- PRACTICES
+-- Organizational units for phone system management
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS practices (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    practice_name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255),
+    contact_email VARCHAR(255),
+    abn VARCHAR(20),
+    afsl_number VARCHAR(50),
+    is_subaccount BOOLEAN DEFAULT FALSE,
+    setup_complete BOOLEAN DEFAULT FALSE,
+    telnyx_app_id VARCHAR(100),              -- Associated Call Control App
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
 -- STAGE 1: Call Control Applications
 -- Telnyx Call Control Applications define webhook endpoints
 -- =====================================================
@@ -29,10 +48,12 @@ CREATE TABLE IF NOT EXISTS phone_numbers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     telnyx_id VARCHAR(100) UNIQUE,           -- Telnyx: id
     phone_number VARCHAR(20) NOT NULL,       -- Telnyx: phone_number (E.164)
+    friendly_name VARCHAR(255),              -- User-friendly label
     connection_id VARCHAR(100),              -- Telnyx: connection_id
     number_type VARCHAR(20) NOT NULL DEFAULT 'local', -- local / toll_free
     region VARCHAR(50) DEFAULT 'sydney',     -- Config: sydney / default
     call_flow_id UUID,                       -- FK to call_flows
+    practice_id UUID,                        -- FK to practices
     messaging_profile_id VARCHAR(100),       -- Telnyx: messaging_profile_id
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()

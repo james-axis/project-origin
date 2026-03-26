@@ -1534,7 +1534,7 @@ function PhoneSettings() {
 
   const fetchPractices = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices`);
+      const res = await fetch(`${API_BASE}/api/telnyx/practices`);
       if (res.ok) {
         const data = await res.json();
         setPractices(data);
@@ -1548,7 +1548,7 @@ function PhoneSettings() {
 
   const fetchPhoneNumbers = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/twilio/phone-numbers`);
+      const res = await fetch(`${API_BASE}/api/telnyx/phone-numbers`);
       if (res.ok) {
         const data = await res.json();
         setPhoneNumbers(data);
@@ -1631,7 +1631,7 @@ function PhoneSettings() {
     setWizardLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices`, {
+      const res = await fetch(`${API_BASE}/api/telnyx/practices`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1666,7 +1666,7 @@ function PhoneSettings() {
       // Use country selector - defaults to US for instant purchase
       const country = formData.numberCountry || 'US';
       const res = await fetch(
-        `${API_BASE}/api/twilio/practices/${wizardPractice.id}/available-numbers?country=${country}&type=${formData.numberType}`
+        `${API_BASE}/api/telnyx/practices/${wizardPractice.id}/available-numbers?country=${country}&type=${formData.numberType}`
       );
       const data = await res.json();
       if (res.ok) {
@@ -1685,7 +1685,7 @@ function PhoneSettings() {
     setWizardLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${wizardPractice.id}/phone-numbers`, {
+      const res = await fetch(`${API_BASE}/api/telnyx/practices/${wizardPractice.id}/phone-numbers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1743,7 +1743,7 @@ function PhoneSettings() {
       // Check if converting to subaccount
       const isConverting = editForm.useSubaccount && !editingPractice.is_subaccount;
       
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${editingPractice.id}`, {
+      const res = await fetch(`${API_BASE}/api/telnyx/practices/${editingPractice.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1772,7 +1772,7 @@ function PhoneSettings() {
     if (!deletingPractice) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/twilio/practices/${deletingPractice.id}`, {
+      const res = await fetch(`${API_BASE}/api/telnyx/practices/${deletingPractice.id}`, {
         method: 'DELETE',
       });
       const data = await res.json();
