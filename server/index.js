@@ -1,11 +1,15 @@
 /**
  * Axis CRM Backend Server
- * Twilio Integration - Complete Self-Service Platform
+ * Telnyx Integration - Complete Self-Service Platform
  * 
  * Tech Stack:
  * - Express.js
  * - PostgreSQL
- * - Twilio Node SDK
+ * - Telnyx Node SDK
+ * - Telnyx WebRTC SDK (frontend)
+ * 
+ * Telnyx offers 30-50% cost savings over Twilio with full feature parity
+ * and a Sydney Point of Presence for low-latency Australian calls.
  */
 
 import 'dotenv/config';
@@ -16,17 +20,15 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import db from './lib/db.js';
 
-// Route imports - all stages (0-10)
-import stage0Routes from './routes/stage0-practices.js'; // Single-account architecture
-import stage1Routes from './routes/stage1-regulatory.js';
-import stage2Routes from './routes/stage2-phone-numbers.js';
-import stage4Routes from './routes/stage4-call-flows.js';
-import stage5Routes from './routes/stage5-inbound.js';
-import stage6Routes from './routes/stage6-outbound.js';
-import stage7Routes from './routes/stage7-recordings.js';
-import stage8Routes from './routes/stage8-transcription.js';
-import stage9Routes from './routes/stage9-softphone.js';
-import stage10Routes from './routes/stage10-reporting.js';
+// Route imports - all stages
+import stage1Routes from './routes/stage1-applications.js';  // Call Control Apps
+import stage2Routes from './routes/stage2-phone-numbers.js'; // Phone Number Purchase
+import stage3Routes from './routes/stage3-inbound.js';       // Inbound Call Handling + Call Flows
+import stage4Routes from './routes/stage4-recording.js';     // Recording & Transcription
+import stage5Routes from './routes/stage5-outbound.js';      // Outbound Calls
+import stage6Routes from './routes/stage6-softphone.js';     // WebRTC Softphone
+import stage7Routes from './routes/stage7-sms.js';           // SMS Integration
+import reportingRoutes from './routes/reporting.js';         // Call History & Reports
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,7 +66,7 @@ app.use(cors({
 // JSON body parser
 app.use(express.json());
 
-// URL-encoded body parser (for Twilio webhooks)
+// URL-encoded body parser (for webhooks)
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging
@@ -81,22 +83,19 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
+    version: '2.0.0',
+    provider: 'telnyx',
     stages: {
-      stage0: 'subaccounts',
-      stage1: 'regulatory',
+      stage1: 'call-control-apps',
       stage2: 'phone-numbers',
-      stage3: 'region-config',
-      stage4: 'call-flows',
-      stage5: 'inbound',
-      stage6: 'outbound',
-      stage7: 'recordings',
-      stage8: 'transcription',
-      stage9: 'softphone',
-      stage10: 'reporting',
+      stage3: 'inbound-calls',
+      stage4: 'recording-transcription',
+      stage5: 'outbound-calls',
+      stage6: 'webrtc-softphone',
+      stage7: 'sms',
     },
     env: {
-      twilioConfigured: !!process.env.TWILIO_ACCOUNT_SID,
+      telnyxConfigured: !!process.env.TELNYX_API_KEY,
       databaseConfigured: !!process.env.DATABASE_URL,
     },
   });
@@ -136,92 +135,6 @@ app.post('/migrate', async (req, res) => {
   }
 });
 
-// Targeted migration for Stage 0 tables only
-app.post('/migrate-stage0', async (req, res) => {
-  try {
-    console.log('🔄 Creating Stage 0 tables...');
-    
-    // Create twilio_practices table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS twilio_practices (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        practice_name VARCHAR(255) NOT NULL,
-        contact_name VARCHAR(255),
-        contact_email VARCHAR(255) NOT NULL,
-        abn VARCHAR(20),
-        afsl_number VARCHAR(20),
-        is_subaccount BOOLEAN DEFAULT FALSE,
-        twilio_account_sid VARCHAR(34) UNIQUE,
-        twilio_auth_token VARCHAR(100),
-        address_sid VARCHAR(34),
-        bundle_sid VARCHAR(34),
-        bundle_status VARCHAR(50) DEFAULT 'not_started',
-        twiml_app_sid VARCHAR(34),
-        setup_step VARCHAR(50) DEFAULT 'not_started',
-        setup_status VARCHAR(20) DEFAULT 'not_started',
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `);
-    console.log('✅ twilio_practices created');
-    
-    // Add is_subaccount column if missing (for existing tables)
-    await db.query(`
-      ALTER TABLE twilio_practices 
-      ADD COLUMN IF NOT EXISTS is_subaccount BOOLEAN DEFAULT FALSE
-    `);
-    console.log('✅ is_subaccount column ensured');
-    
-    // Create twilio_twiml_apps table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS twilio_twiml_apps (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE,
-        app_sid VARCHAR(34) UNIQUE NOT NULL,
-        friendly_name VARCHAR(255),
-        voice_url TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(practice_id)
-      )
-    `);
-    console.log('✅ twilio_twiml_apps created');
-    
-    // Add practice_id columns to existing tables if missing
-    await db.query(`
-      DO $$ 
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'call_flows' AND column_name = 'practice_id') THEN
-          ALTER TABLE call_flows ADD COLUMN practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'phone_numbers' AND column_name = 'practice_id') THEN
-          ALTER TABLE phone_numbers ADD COLUMN practice_id UUID REFERENCES twilio_practices(id) ON DELETE CASCADE;
-        END IF;
-      END $$;
-    `);
-    console.log('✅ practice_id columns added to existing tables');
-    
-    // Verify tables
-    const tablesResult = await db.query(`
-      SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-      ORDER BY table_name
-    `);
-    
-    res.json({
-      success: true,
-      message: 'Stage 0 tables created successfully',
-      tables: tablesResult.rows.map(r => r.table_name),
-    });
-  } catch (error) {
-    console.error('❌ Stage 0 migration failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      detail: error.detail || null,
-    });
-  }
-});
-
 app.get('/tables', async (req, res) => {
   try {
     const result = await db.query(`
@@ -236,42 +149,35 @@ app.get('/tables', async (req, res) => {
 });
 
 // =====================================================
-// API ROUTES - ALL STAGES (0-10)
+// API ROUTES - ALL STAGES
 // =====================================================
 
-// Stage 0: Practice/Adviser Subaccounts
-app.use('/api/twilio', stage0Routes);
-
-// Stage 1: Business Address & Regulatory Setup
-app.use('/api/twilio', stage1Routes);
+// Stage 1: Call Control Applications
+app.use('/api/telnyx', stage1Routes);
 
 // Stage 2: Phone Number Purchase
-app.use('/api/twilio', stage2Routes);
+app.use('/api/telnyx', stage2Routes);
 
-// Stage 4: Call Flows & IVR Configuration
+// Stage 3: Inbound Call Handling + Call Flows
+app.use('/webhooks', stage3Routes);  // Webhooks at /webhooks/telnyx/voice
+app.use('/api', stage3Routes);       // Call flows at /api/call-flows
+
+// Stage 4: Recording & Transcription
 app.use('/api', stage4Routes);
 
-// Stage 5: Inbound Call Handling (webhooks)
-app.use('/webhooks', stage5Routes);
+// Stage 5: Outbound Calls
+app.use('/api', stage5Routes);
 
-// Stage 6: Outbound Calls (click-to-call)
-app.use('/api', stage6Routes);
-app.use('/webhooks', stage6Routes); // outbound-twiml webhook
+// Stage 6: WebRTC Softphone
+app.use('/api/telnyx', stage6Routes);
+app.use('/webhooks', stage6Routes);  // Softphone webhook at /webhooks/telnyx/softphone
 
-// Stage 7: Recording Storage
+// Stage 7: SMS
 app.use('/api', stage7Routes);
-app.use('', stage7Routes); // recording-status webhook at /webhooks
+app.use('/webhooks', stage7Routes);  // SMS webhook at /webhooks/telnyx/sms
 
-// Stage 8: Transcription
-app.use('/api', stage8Routes);
-app.use('', stage8Routes); // transcription-status webhook at /webhooks
-
-// Stage 9: In-Browser Softphone
-app.use('/api/twilio', stage9Routes);
-app.use('/webhooks', stage9Routes); // softphone-twiml webhook
-
-// Stage 10: Call History & Reporting
-app.use('/api', stage10Routes);
+// Reporting & Call History
+app.use('/api', reportingRoutes);
 
 // =====================================================
 // ERROR HANDLING
@@ -301,20 +207,21 @@ async function startServer() {
   app.listen(PORT, () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║           AXIS CRM - TWILIO BACKEND                   ║
+║           AXIS CRM - TELNYX BACKEND                   ║
 ╠═══════════════════════════════════════════════════════╣
 ║  Server running on port ${PORT}                          ║
 ║                                                       ║
-║  Stage 1: Business Address & Regulatory Setup ✅      ║
+║  Provider: Telnyx (30-50% cost savings vs Twilio)     ║
+║  Sydney PoP: Low-latency Australian calls             ║
+║                                                       ║
+║  Stage 1: Call Control Applications ✅                ║
 ║  Stage 2: Phone Number Purchase ✅                    ║
-║  Stage 3: Region Configuration ✅ (built-in)          ║
-║  Stage 4: Call Flow & IVR ✅                          ║
-║  Stage 5: Inbound Call Handling ✅                    ║
-║  Stage 6: Outbound Calls ✅                           ║
-║  Stage 7: Recording Storage ✅                        ║
-║  Stage 8: Transcription ✅                            ║
-║  Stage 9: In-Browser Softphone ✅                     ║
-║  Stage 10: Call History & Reporting ✅                ║
+║  Stage 3: Inbound Call Handling ✅                    ║
+║  Stage 4: Recording & Transcription ✅                ║
+║  Stage 5: Outbound Calls ✅                           ║
+║  Stage 6: WebRTC Softphone ✅                         ║
+║  Stage 7: SMS Integration ✅                          ║
+║  Reporting & Call History ✅                          ║
 ╚═══════════════════════════════════════════════════════╝
     `);
   });
