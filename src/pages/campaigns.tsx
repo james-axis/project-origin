@@ -154,20 +154,16 @@ export function CampaignsPage() {
   const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0);
 
   function renderCell(row: Campaign, key: string) {
-    if (key === "name") return <span className="font-medium text-brand-secondary hover:underline cursor-pointer">{row.name}</span>;
-    if (key === "settable") return (
-      <span className={"inline-flex rounded-full text-[11px] font-medium px-2 py-0.5 " + (row.settable ? "bg-green-50 text-green-700" : "bg-secondary text-quaternary")}>
-        {row.settable ? "Yes" : "No"}
-      </span>
-    );
-    if (key === "group") return <span className="inline-flex rounded-full bg-blue-50 text-blue-700 text-[11px] px-2 py-0.5">{row.group}</span>;
+    if (key === "name") return <span className="font-medium text-primary hover:underline cursor-pointer">{row.name}</span>;
+    if (key === "settable") return <span className="text-xs text-secondary">{row.settable ? "Yes" : "No"}</span>;
+    if (key === "group") return <span className="text-xs text-secondary">{row.group}</span>;
     if (key === "quoteValue" || key === "pendingValue" || key === "submittedValue" || key === "revenue") {
       const val = (row as any)[key] as number;
-      return <span className="text-xs font-medium text-primary">{val > 0 ? `$${val.toLocaleString()}` : "—"}</span>;
+      return <span className="text-xs text-secondary">{val > 0 ? `$${val.toLocaleString()}` : "—"}</span>;
     }
     if (key === "leads" || key === "submittedApps" || key === "pendingApps" || key === "quotesSent" || key === "campaigns") {
       const val = (row as any)[key] as number;
-      return <span className={"text-xs font-semibold " + (val > 0 ? "text-primary" : "text-quaternary")}>{val > 0 ? val.toLocaleString() : "—"}</span>;
+      return <span className="text-xs text-secondary">{val > 0 ? val.toLocaleString() : "—"}</span>;
     }
     return <span className="text-xs text-secondary">{String((row as any)[key] ?? "—") || "—"}</span>;
   }

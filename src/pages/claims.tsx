@@ -120,12 +120,11 @@ export function ClaimsPage() {
   function downloadCSV(){const csv=[visibleCols.map((c:ColDef)=>c.label).join(","),...filtered.map(r=>visibleCols.map((c:ColDef)=>`"${String((r as any)[c.key]??"").replace(/"/g,'""')}"`).join(","))].join("\n");const a=document.createElement("a");a.href="data:text/csv,"+encodeURIComponent(csv);a.download=`claims-${tab}.csv`;a.click();}
 
   function renderCell(row:Claim,key:string){
-    const color=row.status===0?"#D34108":"#3B485B";
-    if(key==="customer")return <span className="font-medium hover:underline" style={{color}}>{row.customer}</span>;
-    if(key==="statusLabel")return <span className="inline-flex rounded-full text-[11px] font-semibold px-2 py-0.5" style={{background:row.status===0?"#FFF4F0":"#F5F5F5",color}}>{row.statusLabel}</span>;
-    if(key==="amount")return <span className="text-xs font-medium text-primary">${(row.amount).toLocaleString()}</span>;
+    if(key==="customer")return <span className="font-medium text-primary hover:underline">{row.customer}</span>;
+    if(key==="statusLabel")return <span className="text-xs text-secondary">{row.statusLabel}</span>;
+    if(key==="amount")return <span className="text-xs text-secondary">${(row.amount).toLocaleString()}</span>;
     if(key==="value")return <span className="text-xs text-secondary">{row.value?`$${row.value.toLocaleString()}`:"—"}</span>;
-    if(key==="company")return <span className="inline-flex rounded-full bg-secondary text-secondary text-[11px] px-2 py-0.5">{row.company}</span>;
+    if(key==="company")return <span className="text-xs text-secondary">{row.company}</span>;
     if(key==="lastNote")return <span className="text-xs text-secondary truncate block max-w-[250px]" title={row.lastNote}>{row.lastNote}</span>;
     return <span className="text-xs text-secondary">{String((row as any)[key]??"—")}</span>;
   }

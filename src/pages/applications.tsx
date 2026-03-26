@@ -79,8 +79,8 @@ const USERS = ["Kam R","SLG Support","Sumeet W","Jas C","Hope L","Adrian R","May
 const COMPANIES = ["Acenda","NEOS","MetLife","OnePath","TAL","Encompass","ClearView","Zurich","AIA"];
 const APP_TYPES = ["Life Insurance","Life and TPD","Life, Trauma and TPD","IP, Life and TPD","IP, Life, Trauma and TPD","IP and Life","Life and Trauma","IP, Life, Child, Trauma"];
 
-const STATUS_ACTIVE_COLOR = "#D34108";
-const STATUS_CLOSED_COLOR = "#22C55E";
+const STATUS_ACTIVE_COLOR = "#1C1C24";
+const STATUS_CLOSED_COLOR = "#3B485B";
 
 const PAGE_SIZE = 20;
 
@@ -218,18 +218,13 @@ export function ApplicationsPage() {
   );
 
   function renderCell(row: Application, key: string) {
-    const color = row.status === 0 ? STATUS_ACTIVE_COLOR : STATUS_CLOSED_COLOR;
     switch (key) {
-      case "customer": return <span className="font-medium hover:underline" style={{ color }}>{row.customer}</span>;
-      case "status":   return <span className="text-xs truncate block max-w-[200px]" title={row.statusLabel} style={{ color }}>{row.statusLabel}</span>;
+      case "customer": return <span className="font-medium text-primary hover:underline">{row.customer}</span>;
+      case "status":   return <span className="text-xs text-secondary">{row.statusLabel}</span>;
       case "premium":  return <span className="text-xs text-secondary">${row.premium.toLocaleString()}</span>;
       case "commission":return <span className="text-xs text-secondary">${row.commission.toLocaleString()}</span>;
-      case "type":     return (
-        <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 text-[11px] font-medium px-2 py-0.5">{row.type}</span>
-      );
-      case "company":  return (
-        <span className="inline-flex items-center rounded-full bg-secondary text-secondary text-[11px] font-medium px-2 py-0.5">{row.company}</span>
-      );
+      case "type":     return <span className="text-xs text-secondary">{row.type}</span>;
+      case "company":  return <span className="text-xs text-secondary">{row.company}</span>;
       default: return <span className="text-xs text-secondary">{String((row as any)[key] ?? "—")}</span>;
     }
   }

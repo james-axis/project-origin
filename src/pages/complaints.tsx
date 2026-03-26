@@ -104,9 +104,9 @@ export function ComplaintsPage() {
   function downloadCSV(){const csv=[visibleCols.map((c:ColDef)=>c.label).join(","),...filtered.map(r=>visibleCols.map((c:ColDef)=>`"${String((r as any)[c.key]??"").replace(/"/g,'""')}"`).join(","))].join("\n");const a=document.createElement("a");a.href="data:text/csv,"+encodeURIComponent(csv);a.download=`complaints-${tab}.csv`;a.click();}
 
   function renderCell(row:Complaint,key:string){
-    if(key==="customer")return <span className="font-medium hover:underline" style={{color:"#D34108"}}>{row.customer}</span>;
-    if(key==="statusLabel")return <span className="inline-flex rounded-full bg-green-50 text-green-700 text-[11px] font-semibold px-2 py-0.5">{row.statusLabel}</span>;
-    if(key==="type")return <span className="inline-flex rounded-full bg-purple-50 text-purple-700 text-[11px] px-2 py-0.5">{row.type}</span>;
+    if(key==="customer")return <span className="font-medium text-primary hover:underline">{row.customer}</span>;
+    if(key==="statusLabel")return <span className="text-xs text-secondary">{row.statusLabel}</span>;
+    if(key==="type")return <span className="text-xs text-secondary">{row.type}</span>;
     if(key==="query"||key==="resolution"||key==="lastNote")return <span className="text-xs text-secondary truncate block max-w-[250px]" title={String((row as any)[key])}>{String((row as any)[key])||"—"}</span>;
     return <span className="text-xs text-secondary">{String((row as any)[key]??"—")}</span>;
   }

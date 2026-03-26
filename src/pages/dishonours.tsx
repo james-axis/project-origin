@@ -113,12 +113,11 @@ export function DishonoursPage() {
   function downloadCSV(){const csv=[visibleCols.map((c:ColDef)=>c.label).join(","),...filtered.map(r=>visibleCols.map((c:ColDef)=>`"${String((r as any)[c.key]??"").replace(/"/g,'""')}"`).join(","))].join("\n");const a=document.createElement("a");a.href="data:text/csv,"+encodeURIComponent(csv);a.download=`dishonours-${tab}.csv`;a.click();}
 
   function renderCell(row:Dishonour,key:string){
-    const color=row.status===0?"#D34108":"#22C55E";
-    if(key==="customer")return <span className="font-medium hover:underline" style={{color}}>{row.customer}</span>;
-    if(key==="statusLabel")return <span className="inline-flex rounded-full text-[11px] font-semibold px-2 py-0.5" style={{background:"#FFF4F0",color:"#D34108"}}>{row.statusLabel}</span>;
-    if(key==="amount")return <span className="text-xs font-medium text-primary">${row.amount.toLocaleString()}</span>;
-    if(key==="company")return <span className="inline-flex rounded-full bg-secondary text-secondary text-[11px] px-2 py-0.5">{row.company}</span>;
-    if(key==="type")return <span className="inline-flex rounded-full bg-orange-50 text-orange-700 text-[11px] px-2 py-0.5">{row.type}</span>;
+    if(key==="customer")return <span className="font-medium text-primary hover:underline">{row.customer}</span>;
+    if(key==="statusLabel")return <span className="text-xs text-secondary">{row.statusLabel}</span>;
+    if(key==="amount")return <span className="text-xs text-secondary">${row.amount.toLocaleString()}</span>;
+    if(key==="company")return <span className="text-xs text-secondary">{row.company}</span>;
+    if(key==="type")return <span className="text-xs text-secondary">{row.type}</span>;
     if(key==="lastNote")return <span className="text-xs text-secondary truncate block max-w-[250px]" title={row.lastNote}>{row.lastNote}</span>;
     return <span className="text-xs text-secondary">{String((row as any)[key]??"—")}</span>;
   }

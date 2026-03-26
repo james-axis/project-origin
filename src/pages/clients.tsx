@@ -23,14 +23,14 @@ interface Client {
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_MAP: Record<ClientStatus, { label: string; color: string; tab: string }> = {
-  0: { label: "Prospect",              color: "#D34108", tab: "prospects"    },
-  1: { label: "In Progress",           color: "#7C3AED", tab: "inprogress"  },
-  2: { label: "Scheduled Appointment", color: "#0284C7", tab: "scheduled"   },
-  3: { label: "Quote Sent",            color: "#059669", tab: "quotesent"   },
-  4: { label: "Application Pending",   color: "#D97706", tab: "apppending"  },
-  5: { label: "Client",                color: "#16A34A", tab: "clients"     },
-  6: { label: "On Hold",               color: "#64748B", tab: "onhold"      },
-  7: { label: "Archive",               color: "#9CA3AF", tab: "archive"     },
+  0: { label: "Prospect",              color: "#1C1C24", tab: "prospects"    },
+  1: { label: "In Progress",           color: "#1C1C24", tab: "inprogress"  },
+  2: { label: "Scheduled Appointment", color: "#1C1C24", tab: "scheduled"   },
+  3: { label: "Quote Sent",            color: "#1C1C24", tab: "quotesent"   },
+  4: { label: "Application Pending",   color: "#1C1C24", tab: "apppending"  },
+  5: { label: "Client",                color: "#1C1C24", tab: "clients"     },
+  6: { label: "On Hold",               color: "#3B485B", tab: "onhold"      },
+  7: { label: "Archive",               color: "#3B485B", tab: "archive"     },
 };
 
 type TabKey = "active" | "prospects" | "inprogress" | "scheduled" | "quotesent" | "apppending" | "clients" | "onhold" | "archive";
