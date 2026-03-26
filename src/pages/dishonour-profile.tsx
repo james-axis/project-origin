@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import type { FC } from "react";
-import { ChevronDown, ChevronRight, Plus, X, Edit01, Check, File01, User01, Users01, Settings01, DotsGrid, Pin01, Pin02, MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01 } from "@untitledui/icons";
+import { ChevronDown, ChevronRight, Plus, X, Edit01, Check, File01, User01, Users01, Settings01, DotsGrid, Pin01, Pin02, MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, Lock01 } from "@untitledui/icons";
 
 interface NoteEntry { id: number; text: string; author: string; date: string; }
 interface FieldDef  { key: string; label: string; defaultVisible: boolean; }
@@ -26,6 +26,7 @@ const FILE_LIBRARY = [{ date:"24/03/2026", name:"Policy - 7105098 MR ANDREW T MA
 const USERS_LIST = ["Beau Portelli","SLG Support","James Nicholls","Aldrine Regido","John Rojas","Rebel Servante"];
 
 const SECTION_DEFS = [
+  { id:"customer_info", label:"Customer Information" },
   { id:"app_info",    label:"Application Information" },
   { id:"dis_info",    label:"Dishonour Information" },
   { id:"iextend",     label:"iExtend Information" },
@@ -80,9 +81,9 @@ function FieldPanel({ defs, state, onChange, onClose, anchorRef }: { defs:FieldD
   );
 }
 
-function SectionCard({ id,title,children,action,actionLabel,defaultOpen=true,onDragStart,onDragOver,onDrop,onDragEnd,isDragOver,extraAction }:{id:string;title:string;children:React.ReactNode;action?:()=>void;actionLabel?:string;defaultOpen?:boolean;onDragStart?:(id:string)=>void;onDragOver?:(id:string)=>void;onDrop?:(id:string)=>void;onDragEnd?:()=>void;isDragOver?:boolean;extraAction?:React.ReactNode;}) {
+function SectionCard({ id,title,children,action,actionLabel,defaultOpen=true,onDragStart,onDragOver,onDrop,onDragEnd,isDragOver,extraAction,locked }:{id:string;title:string;children:React.ReactNode;action?:()=>void;actionLabel?:string;defaultOpen?:boolean;onDragStart?:(id:string)=>void;onDragOver?:(id:string)=>void;onDrop?:(id:string)=>void;onDragEnd?:()=>void;isDragOver?:boolean;extraAction?:React.ReactNode;locked?:boolean;}) {
   const [open,setOpen]=useState(defaultOpen);
-  return <div draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";onDragStart?.(id);}} onDragOver={e=>{e.preventDefault();onDragOver?.(id);}} onDrop={()=>onDrop?.(id)} onDragEnd={()=>onDragEnd?.()} className={"rounded-xl border bg-primary overflow-hidden shadow-sm "+(isDragOver?"border-brand ring-2 ring-brand ring-opacity-30":"border-secondary")}><div className="flex w-full items-center justify-between px-3 py-3 hover:bg-secondary_alt"><div className="flex items-center gap-2 flex-1 min-w-0"><div className="cursor-grab text-quaternary p-0.5 shrink-0"><DotsGrid className="size-4"/></div><button onClick={()=>setOpen(o=>!o)} className="flex items-center gap-2 flex-1 text-left"><div className="w-1 h-4 rounded-full bg-brand-solid shrink-0"/><span className="text-sm font-semibold text-primary truncate">{title}</span></button></div><div className="flex items-center gap-1.5 shrink-0">{extraAction}{action&&actionLabel&&<button onClick={e=>{e.stopPropagation();action();}} className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary"><Plus className="size-3 text-success-primary"/>{actionLabel}</button>}<button onClick={()=>setOpen(o=>!o)}>{open?<ChevronDown className="size-4 text-quaternary"/>:<ChevronRight className="size-4 text-quaternary"/>}</button></div></div>{open&&<div className="border-t border-secondary">{children}</div>}</div>;
+  return <div draggable={!locked} onDragStart={locked?undefined:e=>{e.dataTransfer.effectAllowed="move";onDragStart?.(id);}} onDragOver={e=>{e.preventDefault();onDragOver?.(id);}} onDrop={()=>onDrop?.(id)} onDragEnd={()=>onDragEnd?.()} className={"rounded-xl border bg-primary overflow-hidden shadow-sm "+(isDragOver?"border-brand ring-2 ring-brand ring-opacity-30":"border-secondary")}><div className="flex w-full items-center justify-between px-3 py-3 hover:bg-secondary_alt"><div className="flex items-center gap-2 flex-1 min-w-0"><div className={(locked?"":"cursor-grab ")+"text-quaternary p-0.5 shrink-0"}>{locked?<Lock01 className="size-4"/>:<DotsGrid className="size-4"/>}</div><button onClick={()=>setOpen(o=>!o)} className="flex items-center gap-2 flex-1 text-left"><div className="w-1 h-4 rounded-full bg-brand-solid shrink-0"/><span className="text-sm font-semibold text-primary truncate">{title}</span></button></div><div className="flex items-center gap-1.5 shrink-0">{extraAction}{action&&actionLabel&&<button onClick={e=>{e.stopPropagation();action();}} className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary"><Plus className="size-3 text-success-primary"/>{actionLabel}</button>}<button onClick={()=>setOpen(o=>!o)}>{open?<ChevronDown className="size-4 text-quaternary"/>:<ChevronRight className="size-4 text-quaternary"/>}</button></div></div>{open&&<div className="border-t border-secondary">{children}</div>}</div>;
 }
 
 function IC({ label, value }: { label:string;value:React.ReactNode }) { return <div><p className="text-[11px] text-quaternary mb-0.5">{label}</p><div className="text-sm text-primary font-medium">{value||<span className="text-quaternary">—</span>}</div></div>; }
@@ -94,13 +95,25 @@ export function DishonourProfilePage() {
   const [fieldState,setFieldState]=useState<FieldState>(loadFS);const[fieldPanelOpen,setFieldPanelOpen]=useState(false);const gearRef=useRef<HTMLButtonElement|null>(null);
   const [sectionOrder,setSectionOrder]=useState<string[]>(loadSO);const[dragId,setDragId]=useState<string|null>(null);const[dragOverId,setDragOverId]=useState<string|null>(null);
   function updateFS(s:FieldState){setFieldState(s);saveFS(s);}
-  function handleDrop(toId:string){if(!dragId||dragId===toId)return;const n=[...sectionOrder];const fi=n.indexOf(dragId);const ti=n.indexOf(toId);n.splice(fi,1);n.splice(ti,0,dragId);setSectionOrder(n);saveSO(n);setDragId(null);setDragOverId(null);}
+  function handleDrop(toId:string){if(!dragId||dragId===toId)return;if(dragId==="customer_info"||toId==="customer_info")return;const n=[...sectionOrder];const fi=n.indexOf(dragId);const ti=n.indexOf(toId);n.splice(fi,1);n.splice(ti,0,dragId);setSectionOrder(n);saveSO(n);setDragId(null);setDragOverId(null);}
   function addNote(){if(!noteText.trim())return;setNotes(p=>[{id:Date.now(),text:noteText,author:"James Nicholls",date:new Date().toLocaleDateString("en-AU")},...p]);setNoteText("");}
 
   const dp=(id:string)=>({onDragStart:(sid:string)=>setDragId(sid),onDragOver:(sid:string)=>setDragOverId(sid),onDrop:handleDrop,onDragEnd:()=>{setDragId(null);setDragOverId(null);},isDragOver:dragOverId===id});
 
   function renderSection(id:string){
     switch(id){
+      case "customer_info": return (
+        <SectionCard key={id} id={id} title="Customer Information" locked>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">
+            <IC label="First/Middle Name" value={`${DIS.customer.title} ${DIS.customer.firstName}`}/>
+            <IC label="Last Name" value={DIS.customer.lastName}/>
+            <IC label="Phone" value={<span className="text-brand-secondary">{DIS.customer.phone}</span>}/>
+            <IC label="Email" value={<span className="text-brand-secondary">{DIS.customer.email}</span>}/>
+            <IC label="State" value={`${DIS.customer.state} (08:00)`}/>
+            <IC label="Address" value={`${DIS.customer.address}, ${DIS.customer.city} ${DIS.customer.postcode}`}/>
+          </div>
+        </SectionCard>
+      );
       case "app_info": return (
         <SectionCard key={id} id={id} title="Application Information" {...dp(id)}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import type { FC } from "react";
-import { ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check, File01, User01, Users01, Settings01, DotsGrid, Pin01, Pin02, MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01 } from "@untitledui/icons";
+import { ChevronDown, ChevronRight, Plus, X, Edit01, Phone01, Mail01, Check, File01, User01, Users01, Settings01, DotsGrid, Pin01, Pin02, MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, Lock01 } from "@untitledui/icons";
 
 interface NoteEntry { id: number; text: string; author: string; date: string; }
 interface FieldDef  { key: string; label: string; defaultVisible: boolean; }
@@ -80,14 +80,14 @@ function FieldPanel({ defs, state, onChange, onClose, anchorRef }: { defs:FieldD
   );
 }
 
-function SectionCard({ id, title, children, action, actionLabel, defaultOpen=true, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver, extraAction }: { id:string;title:string;children:React.ReactNode;action?:()=>void;actionLabel?:string;defaultOpen?:boolean;onDragStart?:(id:string)=>void;onDragOver?:(id:string)=>void;onDrop?:(id:string)=>void;onDragEnd?:()=>void;isDragOver?:boolean;extraAction?:React.ReactNode; }) {
+function SectionCard({ id, title, children, action, actionLabel, defaultOpen=true, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver, extraAction, locked }: { id:string;title:string;children:React.ReactNode;action?:()=>void;actionLabel?:string;defaultOpen?:boolean;onDragStart?:(id:string)=>void;onDragOver?:(id:string)=>void;onDrop?:(id:string)=>void;onDragEnd?:()=>void;isDragOver?:boolean;extraAction?:React.ReactNode;locked?:boolean; }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";onDragStart?.(id);}} onDragOver={e=>{e.preventDefault();onDragOver?.(id);}} onDrop={()=>onDrop?.(id)} onDragEnd={()=>onDragEnd?.()}
+    <div draggable={!locked} onDragStart={locked?undefined:e=>{e.dataTransfer.effectAllowed="move";onDragStart?.(id);}} onDragOver={e=>{e.preventDefault();onDragOver?.(id);}} onDrop={()=>onDrop?.(id)} onDragEnd={()=>onDragEnd?.()}
       className={"rounded-xl border bg-primary overflow-hidden shadow-sm "+(isDragOver?"border-brand ring-2 ring-brand ring-opacity-30":"border-secondary")}>
       <div className="flex w-full items-center justify-between px-3 py-3 hover:bg-secondary_alt">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="cursor-grab text-quaternary p-0.5 shrink-0"><DotsGrid className="size-4"/></div>
+          <div className={(locked?"":"cursor-grab ")+"text-quaternary p-0.5 shrink-0"}>{locked?<Lock01 className="size-4"/>:<DotsGrid className="size-4"/>}</div>
           <button onClick={()=>setOpen(o=>!o)} className="flex items-center gap-2 flex-1 text-left">
             <div className="w-1 h-4 rounded-full bg-brand-solid shrink-0"/><span className="text-sm font-semibold text-primary truncate">{title}</span>
           </button>
@@ -120,6 +120,8 @@ export function ClaimProfilePage() {
   function updateFS(s: FieldState) { setFieldState(s); saveFS(s); }
   function handleDrop(toId: string) {
     if (!dragId||dragId===toId) return;
+    // customer_info is locked and always stays first
+    if (dragId === "customer_info" || toId === "customer_info") return;
     const n=[...sectionOrder];const fi=n.indexOf(dragId);const ti=n.indexOf(toId);n.splice(fi,1);n.splice(ti,0,dragId);
     setSectionOrder(n);saveSO(n);setDragId(null);setDragOverId(null);
   }
@@ -143,7 +145,7 @@ export function ClaimProfilePage() {
   function renderSection(id: string) {
     switch(id) {
       case "customer_info": return (
-        <SectionCard key={id} id={id} title="Customer Information" {...dp(id)}
+        <SectionCard key={id} id={id} title="Customer Information" locked
           extraAction={<div className="relative"><button ref={gearRef} onClick={e=>{e.stopPropagation();setFieldPanelOpen(v=>!v);}} className={"flex size-7 items-center justify-center rounded-lg border transition-colors "+(fieldPanelOpen?"border-brand bg-brand-secondary text-brand-secondary":"border-secondary hover:bg-secondary text-quaternary")}><Settings01 className="size-3.5"/></button>{fieldPanelOpen&&<FieldPanel defs={CUST_FIELDS} state={fieldState} onChange={updateFS} onClose={()=>setFieldPanelOpen(false)} anchorRef={gearRef}/>}</div>}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 px-4 py-4">{visibleFields.map(f=><InfoCell key={f.key} label={f.label} value={renderFV(f.key)}/>)}</div>
         </SectionCard>

@@ -10,7 +10,7 @@ import {
   File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
   Lightbulb02, FileSearch02, FileCheck02, Shield01, AlertTriangle, MessageSquare01,
   MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, FilePlus02, Folder, BellOff01,
-  BarChart01,
+  BarChart01, Lock01,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -324,10 +324,10 @@ function SectionCard({
       onDragEnd={locked ? undefined : () => onDragEnd?.()}
       className={"rounded-xl border bg-primary overflow-hidden transition-all " + (isDragOver ? "border-brand shadow-lg ring-2 ring-brand ring-opacity-30" : "border-secondary shadow-sm")}>
       <div className="flex w-full items-center justify-between px-3 py-3 hover:bg-secondary_alt transition-colors">
-        {/* Drag handle — hidden if locked */}
+        {/* Drag handle / Lock icon */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className={locked ? "p-0.5 shrink-0 opacity-0 pointer-events-none" : "cursor-grab text-quaternary hover:text-secondary transition-colors p-0.5 shrink-0"}>
-            <DotsGrid className="size-4" />
+          <div className={locked ? "text-quaternary p-0.5 shrink-0" : "cursor-grab text-quaternary hover:text-secondary transition-colors p-0.5 shrink-0"}>
+            {locked ? <Lock01 className="size-4" /> : <DotsGrid className="size-4" />}
           </div>
           <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
             <div className="w-1 h-4 rounded-full bg-brand-solid shrink-0" />
@@ -438,6 +438,8 @@ export function ClientProfilePage() {
 
   function handleSectionDrop(toId: string) {
     if (!dragSectionId || dragSectionId === toId) return;
+    // customer_info is locked and always stays first
+    if (dragSectionId === "customer_info" || toId === "customer_info") return;
     const next = [...sectionOrder];
     const fi = next.indexOf(dragSectionId);
     const ti = next.indexOf(toId);

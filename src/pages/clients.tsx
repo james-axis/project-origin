@@ -535,7 +535,7 @@ export function ClientsPage() {
         </div>
 
         {/* ── Content ── */}
-        <div className="flex-1 overflow-auto p-4 sm:px-6 lg:px-8">
+        <div className="flex-1 overflow-auto px-4 pt-3 pb-4 sm:px-6 lg:px-8">
           
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-3">
@@ -583,7 +583,7 @@ export function ClientsPage() {
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden lg:block rounded-xl border border-secondary overflow-hidden overflow-x-auto">
+          <div className="hidden lg:block border border-secondary overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-tertiary border-b border-secondary">
                 <tr>

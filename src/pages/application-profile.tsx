@@ -10,7 +10,7 @@ import {
   File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
   FileCheck02, FileSearch02, Shield01, AlertTriangle, Key01,
   MessageChatSquare, Send01, FilePlus02, Calendar, Upload01, RefreshCw01,
-  Folder, BarChart01,
+  Folder, BarChart01, Lock01,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -324,21 +324,21 @@ function FieldPanel({ defs, state, onChange, onClose, anchorRef }: {
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 function SectionCard({ id, title, children, action, actionLabel, defaultOpen=true,
-  onDragStart, onDragOver, onDrop, onDragEnd, isDragOver, extraAction }: {
+  onDragStart, onDragOver, onDrop, onDragEnd, isDragOver, extraAction, locked }: {
   id: string; title: string; children: React.ReactNode;
   action?: () => void; actionLabel?: string; defaultOpen?: boolean;
   onDragStart?: (id: string) => void; onDragOver?: (id: string) => void;
   onDrop?: (id: string) => void; onDragEnd?: () => void; isDragOver?: boolean;
-  extraAction?: React.ReactNode;
+  extraAction?: React.ReactNode; locked?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div draggable onDragStart={e => { e.dataTransfer.effectAllowed="move"; onDragStart?.(id); }}
+    <div draggable={!locked} onDragStart={e => { if (locked) return; e.dataTransfer.effectAllowed="move"; onDragStart?.(id); }}
       onDragOver={e => { e.preventDefault(); onDragOver?.(id); }} onDrop={() => onDrop?.(id)} onDragEnd={() => onDragEnd?.()}
       className={"rounded-xl border bg-primary overflow-hidden transition-all shadow-sm " + (isDragOver?"border-brand ring-2 ring-brand ring-opacity-30":"border-secondary")}>
       <div className="flex w-full items-center justify-between px-3 py-3 hover:bg-secondary_alt transition-colors">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="cursor-grab text-quaternary p-0.5 shrink-0"><DotsGrid className="size-4" /></div>
+          <div className={(locked ? "" : "cursor-grab ") + "text-quaternary p-0.5 shrink-0"}>{locked ? <Lock01 className="size-4" /> : <DotsGrid className="size-4" />}</div>
           <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 flex-1 text-left">
             <div className="w-1 h-4 rounded-full bg-brand-solid shrink-0" />
             <span className="text-sm font-semibold text-primary truncate">{title}</span>
@@ -390,6 +390,8 @@ export function ApplicationProfilePage() {
   function updateFieldState(s: FieldState) { setFieldState(s); saveFieldState(s); }
   function handleSectionDrop(toId: string) {
     if (!dragSectionId || dragSectionId === toId) return;
+    // customer_info is locked and always stays first
+    if (dragSectionId === "customer_info" || toId === "customer_info") return;
     const next = [...sectionOrder]; const fi = next.indexOf(dragSectionId); const ti = next.indexOf(toId);
     next.splice(fi, 1); next.splice(ti, 0, dragSectionId);
     setSectionOrder(next); saveSectionOrder(next); setDragSectionId(null); setDragOverSectionId(null);
@@ -443,7 +445,7 @@ export function ApplicationProfilePage() {
   function renderSection(id: string) {
     switch (id) {
       case "customer_info": return (
-        <SectionCard key={id} id={id} title="Customer Information" {...dragProps(id)}
+        <SectionCard key={id} id={id} title="Customer Information" locked
           extraAction={
             <div className="relative">
               <button ref={gearBtnRef} onClick={e => { e.stopPropagation(); setFieldPanelOpen(v => !v); }}
