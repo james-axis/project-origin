@@ -174,8 +174,8 @@ export function InsuranceProductsPage() {
       rows = rows.filter(r => r.clientName.toLowerCase().includes(s) || r.policyId.toLowerCase().includes(s) || r.adviser.toLowerCase().includes(s));
     }
     return [...rows].sort((a, b) => {
-      const va = String((a as Record<string, unknown>)[sortKey] ?? "");
-      const vb = String((b as Record<string, unknown>)[sortKey] ?? "");
+      const va = String((a as unknown as Record<string, unknown>)[sortKey] ?? "");
+      const vb = String((b as unknown as Record<string, unknown>)[sortKey] ?? "");
       return sortDir === "asc" ? va.localeCompare(vb, undefined, { numeric: true }) : vb.localeCompare(va, undefined, { numeric: true });
     });
   }, [insurerFilter, productFilter, adviserGroupFilter, reconciledFilter, search, sortKey, sortDir]);
@@ -184,7 +184,7 @@ export function InsuranceProductsPage() {
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Visible columns
-  const visibleCols = useMemo(() => colState.order.filter(k => colState.visible[k]).map(k => PRODUCT_COLS.find(c => c.key === k)!).filter(Boolean), [colState]);
+  const visibleCols = useMemo(() => colState.order.filter((k: string) => colState.visible[k]).map((k: string) => PRODUCT_COLS.find((c: ColDef) => c.key === k)!).filter(Boolean), [colState]);
 
   // Metrics
   const totalPolicies = filtered.length;
@@ -260,9 +260,9 @@ export function InsuranceProductsPage() {
 
   // Download CSV
   function downloadCSV() {
-    const headers = visibleCols.map(c => c.label);
-    const rows = filtered.map(r => visibleCols.map(c => String((r as Record<string, unknown>)[c.key] ?? "")));
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const headers = visibleCols.map((c: ColDef) => c.label);
+    const rows = filtered.map((r: InsuranceProduct) => visibleCols.map((c: ColDef) => String((r as unknown as Record<string, unknown>)[c.key] ?? "")));
+    const csv = [headers.join(","), ...rows.map((r: string[]) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -360,10 +360,10 @@ export function InsuranceProductsPage() {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={insurerData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={2} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                    <Pie data={insurerData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={2} label={({ name, percent }) => `${name || ""} ${((percent || 0) * 100).toFixed(0)}%`} labelLine={false}>
                       {insurerData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(value: number) => [value.toLocaleString(), "Policies"]} />
+                    <Tooltip formatter={(value) => [Number(value).toLocaleString(), "Policies"]} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -377,7 +377,7 @@ export function InsuranceProductsPage() {
                   <BarChart data={productData} layout="vertical" margin={{ left: 80, right: 20 }}>
                     <XAxis type="number" tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
-                    <Tooltip formatter={(value: number) => [value.toLocaleString(), "Policies"]} />
+                    <Tooltip formatter={(value) => [Number(value).toLocaleString(), "Policies"]} />
                     <Bar dataKey="value" fill="#D34108" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -416,15 +416,15 @@ export function InsuranceProductsPage() {
             <table className="w-full border-collapse text-sm">
               <thead className="bg-tertiary border-b border-secondary">
                 <tr>
-                  {visibleCols.map((col, idx) => <Th key={col.key} col={col} isLocked={idx === 0} />)}
+                  {visibleCols.map((col: ColDef, idx: number) => <Th key={col.key} col={col} isLocked={idx === 0} />)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary bg-primary">
                 {pageRows.length === 0
                   ? <tr><td colSpan={visibleCols.length} className="px-4 py-16 text-center text-sm text-quaternary">No products found</td></tr>
-                  : pageRows.map(row => (
+                  : pageRows.map((row: InsuranceProduct) => (
                     <tr key={row.id} className="group hover:bg-secondary_alt cursor-pointer transition-colors">
-                      {visibleCols.map((col, idx) => (
+                      {visibleCols.map((col: ColDef, idx: number) => (
                         <td key={col.key} className={"px-3 py-2.5" + (idx === 0 ? " sticky left-0 bg-primary group-hover:bg-secondary_alt z-10" : "")}>{renderCell(row, col.key)}</td>
                       ))}
                     </tr>
