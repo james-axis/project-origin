@@ -12,7 +12,7 @@ import db from '../lib/db.js';
 const router = Router();
 
 // Initialize Telnyx client
-const telnyx = Telnyx(process.env.TELNYX_API_KEY);
+const telnyx = new Telnyx(process.env.TELNYX_API_KEY);
 
 // =====================================================
 // GET /api/recordings
