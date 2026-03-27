@@ -1494,6 +1494,7 @@ function PhoneSettings() {
     numberType: 'local',
     numberCountry: 'US', // Default to US for instant purchase (no regulatory bundle needed)
     selectedNumber: '',
+    selectedNumberIndex: -1,
   });
   
   // Available numbers for purchase
@@ -1703,6 +1704,7 @@ function PhoneSettings() {
         numberType: 'local',
         numberCountry: 'US',
         selectedNumber: '',
+        selectedNumberIndex: -1,
       });
     }
     setShowWizard(true);
@@ -2087,7 +2089,10 @@ function PhoneSettings() {
             <div className="flex gap-3">
               <select
                 value={formData.numberCountry}
-                onChange={e => setFormData(prev => ({ ...prev, numberCountry: e.target.value, selectedNumber: '' }))}
+                onChange={e => {
+                  setFormData(prev => ({ ...prev, numberCountry: e.target.value, selectedNumber: '', selectedNumberIndex: -1 }));
+                  setAvailableNumbers([]);
+                }}
                 className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
               >
                 <option value="US">United States (+1)</option>
@@ -2096,7 +2101,10 @@ function PhoneSettings() {
               </select>
               <select
                 value={formData.numberType}
-                onChange={e => setFormData(prev => ({ ...prev, numberType: e.target.value, selectedNumber: '' }))}
+                onChange={e => {
+                  setFormData(prev => ({ ...prev, numberType: e.target.value, selectedNumber: '', selectedNumberIndex: -1 }));
+                  setAvailableNumbers([]);
+                }}
                 className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:ring-1 focus:ring-brand"
               >
                 <option value="local">Local</option>
@@ -2131,15 +2139,15 @@ function PhoneSettings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-secondary">
-                    {availableNumbers.map(num => (
+                    {availableNumbers.map((num, index) => (
                       <tr 
-                        key={num.phoneNumber} 
-                        onClick={() => setFormData(prev => ({ ...prev, selectedNumber: num.phoneNumber }))}
-                        className={`cursor-pointer transition-colors ${formData.selectedNumber === num.phoneNumber ? 'bg-brand-secondary' : 'hover:bg-secondary_alt'}`}
+                        key={index} 
+                        onClick={() => setFormData(prev => ({ ...prev, selectedNumber: num.phoneNumber, selectedNumberIndex: index }))}
+                        className={`cursor-pointer transition-colors ${formData.selectedNumberIndex === index ? 'bg-brand-secondary' : 'hover:bg-secondary_alt'}`}
                       >
                         <td className="px-4 py-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.selectedNumber === num.phoneNumber ? 'border-brand-solid bg-brand-solid' : 'border-secondary'}`}>
-                            {formData.selectedNumber === num.phoneNumber && <Check className="size-2.5 text-white" />}
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.selectedNumberIndex === index ? 'border-brand-solid bg-brand-solid' : 'border-secondary'}`}>
+                            {formData.selectedNumberIndex === index && <Check className="size-2.5 text-white" />}
                           </div>
                         </td>
                         <td className="px-4 py-3 font-mono text-primary text-sm">{num.friendlyName}</td>
