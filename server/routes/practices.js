@@ -183,17 +183,39 @@ router.get('/:id/available-numbers', async (req, res) => {
     const response = await telnyx.availablePhoneNumbers.list(searchParams);
 
     // Return camelCase keys to match frontend expectations
-    const numbers = response.data.map(n => ({
-      phoneNumber: n.phone_number,
-      friendlyName: n.phone_number,
-      region: n.region_information?.[0]?.region_name || country,
-      locality: n.region_information?.[0]?.region_name || null,
-      capabilities: {
-        voice: true,
-        sms: n.features?.includes('sms') || false,
-      },
-      monthlyCost: n.cost_information?.monthly_cost || '1.00',
-    }));
+    const numbers = response.data.map(n => {
+      // Get region name, checking for Telnyx masked values
+      const rawRegion = n.region_information?.[0]?.region_name;
+      const isMasked = !rawRegion || rawRegion === '---' || rawRegion.includes('-');
+      
+      // Use locality from Telnyx if available, or derive from area code
+      const locality = n.locality || n.region_information?.[0]?.region_name;
+      const displayLocality = isMasked ? null : locality;
+      
+      // Map AU area codes to cities for better UX
+      const areaCodeMap = {
+        '2': 'Sydney/NSW',
+        '3': 'Melbourne/VIC', 
+        '7': 'Brisbane/QLD',
+        '8': 'Adelaide/Perth',
+      };
+      
+      // Extract area code from phone number (e.g., +618 -> '8')
+      const areaCode = n.phone_number?.replace(/[^\d]/g, '').substring(2, 3);
+      const fallbackLocation = areaCodeMap[areaCode] || country;
+      
+      return {
+        phoneNumber: n.phone_number,
+        friendlyName: n.phone_number,
+        region: displayLocality || fallbackLocation,
+        locality: displayLocality || fallbackLocation,
+        capabilities: {
+          voice: true,
+          sms: n.features?.includes('sms') || false,
+        },
+        monthlyCost: n.cost_information?.monthly_cost || '1.00',
+      };
+    });
 
     res.json(numbers);
   } catch (error) {
