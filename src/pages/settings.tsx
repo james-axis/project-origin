@@ -1756,7 +1756,8 @@ function PhoneSettings() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create practice');
-      setWizardPractice(data.practice);
+      // Backend returns practice object directly, not { practice: ... }
+      setWizardPractice(data);
       setWizardStep(1);
       fetchPractices();
     } catch (err: any) {
