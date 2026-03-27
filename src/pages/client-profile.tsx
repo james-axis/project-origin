@@ -10,7 +10,7 @@ import {
   File01, User01, Users01, Tag01, Settings01, DotsGrid, Pin01, Pin02,
   Lightbulb02, FileSearch02, FileCheck02, Shield01, AlertTriangle, MessageSquare01,
   MessageChatSquare, Send01, Calendar, Upload01, RefreshCw01, FilePlus02, Folder, BellOff01,
-  BarChart01, Lock01,
+  BarChart01, Lock01, XClose, LinkExternal01, Copy01, Archive,
 } from "@untitledui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,9 +59,14 @@ const FILE_LIBRARY: FileEntry[] = [
 const SECTION_DEFS = [
   { id: "customer_info",  label: "Customer Information" },
   { id: "tasks",          label: "Tasks" },
+  { id: "dependants",     label: "Dependants" },
   { id: "superfunds",     label: "Superfund Details" },
   { id: "activity_log",   label: "Activity Log" },
 ];
+
+// ─── Mock dependants data ────────────────────────────────────────────────────
+interface DependantEntry { id: number; name: string; relationship: string; dob: string; age: number; }
+const DEPENDANTS: DependantEntry[] = [];
 const SECTIONS_KEY = "axis_profile_sections_v3";
 
 function loadSectionOrder(): string[] {
@@ -519,8 +524,33 @@ export function ClientProfilePage() {
         </SectionCard>
       );
 
-
-
+      case "dependants": return (
+        <SectionCard key={id} id={id} title="Dependants" actionLabel="Add Dependant" action={() => {}} {...dragProps}>
+          {DEPENDANTS.length === 0 ? (
+            <div className="px-4 py-8 flex flex-col items-center gap-3">
+              <svg className="size-12 text-quaternary" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="16" r="8" stroke="currentColor" strokeWidth="2" fill="none"/>
+                <path d="M12 38c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                <circle cx="36" cy="36" r="8" fill="white" stroke="currentColor" strokeWidth="2"/>
+                <path d="M33 36h6M36 33v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <div className="text-center"><p className="text-sm font-medium text-secondary">No dependants added</p><p className="text-xs text-quaternary mt-0.5">Family members and dependants will appear here</p></div>
+            </div>
+          ) : (
+            <div className="divide-y divide-secondary">
+              {DEPENDANTS.map(dep => (
+                <div key={dep.id} className="px-4 py-3 flex items-center justify-between hover:bg-secondary_alt">
+                  <div>
+                    <p className="text-sm font-medium text-primary">{dep.name}</p>
+                    <p className="text-xs text-tertiary">{dep.relationship} · DOB: {dep.dob} ({dep.age} years old)</p>
+                  </div>
+                  <button className="text-xs text-brand-secondary hover:underline">Edit</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      );
 
 
 
@@ -556,27 +586,64 @@ export function ClientProfilePage() {
 
       <main className="flex-1 min-h-screen flex flex-col overflow-hidden">
 
-        {/* ── Header ── */}
+        {/* ── Header (Untitled UI style) ── */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
-                {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
-              </h1>
-              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary">
-                <span>{CLIENT.statusLabel}</span>
-                <span className="text-quaternary">|</span>
-                <span>{CLIENT.group}</span>
-                <span className="text-quaternary">|</span>
-                <span>Created {CLIENT.createdOn}</span>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-xs text-tertiary mb-3">
+            <button className="hover:text-brand-secondary transition-colors">Clients</button>
+            <ChevronRight className="size-3 text-quaternary" />
+            <span className="text-secondary font-medium">{CLIENT.firstName} {CLIENT.lastName}</span>
+          </div>
+          
+          <div className="flex items-start gap-4 flex-wrap">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              <div className="size-16 rounded-full bg-gradient-to-br from-brand-solid to-orange-400 flex items-center justify-center text-white text-xl font-semibold shadow-sm" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+                {CLIENT.firstName.charAt(0)}{CLIENT.lastName.charAt(0)}
+              </div>
+              {/* Status indicator */}
+              <div className="absolute -bottom-0.5 -right-0.5 size-5 rounded-full border-2 border-white flex items-center justify-center" style={{ background: statusColor }}>
+                <Check className="size-2.5 text-white" />
               </div>
             </div>
-            {/* Toolbar + Edit — all inline */}
-            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+            
+            {/* Client info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
+                  {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
+                </h1>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white" style={{ background: statusColor }}>
+                  {CLIENT.statusLabel}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-sm text-secondary">
+                <span className="flex items-center gap-1.5">
+                  <Mail01 className="size-3.5 text-quaternary" />
+                  <span className="text-brand-secondary">{CLIENT.email}</span>
+                </span>
+                <span className="text-quaternary">·</span>
+                <span className="flex items-center gap-1.5">
+                  <Phone01 className="size-3.5 text-quaternary" />
+                  <span className="text-brand-secondary">{CLIENT.phone}</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-tertiary">
+                <span>{CLIENT.group}</span>
+                <span className="text-quaternary">·</span>
+                <span>Created {CLIENT.createdOn}</span>
+                <span className="text-quaternary">·</span>
+                <span>ID #{CLIENT.id}</span>
+              </div>
+            </div>
+            
+            {/* Toolbar */}
+            <div className="flex items-center gap-1.5 flex-wrap">
               <DropdownButton label="New" icon={Plus} pinned={pinnedActions} onPin={togglePin} items={[
                 { label: "Quote",          icon: Lightbulb02 },
                 { label: "Pre-Assessment", icon: FileSearch02 },
                 { label: "Application",    icon: FileCheck02, onClick: () => setShowNewApp(true) },
+                { label: "Add Existing App", icon: LinkExternal01 },
                 { label: "Claim",          icon: Shield01 },
                 { label: "Dishonour",      icon: AlertTriangle },
                 { label: "Complaint",      icon: MessageSquare01 },
@@ -588,11 +655,15 @@ export function ClientProfilePage() {
                 { label: "Schedule",     icon: Calendar },
                 { label: "Upload Files", icon: Upload01 },
                 { label: "Set Status",   icon: RefreshCw01 },
+                { label: "Close Lead",   icon: Archive, danger: true },
               ]} />
               <DropdownButton label="Other" icon={DotsGrid} pinned={pinnedActions} onPin={togglePin} items={[
                 { label: "PDF",              icon: File01 },
                 { label: "Docs",             icon: Folder },
+                { label: "Duplicate",        icon: Copy01 },
                 { label: "Off APL",          icon: BellOff01 },
+                { label: "Marketing List",   icon: BarChart01 },
+              ]} />
                 { label: "Marketing List",   icon: BarChart01 },
               ]} />
               {pinnedActions.map(label => (
