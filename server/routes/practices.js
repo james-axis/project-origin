@@ -182,15 +182,17 @@ router.get('/:id/available-numbers', async (req, res) => {
 
     const response = await telnyx.availablePhoneNumbers.list(searchParams);
 
+    // Return camelCase keys to match frontend expectations
     const numbers = response.data.map(n => ({
-      phone_number: n.phone_number,
-      friendly_name: n.phone_number,
+      phoneNumber: n.phone_number,
+      friendlyName: n.phone_number,
       region: n.region_information?.[0]?.region_name || country,
+      locality: n.region_information?.[0]?.region_name || null,
       capabilities: {
         voice: true,
         sms: n.features?.includes('sms') || false,
       },
-      monthly_cost: n.cost_information?.monthly_cost || '1.00',
+      monthlyCost: n.cost_information?.monthly_cost || '1.00',
     }));
 
     res.json(numbers);
