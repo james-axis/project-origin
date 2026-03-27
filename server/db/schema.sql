@@ -254,6 +254,51 @@ BEGIN
     END IF;
 END $$;
 
+-- Add telnyx_id to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'telnyx_id') THEN
+        ALTER TABLE phone_numbers ADD COLUMN telnyx_id VARCHAR(100) UNIQUE;
+    END IF;
+END $$;
+
+-- Add connection_id to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'connection_id') THEN
+        ALTER TABLE phone_numbers ADD COLUMN connection_id VARCHAR(100);
+    END IF;
+END $$;
+
+-- Add region to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'region') THEN
+        ALTER TABLE phone_numbers ADD COLUMN region VARCHAR(50) DEFAULT 'sydney';
+    END IF;
+END $$;
+
+-- Add messaging_profile_id to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'messaging_profile_id') THEN
+        ALTER TABLE phone_numbers ADD COLUMN messaging_profile_id VARCHAR(100);
+    END IF;
+END $$;
+
+-- Add is_active to phone_numbers if missing
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'phone_numbers' AND column_name = 'is_active') THEN
+        ALTER TABLE phone_numbers ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+    END IF;
+END $$;
+
 -- =====================================================
 -- INDEXES
 -- =====================================================
