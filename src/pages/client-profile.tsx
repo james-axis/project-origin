@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useParams } from "react-router";
 import { SidebarSection } from "@/components/sidebar-section";
 import { createPortal } from "react-dom";
 import { CreateApplicationModal } from "@/components/modals/create-application-modal";
@@ -19,25 +20,74 @@ interface CallEntry     { date: string; phone: string; status: string; duration:
 interface FileEntry     { date: string; name: string; }
 interface NoteEntry     { id: number; text: string; author: string; date: string; }
 
-// ─── Mock client data ─────────────────────────────────────────────────────────
-const CLIENT = {
-  id: 38456, title: "Mr", firstName: "Jon", middleName: "(Jon)", lastName: "Doe",
-  preferredName: "Jon", status: 0, statusLabel: "Prospect",
-  dob: "15/06/1985", age: 40, gender: "Male", smoker: false,
-  state: "NSW", city: "Sydney", postcode: "2000", address: "42 Martin Place",
-  phone: "0412 345 678", phone2: "(02) 9876 5432",
-  email: "jon.doe@testmail.com.au", email2: "jdoe.work@testmail.com.au",
-  contactTime: "Afternoon", employment: "Employed full-time", occupation: "Software Engineer",
-  salary: 95000, height: 178, weight: 82, bmi: "25.88",
-  family: "Married", children: 2, childrenAges: "8, 5", maritalStatus: "Married",
-  taxRate: "30.00%", group: "Three Dogs Insurance", referrer: "", affiliateCompany: "",
-  tags: ["TEST CLIENT"],
-  assignedTo: "SLG Test Training", consultant: "James Nicholls", admin: "SLG Test Training",
-  createdOn: "16/03/2026 09:13", assignedOn: "17/03/2026 06:28", updatedOn: "17/03/2026 06:29",
-  campaignGroup: "Organic", campaign: "No Campaign", refer: "", keywords: "", website: "", path: "",
-  nextContact: null as string | null,
+// ─── Client type ─────────────────────────────────────────────────────────────
+interface ClientData {
+  id: number; title: string; firstName: string; middleName: string; lastName: string;
+  preferredName: string; status: number; statusLabel: string;
+  dob: string; age: number; gender: string; smoker: boolean;
+  state: string; city: string; postcode: string; address: string;
+  phone: string; phone2: string;
+  email: string; email2: string;
+  contactTime: string; employment: string; occupation: string;
+  salary: number; height: number; weight: number; bmi: string;
+  family: string; children: number; childrenAges: string; maritalStatus: string;
+  taxRate: string; group: string; referrer: string; affiliateCompany: string;
+  tags: string[];
+  assignedTo: string; consultant: string; admin: string;
+  createdOn: string; assignedOn: string; updatedOn: string;
+  campaignGroup: string; campaign: string; refer: string; keywords: string; website: string; path: string;
+  nextContact: string | null;
+  callsMade: number; emailsSent: number; smsSent: number;
+  seventyPctSalary: string; marginaltaxRate: string;
+}
+
+// ─── Status config ───────────────────────────────────────────────────────────
+const STATUS_MAP: Record<number, { label: string }> = {
+  0: { label: "Prospect" },
+  1: { label: "In Progress" },
+  2: { label: "Scheduled Appointment" },
+  3: { label: "Quote Sent" },
+  4: { label: "Application Pending" },
+  5: { label: "Client" },
+  6: { label: "On Hold" },
+  7: { label: "Archive" },
+};
+
+// ─── Mock client data (matching IDs from clients list) ───────────────────────
+const MOCK_CLIENTS: ClientData[] = [
+  { id:38658, title:"Mr", firstName:"Alois", middleName:"", lastName:"Mpisa", preferredName:"Alois", status:0, statusLabel:"Prospect", dob:"12/04/1988", age:37, gender:"Male", smoker:false, state:"WA", city:"Perth", postcode:"6000", address:"15 St Georges Terrace", phone:"0412 555 001", phone2:"", email:"alois.mpisa@email.com", email2:"", contactTime:"Morning", employment:"Employed full-time", occupation:"Mining Engineer", salary:145000, height:180, weight:85, bmi:"26.23", family:"Married", children:1, childrenAges:"3", maritalStatus:"Married", taxRate:"37.00%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"26/03/2026 09:00", assignedOn:"26/03/2026 09:00", updatedOn:"26/03/2026 09:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$101,500", marginaltaxRate:"37.00%" },
+  { id:38657, title:"Ms", firstName:"Paula", middleName:"", lastName:"Reeves", preferredName:"Paula", status:0, statusLabel:"Prospect", dob:"22/08/1990", age:35, gender:"Female", smoker:false, state:"QLD", city:"Brisbane", postcode:"4000", address:"88 Queen Street", phone:"0413 555 002", phone2:"", email:"paula.reeves@email.com", email2:"", contactTime:"Afternoon", employment:"Employed full-time", occupation:"Marketing Manager", salary:98000, height:165, weight:62, bmi:"22.77", family:"Single", children:0, childrenAges:"", maritalStatus:"Single", taxRate:"32.50%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"26/03/2026 08:45", assignedOn:"26/03/2026 08:45", updatedOn:"26/03/2026 08:45", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$68,600", marginaltaxRate:"32.50%" },
+  { id:38656, title:"Mrs", firstName:"Cirila", middleName:"", lastName:"Borbon", preferredName:"Cirila", status:0, statusLabel:"Prospect", dob:"15/11/1985", age:40, gender:"Female", smoker:false, state:"QLD", city:"Gold Coast", postcode:"4217", address:"42 Surfers Paradise Blvd", phone:"0414 555 003", phone2:"(07) 5555 1234", email:"cirila.borbon@email.com", email2:"", contactTime:"Evening", employment:"Self-employed", occupation:"Business Owner", salary:120000, height:160, weight:58, bmi:"22.66", family:"Married", children:2, childrenAges:"12, 8", maritalStatus:"Married", taxRate:"37.00%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"26/03/2026 08:30", assignedOn:"26/03/2026 08:30", updatedOn:"26/03/2026 08:30", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$84,000", marginaltaxRate:"37.00%" },
+  { id:38655, title:"Mr", firstName:"Ricardo", middleName:"", lastName:"Curioso", preferredName:"Ricardo", status:3, statusLabel:"Quote Sent", dob:"03/02/1982", age:44, gender:"Male", smoker:false, state:"WA", city:"Perth", postcode:"6005", address:"22 Kings Park Road", phone:"0415 555 004", phone2:"", email:"ricardo.curioso@email.com", email2:"", contactTime:"Afternoon", employment:"Employed full-time", occupation:"Software Architect", salary:185000, height:175, weight:78, bmi:"25.47", family:"Married", children:2, childrenAges:"10, 7", maritalStatus:"Married", taxRate:"45.00%", group:"Personal Insurance Options", referrer:"", affiliateCompany:"", tags:["insurance"], assignedTo:"Ami Heyman", consultant:"Ami Heyman", admin:"Ami Heyman", createdOn:"26/03/2026 07:00", assignedOn:"26/03/2026 07:00", updatedOn:"27/03/2026 11:00", campaignGroup:"Referral", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:3, emailsSent:2, smsSent:1, seventyPctSalary:"$129,500", marginaltaxRate:"45.00%" },
+  { id:38654, title:"Mr", firstName:"Tim", middleName:"", lastName:"Horne", preferredName:"Tim", status:0, statusLabel:"Prospect", dob:"28/06/1992", age:33, gender:"Male", smoker:true, state:"QLD", city:"Cairns", postcode:"4870", address:"5 Esplanade", phone:"0416 555 005", phone2:"", email:"tim.horne@email.com", email2:"", contactTime:"Morning", employment:"Employed full-time", occupation:"Pilot", salary:130000, height:182, weight:80, bmi:"24.15", family:"Single", children:0, childrenAges:"", maritalStatus:"Single", taxRate:"37.00%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"26/03/2026 06:30", assignedOn:"26/03/2026 06:30", updatedOn:"26/03/2026 06:30", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$91,000", marginaltaxRate:"37.00%" },
+  { id:38653, title:"Mr", firstName:"Etienne", middleName:"", lastName:"Gouws", preferredName:"Etienne", status:3, statusLabel:"Quote Sent", dob:"17/09/1978", age:47, gender:"Male", smoker:false, state:"WA", city:"Fremantle", postcode:"6160", address:"18 South Terrace", phone:"0417 555 006", phone2:"", email:"etienne.gouws@email.com", email2:"", contactTime:"Afternoon", employment:"Employed full-time", occupation:"Project Manager", salary:155000, height:188, weight:92, bmi:"26.03", family:"Married", children:3, childrenAges:"18, 15, 12", maritalStatus:"Married", taxRate:"37.00%", group:"Umbrella Insurance Advice Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Justin Turtle", consultant:"Justin Turtle", admin:"Justin Turtle", createdOn:"26/03/2026 06:00", assignedOn:"26/03/2026 06:00", updatedOn:"26/03/2026 21:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:2, emailsSent:1, smsSent:0, seventyPctSalary:"$108,500", marginaltaxRate:"37.00%" },
+  { id:38652, title:"Ms", firstName:"Caz", middleName:"", lastName:"Sandringham", preferredName:"Caz", status:0, statusLabel:"Prospect", dob:"05/12/1995", age:30, gender:"Female", smoker:false, state:"VIC", city:"Melbourne", postcode:"3000", address:"100 Collins Street", phone:"0418 555 007", phone2:"", email:"caz.sandringham@email.com", email2:"", contactTime:"Morning", employment:"Employed full-time", occupation:"Accountant", salary:88000, height:168, weight:60, bmi:"21.26", family:"Single", children:0, childrenAges:"", maritalStatus:"Single", taxRate:"32.50%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"25/03/2026 14:00", assignedOn:"25/03/2026 14:00", updatedOn:"25/03/2026 14:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$61,600", marginaltaxRate:"32.50%" },
+  { id:38651, title:"Mrs", firstName:"Tanya", middleName:"", lastName:"Zuv", preferredName:"Tanya", status:0, statusLabel:"Prospect", dob:"20/03/1987", age:39, gender:"Female", smoker:false, state:"QLD", city:"Townsville", postcode:"4810", address:"25 Flinders Street", phone:"0419 555 008", phone2:"", email:"tanya.zuv@email.com", email2:"", contactTime:"Afternoon", employment:"Part-time", occupation:"Teacher", salary:65000, height:162, weight:55, bmi:"20.96", family:"Married", children:2, childrenAges:"6, 4", maritalStatus:"Married", taxRate:"30.00%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"25/03/2026 12:00", assignedOn:"25/03/2026 12:00", updatedOn:"25/03/2026 12:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$45,500", marginaltaxRate:"30.00%" },
+  { id:38650, title:"Mr", firstName:"Benito", middleName:"", lastName:"Custodio Jr", preferredName:"Ben", status:0, statusLabel:"Prospect", dob:"14/07/1980", age:45, gender:"Male", smoker:false, state:"VIC", city:"Geelong", postcode:"3220", address:"8 Moorabool Street", phone:"0420 555 009", phone2:"", email:"benito.custodio@email.com", email2:"", contactTime:"Evening", employment:"Employed full-time", occupation:"Warehouse Manager", salary:78000, height:170, weight:88, bmi:"30.45", family:"Married", children:4, childrenAges:"20, 18, 14, 10", maritalStatus:"Married", taxRate:"32.50%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"25/03/2026 10:00", assignedOn:"25/03/2026 10:00", updatedOn:"25/03/2026 10:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$54,600", marginaltaxRate:"32.50%" },
+  { id:38649, title:"Mr", firstName:"Luke", middleName:"", lastName:"Milojkovic", preferredName:"Luke", status:0, statusLabel:"Prospect", dob:"09/01/1993", age:33, gender:"Male", smoker:false, state:"NSW", city:"Sydney", postcode:"2000", address:"200 George Street", phone:"0421 555 010", phone2:"", email:"luke.milojkovic@email.com", email2:"", contactTime:"Afternoon", employment:"Employed full-time", occupation:"Data Analyst", salary:95000, height:178, weight:75, bmi:"23.67", family:"Single", children:0, childrenAges:"", maritalStatus:"Single", taxRate:"32.50%", group:"UFinancial Protect", referrer:"Mars Hana", affiliateCompany:"", tags:[], assignedTo:"Advice Team", consultant:"Advice Team", admin:"Advice Team", createdOn:"25/03/2026 09:00", assignedOn:"25/03/2026 09:00", updatedOn:"25/03/2026 09:00", campaignGroup:"Referral", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:0, emailsSent:0, smsSent:0, seventyPctSalary:"$66,500", marginaltaxRate:"32.50%" },
+  { id:38400, title:"Mrs", firstName:"Kirsty", middleName:"", lastName:"Kitchener", preferredName:"Kirsty", status:4, statusLabel:"Application Pending", dob:"18/05/1984", age:41, gender:"Female", smoker:false, state:"VIC", city:"Melbourne", postcode:"3004", address:"55 St Kilda Road", phone:"0422 555 011", phone2:"(03) 9555 1234", email:"kirsty.kitchener@email.com", email2:"kirsty.k@work.com", contactTime:"Morning", employment:"Employed full-time", occupation:"HR Director", salary:165000, height:170, weight:65, bmi:"22.49", family:"Married", children:2, childrenAges:"14, 11", maritalStatus:"Married", taxRate:"45.00%", group:"Surety Insurance Pty Ltd", referrer:"", affiliateCompany:"", tags:["application"], assignedTo:"Maysee Chang", consultant:"Maysee Chang", admin:"Maysee Chang", createdOn:"23/03/2026 10:00", assignedOn:"23/03/2026 10:00", updatedOn:"27/03/2026 01:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:5, emailsSent:8, smsSent:2, seventyPctSalary:"$115,500", marginaltaxRate:"45.00%" },
+  { id:37900, title:"Ms", firstName:"Natalie", middleName:"", lastName:"Brooks", preferredName:"Nat", status:5, statusLabel:"Client", dob:"02/11/1989", age:36, gender:"Female", smoker:false, state:"NSW", city:"Newcastle", postcode:"2300", address:"12 Hunter Street", phone:"0423 555 012", phone2:"", email:"natalie.brooks@email.com", email2:"", contactTime:"Afternoon", employment:"Employed full-time", occupation:"Nurse", salary:82000, height:165, weight:58, bmi:"21.30", family:"Married", children:1, childrenAges:"5", maritalStatus:"Married", taxRate:"32.50%", group:"Hunter Galloway", referrer:"", affiliateCompany:"", tags:["inforce"], assignedTo:"Maysee Chang", consultant:"Maysee Chang", admin:"Maysee Chang", createdOn:"13/03/2026 09:00", assignedOn:"13/03/2026 09:00", updatedOn:"24/03/2026 15:00", campaignGroup:"Organic", campaign:"No Campaign", refer:"", keywords:"", website:"", path:"", nextContact:null, callsMade:8, emailsSent:12, smsSent:4, seventyPctSalary:"$57,400", marginaltaxRate:"32.50%" },
+];
+
+// Fallback client for unknown IDs
+const DEFAULT_CLIENT: ClientData = {
+  id: 0, title: "", firstName: "Unknown", middleName: "", lastName: "Client",
+  preferredName: "", status: 0, statusLabel: "Unknown",
+  dob: "", age: 0, gender: "", smoker: false,
+  state: "", city: "", postcode: "", address: "",
+  phone: "", phone2: "",
+  email: "", email2: "",
+  contactTime: "", employment: "", occupation: "",
+  salary: 0, height: 0, weight: 0, bmi: "",
+  family: "", children: 0, childrenAges: "", maritalStatus: "",
+  taxRate: "", group: "", referrer: "", affiliateCompany: "",
+  tags: [],
+  assignedTo: "", consultant: "", admin: "",
+  createdOn: "", assignedOn: "", updatedOn: "",
+  campaignGroup: "", campaign: "", refer: "", keywords: "", website: "", path: "",
+  nextContact: null,
   callsMade: 0, emailsSent: 0, smsSent: 0,
-  seventyPctSalary: "$66,500", marginaltaxRate: "30.00%",
+  seventyPctSalary: "", marginaltaxRate: "",
 };
 
 const CALLS: CallEntry[] = [];
@@ -358,7 +408,7 @@ function SectionCard({
 }
 
 // ─── Customer Info grid (field-aware) ─────────────────────────────────────────
-function CustomerInfoGrid({ fieldState }: { fieldState: FieldState }) {
+function CustomerInfoGrid({ fieldState, client }: { fieldState: FieldState; client: ClientData }) {
   const visibleFields: FieldDef[] = [];
   for (const k of fieldState.order) {
     const f = CUSTOMER_FIELD_DEFS.find(d => d.key === k);
@@ -367,45 +417,45 @@ function CustomerInfoGrid({ fieldState }: { fieldState: FieldState }) {
 
   function renderValue(key: string): React.ReactNode {
     switch (key) {
-      case "name":       return `${CLIENT.title} ${CLIENT.firstName} ${CLIENT.middleName}`;
-      case "preferred":  return CLIENT.preferredName;
-      case "lastName":   return CLIENT.lastName;
-      case "employment": return `${CLIENT.employment} / ${CLIENT.occupation}`;
-      case "dob":        return `${CLIENT.dob} (${CLIENT.age} years old)`;
-      case "gender":     return CLIENT.gender;
-      case "state":      return `${CLIENT.state} (17:57)`;
-      case "nextContact":return CLIENT.nextContact ?? "—";
+      case "name":       return `${client.title} ${client.firstName} ${client.middleName}`.trim();
+      case "preferred":  return client.preferredName;
+      case "lastName":   return client.lastName;
+      case "employment": return `${client.employment} / ${client.occupation}`;
+      case "dob":        return `${client.dob} (${client.age} years old)`;
+      case "gender":     return client.gender;
+      case "state":      return `${client.state} (17:57)`;
+      case "nextContact":return client.nextContact ?? "—";
       case "contacts":   return (
         <span className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-quaternary"><Phone01 className="size-3" />{CLIENT.callsMade}</span>
-          <span className="flex items-center gap-1 text-quaternary"><Mail01 className="size-3" />{CLIENT.emailsSent}</span>
-          <span className="flex items-center gap-1 text-quaternary">💬{CLIENT.smsSent}</span>
+          <span className="flex items-center gap-1 text-quaternary"><Phone01 className="size-3" />{client.callsMade}</span>
+          <span className="flex items-center gap-1 text-quaternary"><Mail01 className="size-3" />{client.emailsSent}</span>
+          <span className="flex items-center gap-1 text-quaternary">💬{client.smsSent}</span>
         </span>
       );
-      case "salary":     return `$${CLIENT.salary.toLocaleString()}`;
-      case "salary70":   return CLIENT.seventyPctSalary;
-      case "affiliate":  return CLIENT.affiliateCompany || "—";
-      case "referrer":   return CLIENT.referrer || "—";
-      case "taxRate":    return CLIENT.marginaltaxRate;
-      case "group":      return <EditableGroupField value={CLIENT.group} />;
-      case "phone":      return <span className="text-brand-secondary">{CLIENT.phone}</span>;
-      case "phone2":     return <span className="text-brand-secondary">{CLIENT.phone2}</span>;
-      case "contactTime":return CLIENT.contactTime;
-      case "email":      return <span className="text-brand-secondary">{CLIENT.email}</span>;
-      case "email2":     return <span className="text-brand-secondary">{CLIENT.email2}</span>;
-      case "address":    return CLIENT.address;
-      case "cityState":  return `${CLIENT.city}, ${CLIENT.state} ${CLIENT.postcode}`;
-      case "height":     return `${CLIENT.height} cm`;
-      case "weight":     return `${CLIENT.weight} kg`;
-      case "bmi":        return CLIENT.bmi;
-      case "smoker":     return CLIENT.smoker ? "Smoker" : "Non-smoker";
-      case "marital":    return CLIENT.maritalStatus;
-      case "children":   return `${CLIENT.children} children (aged ${CLIENT.childrenAges})`;
-      case "assignedTo": return <EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} />;
-      case "createdOn":  return CLIENT.createdOn;
-      case "assignedOn": return CLIENT.assignedOn;
-      case "updatedOn":  return CLIENT.updatedOn;
-      case "tags":       return CLIENT.tags.length > 0 ? (<span className="flex flex-wrap gap-1">{CLIENT.tags.map(t => <span key={t} className="text-xs font-semibold text-brand-secondary hover:underline cursor-pointer">{t}</span>)}</span>) : <span className="text-quaternary">—</span>;
+      case "salary":     return `$${client.salary.toLocaleString()}`;
+      case "salary70":   return client.seventyPctSalary;
+      case "affiliate":  return client.affiliateCompany || "—";
+      case "referrer":   return client.referrer || "—";
+      case "taxRate":    return client.marginaltaxRate;
+      case "group":      return <EditableGroupField value={client.group} />;
+      case "phone":      return <span className="text-brand-secondary">{client.phone}</span>;
+      case "phone2":     return <span className="text-brand-secondary">{client.phone2}</span>;
+      case "contactTime":return client.contactTime;
+      case "email":      return <span className="text-brand-secondary">{client.email}</span>;
+      case "email2":     return <span className="text-brand-secondary">{client.email2}</span>;
+      case "address":    return client.address;
+      case "cityState":  return `${client.city}, ${client.state} ${client.postcode}`;
+      case "height":     return `${client.height} cm`;
+      case "weight":     return `${client.weight} kg`;
+      case "bmi":        return client.bmi;
+      case "smoker":     return client.smoker ? "Smoker" : "Non-smoker";
+      case "marital":    return client.maritalStatus;
+      case "children":   return `${client.children} children (aged ${client.childrenAges})`;
+      case "assignedTo": return <EditableField label="" value={client.assignedTo} options={USERS_LIST} />;
+      case "createdOn":  return client.createdOn;
+      case "assignedOn": return client.assignedOn;
+      case "updatedOn":  return client.updatedOn;
+      case "tags":       return client.tags.length > 0 ? (<span className="flex flex-wrap gap-1">{client.tags.map(t => <span key={t} className="text-xs font-semibold text-brand-secondary hover:underline cursor-pointer">{t}</span>)}</span>) : <span className="text-quaternary">—</span>;
       default:           return "—";
     }
   }
@@ -424,6 +474,10 @@ function CustomerInfoGrid({ fieldState }: { fieldState: FieldState }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function ClientProfilePage() {
+  // Get client ID from URL params
+  const { id } = useParams<{ id: string }>();
+  const CLIENT = MOCK_CLIENTS.find(c => c.id === Number(id)) || DEFAULT_CLIENT;
+  
   const [noteText, setNoteText] = useState("");
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [clientsExpanded, setClientsExpanded] = useState(true);
@@ -493,7 +547,7 @@ export function ClientProfilePage() {
               )}
             </div>
           }>
-          <CustomerInfoGrid fieldState={fieldState} />
+          <CustomerInfoGrid fieldState={fieldState} client={CLIENT} />
 
         </SectionCard>
       );
@@ -724,13 +778,13 @@ export function ClientProfilePage() {
                 </div>
                 <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
                   <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}</span>
-                  <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Prospect</span>
+                  <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">{CLIENT.statusLabel}</span>
                 </div>
               </SidebarSection>
 
               <SidebarSection title="Assigned Team">
-                <EditableField label="Consultant" value="James Nicholls" options={USERS_LIST} />
-                <EditableField label="Admin" value="SLG Test Training" options={USERS_LIST} />
+                <EditableField label="Consultant" value={CLIENT.consultant} options={USERS_LIST} />
+                <EditableField label="Admin" value={CLIENT.admin} options={USERS_LIST} />
               </SidebarSection>
 
               <SidebarSection title="Notes" action={{ label:"Audit", onClick:()=>{} }}>
@@ -831,7 +885,7 @@ export function ClientProfilePage() {
                   <div className="px-3 py-2.5">
                     <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#D34108" }}>
                       <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{CLIENT.title} {CLIENT.firstName} ({CLIENT.preferredName}) {CLIENT.lastName}</span>
-                      <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Prospect</span>
+                      <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">{CLIENT.statusLabel}</span>
                     </div>
                   </div>
                 </div>
@@ -840,8 +894,8 @@ export function ClientProfilePage() {
               {/* Assigned Team */}
               <div>
                 <p className="text-sm font-semibold text-primary mb-3">Assigned Team</p>
-                <EditableField label="Consultant" value="James Nicholls" options={USERS_LIST} />
-                <EditableField label="Admin" value="SLG Test Training" options={USERS_LIST} />
+                <EditableField label="Consultant" value={CLIENT.consultant} options={USERS_LIST} />
+                <EditableField label="Admin" value={CLIENT.admin} options={USERS_LIST} />
               </div>
 
               {/* Notes */}
