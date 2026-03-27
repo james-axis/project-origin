@@ -2122,12 +2122,12 @@ function PhoneSettings() {
             )}
             {availableNumbers.length > 0 && (
               <div className="rounded-xl border border-secondary overflow-hidden max-h-64 overflow-y-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-fixed">
                   <thead className="bg-tertiary border-b border-secondary sticky top-0">
                     <tr>
-                      <th className="w-8 px-4 py-2"></th>
-                      <th className="text-left px-4 py-2 text-xs font-medium text-quaternary">Number</th>
-                      <th className="text-left px-4 py-2 text-xs font-medium text-quaternary">Location</th>
+                      <th className="w-12 px-4 py-3"></th>
+                      <th className="w-1/2 text-left px-4 py-3 text-xs font-medium text-quaternary uppercase tracking-wider">Number</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-quaternary uppercase tracking-wider">Location</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-secondary">
@@ -2137,13 +2137,13 @@ function PhoneSettings() {
                         onClick={() => setFormData(prev => ({ ...prev, selectedNumber: num.phoneNumber }))}
                         className={`cursor-pointer transition-colors ${formData.selectedNumber === num.phoneNumber ? 'bg-brand-secondary' : 'hover:bg-secondary_alt'}`}
                       >
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.selectedNumber === num.phoneNumber ? 'border-brand-solid bg-brand-solid' : 'border-secondary'}`}>
                             {formData.selectedNumber === num.phoneNumber && <Check className="size-2.5 text-white" />}
                           </div>
                         </td>
-                        <td className="px-4 py-2 font-mono text-primary">{num.friendlyName}</td>
-                        <td className="px-4 py-2 text-tertiary">{num.locality || num.region}</td>
+                        <td className="px-4 py-3 font-mono text-primary text-sm">{num.friendlyName}</td>
+                        <td className="px-4 py-3 text-tertiary text-sm">{num.locality || num.region}</td>
                       </tr>
                     ))}
                   </tbody>
