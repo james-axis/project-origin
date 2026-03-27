@@ -250,18 +250,15 @@ router.post('/:id/phone-numbers', async (req, res) => {
       connection_id: connectionId,
     });
 
-    // Store in database
+    // Store in database (using only columns guaranteed to exist)
     const result = await db.query(`
       INSERT INTO phone_numbers (
-        telnyx_id, phone_number, friendly_name, connection_id, 
-        number_type, practice_id, is_active, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, true, NOW())
+        phone_number, friendly_name, number_type, practice_id
+      ) VALUES ($1, $2, $3, $4)
       RETURNING *
     `, [
-      order.data.phone_numbers[0]?.id || phoneNumber,
       phoneNumber,
       friendlyName || phoneNumber,
-      connectionId,
       'local',
       id
     ]);
