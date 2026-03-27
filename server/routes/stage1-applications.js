@@ -144,23 +144,51 @@ router.delete('/applications/:id', async (req, res) => {
 
 // =====================================================
 // POST /api/telnyx/applications/setup
-// Auto-setup: Create default application if none exists
+// Auto-setup: Import existing or create new application
 // =====================================================
 router.post('/applications/setup', async (req, res) => {
   try {
-    // Check if we already have an application
+    // Check if we already have an application in our DB
     const existing = await db.query(`SELECT * FROM call_control_apps LIMIT 1`);
     
     if (existing.rows.length > 0) {
       return res.json({
         success: true,
-        message: 'Application already exists',
+        message: 'Application already exists in database',
         application: existing.rows[0],
         created: false,
       });
     }
     
-    // Create new application
+    // Check if Telnyx already has an app we can import
+    const telnyxApps = await telnyx.callControlApplications.list({ page: { size: 10 } });
+    
+    if (telnyxApps.data && telnyxApps.data.length > 0) {
+      // Import the first existing app from Telnyx
+      const existingApp = telnyxApps.data[0];
+      console.log('Found existing Telnyx app, importing:', existingApp.id);
+      
+      const result = await db.query(`
+        INSERT INTO call_control_apps (app_id, name, webhook_url, webhook_api_version)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [
+        existingApp.id, 
+        existingApp.application_name || 'Imported Telnyx App', 
+        existingApp.webhook_event_url || `${BASE_URL}/webhooks/telnyx/voice`,
+        existingApp.webhook_api_version || '2'
+      ]);
+      
+      return res.json({
+        success: true,
+        message: 'Imported existing Telnyx application',
+        application: result.rows[0],
+        created: false,
+        imported: true,
+      });
+    }
+    
+    // No existing apps - create new application
     const webhookUrl = `${BASE_URL}/webhooks/telnyx/voice`;
     
     const telnyxApp = await telnyx.callControlApplications.create({
