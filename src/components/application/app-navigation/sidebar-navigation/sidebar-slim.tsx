@@ -83,6 +83,22 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     ))}
                 </ul>
                 <div className="mt-auto flex flex-col gap-2 px-3 py-5">
+                    {/* Footer nav items (Settings, Support) */}
+                    <ul className="flex flex-col gap-0.5 mb-3">
+                        {footerItems.map((item) => (
+                            <li key={item.label} onPointerEnter={() => setCurrentItem(item)} title={item.label}>
+                                <NavItemButton
+                                    size="md"
+                                    current={currentItem.href === item.href}
+                                    href={item.href}
+                                    label={item.label || ""}
+                                    icon={item.icon}
+                                    onClick={() => setCurrentItem(item)}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                    
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
 
                     <AriaDialogTrigger>

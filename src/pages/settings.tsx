@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router";
+import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
+import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01, Phone01,
   ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
@@ -3499,56 +3501,61 @@ export function Settings() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
-      {/* Header with group tabs */}
-      <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
-        <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
-        
-        {/* Primary group tabs */}
-        <div className="flex overflow-x-auto gap-0 -mb-px">
-          {settingsGroups.map(group => {
-            const Icon = group.icon;
-            const isActive = currentGroup.id === group.id;
-            return (
-              <button 
-                key={group.id} 
-                onClick={() => handleGroupChange(group.id)} 
-                className={"flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}
-              >
-                <Icon className={"size-4 " + (isActive ? "text-brand-secondary" : "text-fg-quaternary")} aria-hidden />
-                {group.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      
-      {/* Sub-tabs for current group (only show if group has multiple tabs and isn't task-builder) */}
-      {currentGroup.id !== "task-builder" && currentGroup.tabs.length > 1 && (
-        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
-          <div className="flex overflow-x-auto gap-6 -mb-px">
-            {currentGroup.tabs.map(tab => {
-              const isActive = activeSubTab === tab.id;
+    <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
+      <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
+      <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
+
+      <main className="min-h-screen overflow-x-hidden lg:flex-1 flex flex-col">
+        {/* Header with group tabs */}
+        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
+          <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
+          
+          {/* Primary group tabs */}
+          <div className="flex overflow-x-auto gap-0 -mb-px">
+            {settingsGroups.map(group => {
+              const Icon = group.icon;
+              const isActive = currentGroup.id === group.id;
               return (
                 <button 
-                  key={tab.id} 
-                  onClick={() => handleSubTabChange(tab.id)} 
-                  className={"py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand-solid text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary")}
+                  key={group.id} 
+                  onClick={() => handleGroupChange(group.id)} 
+                  className={"flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}
                 >
-                  {tab.label}
+                  <Icon className={"size-4 " + (isActive ? "text-brand-secondary" : "text-fg-quaternary")} aria-hidden />
+                  {group.label}
                 </button>
               );
             })}
           </div>
         </div>
-      )}
-      
-      {/* Content area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4 sm:p-6 lg:p-8">
-          {renderContent()}
+        
+        {/* Sub-tabs for current group (only show if group has multiple tabs and isn't task-builder) */}
+        {currentGroup.id !== "task-builder" && currentGroup.tabs.length > 1 && (
+          <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
+            <div className="flex overflow-x-auto gap-6 -mb-px">
+              {currentGroup.tabs.map(tab => {
+                const isActive = activeSubTab === tab.id;
+                return (
+                  <button 
+                    key={tab.id} 
+                    onClick={() => handleSubTabChange(tab.id)} 
+                    className={"py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand-solid text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary")}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
+        {/* Content area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8">
+            {renderContent()}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
