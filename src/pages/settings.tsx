@@ -6,8 +6,8 @@ import {
   Zap, X, Check, InfoCircle, AlertCircle, ArrowLeft,
   Building01, MarkerPin01, Globe01, PhoneCall01, CheckCircle,
   Clock, PlayCircle, SearchLg, RefreshCw01, File01, 
-  File02, FileText01, Tag01, Mail01, MessageSquare01, Calendar,
-  UserPlus01, UserX01, MoreHorizontal, Key01, Code01,
+  File02, Tag01, Mail01, MessageSquare01, Calendar,
+  UserPlus01, UserX01, Key01, Code01,
 } from "@untitledui/icons";
 
 type TriggerType = "object_created" | "task_completed";
@@ -64,7 +64,7 @@ const settingsGroups = [
   {
     id: "forms",
     label: "Forms & Data",
-    icon: FileText01,
+    icon: File01,
     tabs: [
       { id: "form-field-types", label: "Form Field Types" },
       { id: "lead-forms", label: "Lead Forms" },

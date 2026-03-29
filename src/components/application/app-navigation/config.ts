@@ -15,7 +15,7 @@ import {
     UserPlus01,
     Shield01,
     File02,
-    FileText01,
+    File01,
     Building01,
     Link01,
 } from "@untitledui/icons";
@@ -176,7 +176,7 @@ export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> }
             { label: "Users & Access", href: "/settings?tab=users", icon: Users01 },
             { label: "Security", href: "/settings?tab=security", icon: Shield01 },
             { label: "Templates", href: "/settings?tab=templates", icon: File02 },
-            { label: "Forms & Data", href: "/settings?tab=forms", icon: FileText01 },
+            { label: "Forms & Data", href: "/settings?tab=forms", icon: File01 },
             { label: "Business Config", href: "/settings?tab=business", icon: Building01 },
             { label: "Integrations", href: "/settings?tab=integrations", icon: Link01 },
         ],
