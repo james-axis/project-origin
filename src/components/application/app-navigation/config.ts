@@ -14,6 +14,10 @@ import {
     Users01,
     UserPlus01,
     Shield01,
+    File02,
+    FileText01,
+    Building01,
+    Link01,
 } from "@untitledui/icons";
 
 export type NavItemType = {
@@ -163,5 +167,18 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
 
 export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
     { label: "Support", href: "/support", icon: LifeBuoy01 },
-    { label: "Settings", href: "/settings", icon: Settings01 },
+    { 
+        label: "Settings", 
+        href: "/settings", 
+        icon: Settings01,
+        items: [
+            { label: "Task Builder", href: "/settings?tab=task-builder", icon: CheckDone01 },
+            { label: "Users & Access", href: "/settings?tab=users", icon: Users01 },
+            { label: "Security", href: "/settings?tab=security", icon: Shield01 },
+            { label: "Templates", href: "/settings?tab=templates", icon: File02 },
+            { label: "Forms & Data", href: "/settings?tab=forms", icon: FileText01 },
+            { label: "Business Config", href: "/settings?tab=business", icon: Building01 },
+            { label: "Integrations", href: "/settings?tab=integrations", icon: Link01 },
+        ],
+    },
 ];

@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import {
   Settings01, List, Users01, Shield01, Bell01, Link01, Phone01,
   ChevronDown, ChevronRight, Plus, DotsGrid, Trash01, Edit01,
   Zap, X, Check, InfoCircle, AlertCircle, ArrowLeft,
   Building01, MarkerPin01, Globe01, PhoneCall01, CheckCircle,
   Clock, PlayCircle, SearchLg, RefreshCw01, File01, 
+  File02, FileText01, Tag01, Mail01, MessageSquare01, Calendar,
+  UserPlus01, UserX01, MoreHorizontal, Key01, Code01,
 } from "@untitledui/icons";
 
 type TriggerType = "object_created" | "task_completed";
@@ -15,6 +18,92 @@ type WizardStep = 1 | 2 | 3;
 const PRACTICES = ["All Practices", "LIP", "Tony Insurance", "Surehaven", "Averse to Risk", "Living Rich"];
 const ASSIGNEE_ROLES = ["Consultant", "Admin", "Services", "Compliance", "Manager", "Task Master"];
 
+// Main settings groups with their sub-tabs
+const settingsGroups = [
+  {
+    id: "task-builder",
+    label: "Task Builder",
+    icon: List,
+    tabs: [
+      { id: "task-flows", label: "Task Flows" },
+    ],
+  },
+  {
+    id: "users",
+    label: "Users & Access",
+    icon: Users01,
+    tabs: [
+      { id: "users", label: "Users" },
+      { id: "groups", label: "Groups" },
+      { id: "teams", label: "Teams" },
+      { id: "roles", label: "Roles" },
+    ],
+  },
+  {
+    id: "security",
+    label: "Security",
+    icon: Shield01,
+    tabs: [
+      { id: "active-sessions", label: "Active Sessions" },
+      { id: "session-history", label: "Session History" },
+      { id: "login-attempts", label: "Login Attempts" },
+    ],
+  },
+  {
+    id: "templates",
+    label: "Templates",
+    icon: File02,
+    tabs: [
+      { id: "task-templates", label: "Task Templates" },
+      { id: "file-library", label: "File Library" },
+      { id: "sms-templates", label: "SMS Templates" },
+      { id: "email-templates", label: "Email Templates" },
+      { id: "docx-templates", label: "DOCx Templates" },
+    ],
+  },
+  {
+    id: "forms",
+    label: "Forms & Data",
+    icon: FileText01,
+    tabs: [
+      { id: "form-field-types", label: "Form Field Types" },
+      { id: "lead-forms", label: "Lead Forms" },
+      { id: "form-field-aliases", label: "Form Field Aliases" },
+      { id: "tags", label: "Tags" },
+    ],
+  },
+  {
+    id: "business",
+    label: "Business Config",
+    icon: Building01,
+    tabs: [
+      { id: "budget-calculators", label: "Budget Calculators" },
+      { id: "close-reasons", label: "Close Reasons" },
+      { id: "marketing-lists", label: "Marketing Lists" },
+      { id: "scheduled-tasks", label: "Scheduled Tasks" },
+      { id: "leaves", label: "Leaves" },
+      { id: "adviser-codes", label: "Adviser Codes" },
+      { id: "insurance-type-mappings", label: "Insurance Type Mappings" },
+    ],
+  },
+  {
+    id: "integrations",
+    label: "Integrations",
+    icon: Link01,
+    tabs: [
+      { id: "phone", label: "Phone System" },
+      { id: "email-import", label: "Email Import" },
+      { id: "email-groups", label: "Email Groups" },
+      { id: "webhooks", label: "Webhooks" },
+      { id: "affiliates", label: "Affiliates" },
+      { id: "apis", label: "APIs" },
+      { id: "neos-advisers", label: "NEOS Advisers" },
+      { id: "report-permissions", label: "Report Permissions" },
+    ],
+  },
+];
+
+// Legacy tabs for backwards compatibility
 const settingsTabs = [
   { id: "task-builder", label: "Task Builder", icon: List },
   { id: "general", label: "General", icon: Settings01 },
@@ -3064,33 +3153,401 @@ function PhoneSettings() {
 }
 
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Settings page ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
+// ─── Mock users data for Users section ──────────────────────────────────────
+const MOCK_USERS_ADMIN = [
+  { id: 1, name: "Adam Cowburn", email: "adam.cowburn@slife.com.au", position: "Life Insurance Specialist", group: "Kadota Assurance Pty Ltd", roles: ["Commissions user", "Consultant", "Admin"], extension: "279", tags: "nexa", leads: 15, status: "active" },
+  { id: 2, name: "Adam Spilsted", email: "adam.spilsted@slife.com.au", position: "Life Insurance Specialist", group: "URinsured Pty Ltd", roles: ["Commissions user", "Consultant", "Admin"], extension: "600", tags: "nexa", leads: 115, status: "active" },
+  { id: 3, name: "Adrian Ranieri", email: "adrian.ranieri@slife.com.au", position: "Life Risk Specialist", group: "InsureYou Advisory Pty Ltd", roles: ["Consultant", "Admin"], extension: "307", tags: "SLS", leads: 4, status: "active" },
+  { id: 4, name: "Adviser TBC", email: "adviser.tbc@slife.com.au", position: "", group: "", roles: ["Consultant", "Admin"], extension: "", tags: "", leads: 2, status: "active" },
+  { id: 5, name: "Aldrine Regido", email: "aldrine.regido@slife.com.au", position: "Admin - Data Processing", group: "2020 Insurance Advisers, Averse To Risk", roles: ["Payments", "Services"], extension: "", tags: "Data Processing", leads: 0, status: "active" },
+  { id: 6, name: "Ali Jama", email: "ali.jama@slife.com.au", position: "Life Insurance Specialist", group: "PWP Services", roles: ["Commissions user", "Consultant", "Admin"], extension: "234", tags: "SLS", leads: 109, status: "active" },
+  { id: 7, name: "Ami Heyman", email: "ami.heyman@slife.com.au", position: "Life Insurance Specialist", group: "Personal Insurance Options", roles: ["Commissions user", "Consultant", "Admin"], extension: "220", tags: "SLS", leads: 706, status: "active" },
+  { id: 8, name: "Andrej Kudriavcev", email: "andrej.kudriavcev@slife.com.au", position: "IT Support", group: "", roles: ["System Admin"], extension: "", tags: "", leads: 14, status: "active" },
+  { id: 9, name: "Annie Erasmo", email: "annie.erasmo@slife.com.au", position: "Compliance Officer", group: "", roles: ["Audits"], extension: "", tags: "Compliance Team", leads: 0, status: "active" },
+  { id: 10, name: "Ben Tutton", email: "ben.tutton@slife.com.au", position: "Life Insurance Specialist", group: "Vital Life Insurance", roles: ["Commissions user", "Consultant", "Admin"], extension: "213", tags: "SLS", leads: 364, status: "active" },
+  { id: 11, name: "Biren Amin", email: "biren.amin@slife.com.au", position: "Life Insurance Specialist", group: "Ensurlife Pty Ltd", roles: ["Consultant", "Admin"], extension: "", tags: "nexa", leads: 1, status: "active" },
+  { id: 12, name: "Brent Fraser", email: "brent.fraser@slife.com.au", position: "Life Insurance Specialist", group: "SafeNet Solutions", roles: ["Commissions user", "Consultant", "Admin"], extension: "221", tags: "SLS", leads: 475, status: "active" },
+];
+
+// ─── Users Section Component ─────────────────────────────────────────────────
+function UsersSection() {
+  const [tab, setTab] = useState<"active" | "inactive">("active");
+  const [search, setSearch] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [roleFilter, setRoleFilter] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
+
+  const filteredUsers = MOCK_USERS_ADMIN.filter((u) => {
+    if (tab === "active" && u.status !== "active") return false;
+    if (tab === "inactive" && u.status !== "inactive") return false;
+    if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const toggleSelect = (id: number) => {
+    setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filteredUsers.map((u) => u.id));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-primary">Active Users</h2>
+          <p className="text-sm text-tertiary mt-0.5">Manage user accounts, roles, and permissions</p>
+        </div>
+        <button className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90" style={{ background: "#D34108" }}>
+          <Plus className="size-4" />
+          Create User
+        </button>
+      </div>
+
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-6 border-b border-secondary">
+        <button
+          onClick={() => setTab("active")}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+            tab === "active" ? "border-brand-solid text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary"
+          }`}
+        >
+          Active Users
+        </button>
+        <button
+          onClick={() => setTab("inactive")}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+            tab === "inactive" ? "border-brand-solid text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary"
+          }`}
+        >
+          Inactive Users
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <SearchLg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-quaternary" />
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-secondary bg-primary pl-9 pr-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-colors"
+          />
+        </div>
+        <select
+          value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value)}
+          className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm outline-none focus:border-brand"
+        >
+          <option value="">User Role</option>
+          <option value="admin">Admin</option>
+          <option value="consultant">Consultant</option>
+          <option value="commissions">Commissions user</option>
+        </select>
+        <select
+          value={groupFilter}
+          onChange={e => setGroupFilter(e.target.value)}
+          className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm outline-none focus:border-brand"
+        >
+          <option value="">User Group</option>
+          <option value="kadota">Kadota Assurance</option>
+          <option value="pwp">PWP Services</option>
+          <option value="vital">Vital Life Insurance</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Search Tags..."
+          className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm outline-none focus:border-brand transition-colors"
+        />
+      </div>
+
+      {/* Action toolbar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <Plus className="size-4" /> Create User
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <Users01 className="size-4" /> Assign to Group
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <X className="size-4" /> Remove from Group
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <Shield01 className="size-4" /> Assign to Role
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <X className="size-4" /> Remove from Role
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <Plus className="size-4" /> Add tags...
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <X className="size-4" /> Remove tags...
+        </button>
+        <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary transition-colors">
+          <AlertCircle className="size-4" /> Disable Users
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-secondary" style={{ background: "#3B485B" }}>
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                    onChange={toggleAll}
+                    className="rounded border-white/30"
+                  />
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">User</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Position</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Groups</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Roles</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Extension</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Tags</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Leads</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary">
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="hover:bg-secondary_alt transition-colors">
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.includes(user.id)}
+                      onChange={() => toggleSelect(user.id)}
+                      className="rounded border-secondary"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-medium text-brand-secondary hover:underline cursor-pointer">{user.name}</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-secondary">{user.position || "—"}</td>
+                  <td className="px-4 py-3">
+                    {user.group ? (
+                      <span className="text-sm text-brand-secondary hover:underline cursor-pointer">🔒 {user.group}</span>
+                    ) : (
+                      <span className="text-sm text-quaternary">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-secondary">{user.roles.join(", ")}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{user.extension || "—"}</td>
+                  <td className="px-4 py-3">
+                    {user.tags ? (
+                      <span className="text-sm text-brand-secondary hover:underline cursor-pointer">{user.tags}</span>
+                    ) : (
+                      <span className="text-sm text-quaternary">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-brand-secondary hover:underline cursor-pointer">{user.leads}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Generic placeholder for sections not yet built ─────────────────────────
+function SettingsPlaceholder({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+        <Settings01 className="size-8 text-quaternary" />
+      </div>
+      <h2 className="text-lg font-semibold text-primary mb-1">{title}</h2>
+      <p className="text-sm text-tertiary text-center max-w-sm">{description || `Configure ${title.toLowerCase()} settings`}</p>
+    </div>
+  );
+}
+
+// ─── Settings page with grouped horizontal tabs ─────────────────────────────
 export function Settings() {
-  const [activeTab, setActiveTab] = useState("task-builder");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const groupParam = searchParams.get("tab") || "task-builder";
+  const subTabParam = searchParams.get("sub");
+  
+  // Find current group
+  const currentGroup = settingsGroups.find(g => g.id === groupParam) || settingsGroups[0];
+  
+  // Active sub-tab within group (defaults to first tab in group)
+  const [activeSubTab, setActiveSubTab] = useState(subTabParam || currentGroup.tabs[0]?.id || "");
+  
+  // Update sub-tab when group changes
+  useEffect(() => {
+    const group = settingsGroups.find(g => g.id === groupParam);
+    if (group && !group.tabs.find(t => t.id === activeSubTab)) {
+      setActiveSubTab(group.tabs[0]?.id || "");
+    }
+  }, [groupParam, activeSubTab]);
+
+  const handleGroupChange = (groupId: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tab", groupId);
+    newParams.delete("sub");
+    setSearchParams(newParams);
+    const group = settingsGroups.find(g => g.id === groupId);
+    if (group) {
+      setActiveSubTab(group.tabs[0]?.id || "");
+    }
+  };
+
+  const handleSubTabChange = (tabId: string) => {
+    setActiveSubTab(tabId);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("sub", tabId);
+    setSearchParams(newParams);
+  };
+
+  // Render content based on active group and sub-tab
+  function renderContent() {
+    // Task Builder group - use existing TaskBuilder component
+    if (currentGroup.id === "task-builder") {
+      return <TaskBuilder />;
+    }
+    
+    // Users & Access group
+    if (currentGroup.id === "users") {
+      switch (activeSubTab) {
+        case "users": return <UsersSection />;
+        case "groups": return <SettingsPlaceholder title="Groups" description="Manage user groups and their permissions" />;
+        case "teams": return <SettingsPlaceholder title="Teams" description="Configure teams and team assignments" />;
+        case "roles": return <SettingsPlaceholder title="Roles" description="Define roles and their associated permissions" />;
+        default: return <UsersSection />;
+      }
+    }
+    
+    // Security group
+    if (currentGroup.id === "security") {
+      switch (activeSubTab) {
+        case "active-sessions": return <SettingsPlaceholder title="Active Sessions" description="View and manage currently active user sessions" />;
+        case "session-history": return <SettingsPlaceholder title="Session History" description="Review historical session data and login activity" />;
+        case "login-attempts": return <SettingsPlaceholder title="Login Attempts" description="Monitor login attempts and security events" />;
+        default: return <SettingsPlaceholder title="Security" />;
+      }
+    }
+    
+    // Templates group
+    if (currentGroup.id === "templates") {
+      switch (activeSubTab) {
+        case "task-templates": return <SettingsPlaceholder title="Task Templates" description="Create and manage reusable task templates" />;
+        case "file-library": return <SettingsPlaceholder title="File Library" description="Organize and manage shared files" />;
+        case "sms-templates": return <SettingsPlaceholder title="SMS Templates" description="Configure SMS message templates" />;
+        case "email-templates": return <SettingsPlaceholder title="Email Templates" description="Design and manage email templates" />;
+        case "docx-templates": return <SettingsPlaceholder title="DOCx Templates" description="Manage Word document templates" />;
+        default: return <SettingsPlaceholder title="Templates" />;
+      }
+    }
+    
+    // Forms & Data group
+    if (currentGroup.id === "forms") {
+      switch (activeSubTab) {
+        case "form-field-types": return <SettingsPlaceholder title="Form Field Types" description="Configure custom form field types" />;
+        case "lead-forms": return <SettingsPlaceholder title="Lead Forms" description="Design and manage lead capture forms" />;
+        case "form-field-aliases": return <SettingsPlaceholder title="Form Field Aliases" description="Set up field aliases for form integration" />;
+        case "tags": return <SettingsPlaceholder title="Tags" description="Manage tags for organizing records" />;
+        default: return <SettingsPlaceholder title="Forms & Data" />;
+      }
+    }
+    
+    // Business Config group
+    if (currentGroup.id === "business") {
+      switch (activeSubTab) {
+        case "budget-calculators": return <SettingsPlaceholder title="Budget Calculators" description="Configure budget calculation tools" />;
+        case "close-reasons": return <SettingsPlaceholder title="Close Reasons" description="Define reasons for closing leads or applications" />;
+        case "marketing-lists": return <SettingsPlaceholder title="Marketing Lists" description="Manage marketing distribution lists" />;
+        case "scheduled-tasks": return <SettingsPlaceholder title="Scheduled Tasks" description="Configure automated task schedules" />;
+        case "leaves": return <SettingsPlaceholder title="Leaves" description="Manage leave requests and approvals" />;
+        case "adviser-codes": return <SettingsPlaceholder title="Adviser Codes" description="Configure adviser identification codes" />;
+        case "insurance-type-mappings": return <SettingsPlaceholder title="Insurance Type Mappings" description="Map insurance types to products" />;
+        default: return <SettingsPlaceholder title="Business Config" />;
+      }
+    }
+    
+    // Integrations group
+    if (currentGroup.id === "integrations") {
+      switch (activeSubTab) {
+        case "phone": return <PhoneSettings />;
+        case "email-import": return <SettingsPlaceholder title="Email Import" description="Configure email import settings" />;
+        case "email-groups": return <SettingsPlaceholder title="Email Groups" description="Manage email distribution groups" />;
+        case "webhooks": return <SettingsPlaceholder title="Webhooks" description="Set up webhook integrations" />;
+        case "affiliates": return <SettingsPlaceholder title="Affiliates" description="Manage affiliate partnerships" />;
+        case "apis": return <SettingsPlaceholder title="APIs" description="Configure API access and keys" />;
+        case "neos-advisers": return <SettingsPlaceholder title="NEOS Advisers" description="Manage NEOS adviser integrations" />;
+        case "report-permissions": return <SettingsPlaceholder title="Report Permissions" description="Configure report access permissions" />;
+        default: return <SettingsPlaceholder title="Integrations" />;
+      }
+    }
+    
+    return <SettingsPlaceholder title="Settings" />;
+  }
+
   return (
     <div className="flex flex-col h-full min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
+      {/* Header with group tabs */}
       <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
         <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>Settings</h1>
+        
+        {/* Primary group tabs */}
         <div className="flex overflow-x-auto gap-0 -mb-px">
-          {settingsTabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+          {settingsGroups.map(group => {
+            const Icon = group.icon;
+            const isActive = currentGroup.id === group.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={"flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}>
+              <button 
+                key={group.id} 
+                onClick={() => handleGroupChange(group.id)} 
+                className={"flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary hover:border-secondary")}
+              >
                 <Icon className={"size-4 " + (isActive ? "text-brand-secondary" : "text-fg-quaternary")} aria-hidden />
-                {tab.label}
+                {group.label}
               </button>
             );
           })}
         </div>
       </div>
+      
+      {/* Sub-tabs for current group (only show if group has multiple tabs and isn't task-builder) */}
+      {currentGroup.id !== "task-builder" && currentGroup.tabs.length > 1 && (
+        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8">
+          <div className="flex overflow-x-auto gap-6 -mb-px">
+            {currentGroup.tabs.map(tab => {
+              const isActive = activeSubTab === tab.id;
+              return (
+                <button 
+                  key={tab.id} 
+                  onClick={() => handleSubTabChange(tab.id)} 
+                  className={"py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand-solid text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary")}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      {/* Content area */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "task-builder" && <TaskBuilder />}
-        {activeTab === "general" && <PlaceholderSection title="General" />}
-        {activeTab === "users" && <PlaceholderSection title="Users & Permissions" />}
-        {activeTab === "security" && <PlaceholderSection title="Security" />}
-        {activeTab === "notifications" && <PlaceholderSection title="Notifications" />}
-        {activeTab === "phone" && <PhoneSettings />}
-        {activeTab === "integrations" && <PlaceholderSection title="Integrations" />}
+        <div className="p-4 sm:p-6 lg:p-8">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
