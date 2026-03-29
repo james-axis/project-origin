@@ -718,8 +718,6 @@ export function ClientProfilePage() {
                 { label: "Off APL",          icon: BellOff01 },
                 { label: "Marketing List",   icon: BarChart01 },
               ]} />
-                { label: "Marketing List",   icon: BarChart01 },
-              ]} />
               {pinnedActions.map(label => (
                 <div key={label} className="inline-flex items-center rounded-lg border border-secondary bg-primary overflow-hidden">
                   <button onClick={() => label === "Application" ? setShowNewApp(true) : undefined}

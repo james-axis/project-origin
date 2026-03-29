@@ -47,7 +47,7 @@ export function ProfilePage() {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState(USER.avatarUrl);
-  const initials = \`\${firstName.charAt(0)}\${lastName.charAt(0)}\`;
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
   return (
     <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
