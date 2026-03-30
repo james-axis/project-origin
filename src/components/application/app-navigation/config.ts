@@ -9,6 +9,7 @@ import {
     Download01,
     FileCheck02,
     FileSearch02,
+    Folder,
     HomeLine,
     LifeBuoy01,
     Settings01,
@@ -181,6 +182,18 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "Policies", href: "/exports?group=policies" },
             { label: "Commissions", href: "/exports?group=commissions" },
             { label: "Submissions", href: "/exports?group=submissions" },
+        ],
+    },
+    {
+        label: "Documents",
+        href: "/documents",
+        icon: Folder,
+        items: [
+            { label: "PDS Documents", href: "/documents?group=pds" },
+            { label: "TMD Documents", href: "/documents?group=tmd" },
+            { label: "Forms", href: "/documents?group=forms" },
+            { label: "Templates", href: "/documents?group=templates" },
+            { label: "Guides", href: "/documents?group=guides" },
         ],
     },
 ];

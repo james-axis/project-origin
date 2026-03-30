@@ -188,21 +188,8 @@ function ReportTable({
                   <td key={col.key} className={`px-4 py-3 text-sm ${
                     col.key === "customer" || col.key === "adviser" ? "text-brand-secondary font-medium" : "text-primary"
                   }`}>
-                    {col.key === "status" ? (
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        row[col.key] === "Prospect" || row[col.key] === "Pending" ? "bg-gray-100 text-gray-600" :
-                        row[col.key] === "Scheduled Appoint" || row[col.key] === "Under Review" ? "bg-blue-50 text-blue-600" :
-                        row[col.key] === "Quote Sent" || row[col.key] === "Delivered" ? "bg-purple-50 text-purple-600" :
-                        row[col.key] === "Application Pending" ? "bg-warning-secondary text-warning-primary" :
-                        row[col.key] === "Approved" || row[col.key] === "Received" ? "bg-success-secondary text-success-primary" :
-                        "bg-gray-100 text-gray-600"
-                      }`}>
-                        {row[col.key]}
-                      </span>
-                    ) : col.key === "direction" ? (
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        row[col.key] === "Inbound" ? "bg-success-secondary text-success-primary" : "bg-blue-50 text-blue-600"
-                      }`}>
+                    {col.key === "status" || col.key === "direction" ? (
+                      <span className="text-xs text-tertiary">
                         {row[col.key]}
                       </span>
                     ) : (

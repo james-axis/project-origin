@@ -354,11 +354,7 @@ function PayrunsContent() {
                 <td className="px-4 py-3 text-sm text-primary font-medium">{payrun.amount}</td>
                 <td className="px-4 py-3 text-sm text-tertiary">{payrun.transactions}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    payrun.status === "Reconciled" ? "bg-success-secondary text-success-primary" :
-                    payrun.status === "Unreconciled" ? "bg-warning-secondary text-warning-primary" :
-                    "bg-error-secondary text-error-primary"
-                  }`}>{payrun.status}</span>
+                  <span className="text-xs text-tertiary">{payrun.status}</span>
                 </td>
                 <td className="px-4 py-3 text-sm text-tertiary">{payrun.reconciled}</td>
                 <td className="px-4 py-3">
@@ -434,11 +430,7 @@ function BankTransactionsContent() {
                 <td className="px-4 py-3 text-sm text-primary">{txn.description}</td>
                 <td className="px-4 py-3 text-sm text-primary font-medium">{txn.amount}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    txn.status === "Matched" ? "bg-success-secondary text-success-primary" :
-                    txn.status === "Partial" ? "bg-warning-secondary text-warning-primary" :
-                    "bg-error-secondary text-error-primary"
-                  }`}>{txn.status}</span>
+                  <span className="text-xs text-tertiary">{txn.status}</span>
                 </td>
                 <td className="px-4 py-3 text-sm text-brand-secondary">{txn.payrunId ? `#${txn.payrunId}` : "—"}</td>
                 <td className="px-4 py-3">

@@ -145,7 +145,7 @@ export function ComplaintsPage() {
             {search&&<button onClick={()=>{setSearch("");setPage(1);}} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-quaternary hover:text-secondary"><X className="size-3.5"/></button>}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <button onClick={downloadCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary"><Download01 className="size-4 text-success-primary"/>Download CSV</button>
+            <button onClick={downloadCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary"><Download01 className="size-4"/>Download CSV</button>
             <div className="relative">
               <button onClick={()=>setColPanelOpen(v=>!v)} className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors "+(colPanelOpen?"border-brand bg-brand-secondary text-brand-secondary":"border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4"/>Columns <span className="rounded-full bg-brand-solid text-white text-[10px] font-semibold px-1.5 py-0.5">{visibleCols.length}/{COLS.length}</span>
