@@ -164,8 +164,10 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         href: "/reports",
         icon: BarChartSquare02,
         items: [
-            { label: "All Reports", href: "/reports" },
-            { label: "Submissions", href: "/reports/submissions" },
+            { label: "Leads", href: "/reports?group=leads" },
+            { label: "Applications", href: "/reports?group=applications" },
+            { label: "Submissions", href: "/reports?group=submissions" },
+            { label: "Completions", href: "/reports?group=completions" },
         ],
     },
 ];
