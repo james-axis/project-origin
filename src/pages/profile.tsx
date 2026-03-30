@@ -365,21 +365,16 @@ export function ProfilePage() {
       <main className="min-h-screen overflow-x-hidden lg:flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b border-secondary bg-primary px-6 lg:px-8 pt-6 pb-0">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl font-semibold text-primary" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-                {TABS.find(t => t.id === activeTab)?.label || "Profile"}
-              </h1>
-              <p className="text-sm text-tertiary mt-0.5">Manage your account settings and preferences</p>
-            </div>
-          </div>
+          <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
+            {TABS.find(t => t.id === activeTab)?.label || "Profile"}
+          </h1>
           {/* Tabs */}
-          <div className="flex gap-0 -mb-px overflow-x-auto">
+          <div className="flex gap-6 -mb-px overflow-x-auto">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setSearchParams({ tab: tab.id })}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center gap-2 px-0 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? "border-brand text-brand-secondary"
                     : "border-transparent text-tertiary hover:text-secondary hover:border-secondary"
