@@ -6,6 +6,7 @@ import {
     BarChartSquare02,
     CheckDone01,
     CurrencyDollar,
+    Download01,
     FileCheck02,
     FileSearch02,
     HomeLine,
@@ -168,6 +169,18 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "Applications", href: "/reports?group=applications" },
             { label: "Submissions", href: "/reports?group=submissions" },
             { label: "Completions", href: "/reports?group=completions" },
+        ],
+    },
+    {
+        label: "Exports",
+        href: "/exports",
+        icon: Download01,
+        items: [
+            { label: "Clients", href: "/exports?group=clients" },
+            { label: "Leads", href: "/exports?group=leads" },
+            { label: "Policies", href: "/exports?group=policies" },
+            { label: "Commissions", href: "/exports?group=commissions" },
+            { label: "Submissions", href: "/exports?group=submissions" },
         ],
     },
 ];

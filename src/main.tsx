@@ -17,6 +17,7 @@ import { CampaignsPage } from "@/pages/campaigns";
 import { InsuranceProductsPage } from "@/pages/insurance-products";
 import { PaymentsPage } from "@/pages/payments";
 import { ReportsPage } from "@/pages/reports";
+import { ExportsPage } from "@/pages/exports";
 import { Settings } from "@/pages/settings";
 import { ProfilePage } from "@/pages/profile";
 import { NotFound } from "@/pages/not-found";
@@ -76,6 +77,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/payments/*" element={<RequireAuth><PaymentsPage /></RequireAuth>} />
               <Route path="/reports" element={<RequireAuth><ReportsPage /></RequireAuth>} />
               <Route path="/reports/*" element={<RequireAuth><ReportsPage /></RequireAuth>} />
+              <Route path="/exports" element={<RequireAuth><ExportsPage /></RequireAuth>} />
+              <Route path="/exports/*" element={<RequireAuth><ExportsPage /></RequireAuth>} />
               <Route path="/client/:id" element={<RequireAuth><ClientProfilePage /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
               <Route path="/settings/*" element={<RequireAuth><Settings /></RequireAuth>} />
