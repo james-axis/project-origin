@@ -5,7 +5,7 @@ import { ChevronSelectorVertical, LogOut01, Plus, User01 } from "@untitledui/ico
 import { useFocusManager } from "react-aria";
 import type { DialogProps as AriaDialogProps } from "react-aria-components";
 import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { Button } from "@/components/base/buttons/button";
 import { RadioButtonBase } from "@/components/base/radio-buttons/radio-buttons";
@@ -41,6 +41,44 @@ const placeholderAccounts: NavAccountType[] = [
         status: "online",
     },
 ];
+
+/** Simple account card - clicking the avatar/name goes to profile, with a sign out button */
+export const NavAccountCardSimple = ({
+    selectedAccountId = "olivia",
+}: {
+    selectedAccountId?: string;
+}) => {
+    const selectedAccount = placeholderAccounts.find((account) => account.id === selectedAccountId);
+
+    if (!selectedAccount) {
+        console.warn(`Account with ID ${selectedAccountId} not found in <NavAccountCardSimple />`);
+        return null;
+    }
+
+    return (
+        <div className="relative flex items-center gap-3 rounded-xl p-3 ring-1 ring-secondary ring-inset">
+            <Link to="/profile" className="flex-1 outline-focus-ring rounded-md focus-visible:outline-2 focus-visible:outline-offset-2">
+                <AvatarLabelGroup
+                    size="md"
+                    src={selectedAccount.avatar}
+                    title={selectedAccount.name}
+                    subtitle={selectedAccount.email}
+                    status={selectedAccount.status}
+                />
+            </Link>
+
+            <div className="absolute top-1/2 right-1.5 -translate-y-1/2">
+                <Button
+                    size="sm"
+                    color="tertiary"
+                    iconLeading={<LogOut01 className="size-5 text-fg-quaternary transition-inherit-all group-hover:text-fg-quaternary_hover" />}
+                    className="p-1.5!"
+                    aria-label="Sign out"
+                />
+            </div>
+        </div>
+    );
+};
 
 export const NavAccountMenu = ({
     className,

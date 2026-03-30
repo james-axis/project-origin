@@ -203,8 +203,8 @@ function StatusButton() {
   }, [open]);
   const statuses = [
     { label:"In Progress", color:"#3B82F6" },
-    { label:"On Hold",     color:"#F59E0B" },
-    { label:"Complete",    color:"#22C55E" },
+    { label:"On Hold",     color:"#3B485B" },
+    { label:"Complete",    color:"#3B485B" },
     { label:"Closed",      color:"#6B7280" },
   ];
   return (
@@ -349,7 +349,7 @@ function SectionCard({ id, title, children, action, actionLabel, defaultOpen=tru
           {action && actionLabel && (
             <button onClick={e => { e.stopPropagation(); action(); }}
               className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary">
-              <Plus className="size-3 text-success-primary" />{actionLabel}
+              <Plus className="size-3 text-brand-secondary" />{actionLabel}
             </button>
           )}
           <button onClick={() => setOpen(o => !o)}>

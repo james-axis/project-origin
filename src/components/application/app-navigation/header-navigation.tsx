@@ -1,13 +1,13 @@
 import type { FC, ReactNode } from "react";
 import { Bell01, LifeBuoy01, SearchLg, Settings01 } from "@untitledui/icons";
-import { Button as AriaButton, DialogTrigger, Popover } from "react-aria-components";
+import { Link } from "react-router";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { Input } from "@/components/base/input/input";
 import { UntitledLogo } from "@/components/foundations/logo/untitledui-logo";
 import { cx } from "@/utils/cx";
 import { MobileNavigationHeader } from "./base-components/mobile-header";
-import { NavAccountCard, NavAccountMenu } from "./base-components/nav-account-card";
+import { NavAccountCardSimple } from "./base-components/nav-account-card";
 import { NavItemBase } from "./base-components/nav-item";
 import { NavItemButton } from "./base-components/nav-item-button";
 import { NavList } from "./base-components/nav-list";
@@ -87,7 +87,7 @@ export const HeaderNavigationBase = ({
                             </NavItemBase>
                         </div>
 
-                        <NavAccountCard />
+                        <NavAccountCardSimple />
                     </div>
                 </aside>
             </MobileNavigationHeader>
@@ -145,33 +145,12 @@ export const HeaderNavigationBase = ({
                             </div>
 
                             {showAvatarDropdown && (
-                                <DialogTrigger>
-                                    <AriaButton
-                                        className={({ isPressed, isFocused }) =>
-                                            cx(
-                                                "group relative inline-flex cursor-pointer",
-                                                (isPressed || isFocused) && "rounded-full outline-2 outline-offset-2 outline-focus-ring",
-                                            )
-                                        }
-                                    >
-                                        <Avatar alt="Olivia Rhye" src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0" size="md" />
-                                    </AriaButton>
-                                    <Popover
-                                        placement="bottom right"
-                                        offset={8}
-                                        className={({ isEntering, isExiting }) =>
-                                            cx(
-                                                "will-change-transform",
-                                                isEntering &&
-                                                    "duration-300 ease-out animate-in fade-in placement-right:slide-in-from-left-2 placement-top:slide-in-from-bottom-2 placement-bottom:slide-in-from-top-2",
-                                                isExiting &&
-                                                    "duration-150 ease-in animate-out fade-out placement-right:slide-out-to-left-2 placement-top:slide-out-to-bottom-2 placement-bottom:slide-out-to-top-2",
-                                            )
-                                        }
-                                    >
-                                        <NavAccountMenu />
-                                    </Popover>
-                                </DialogTrigger>
+                                <Link
+                                    to="/profile"
+                                    className="group relative inline-flex cursor-pointer rounded-full outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                                >
+                                    <Avatar alt="Olivia Rhye" src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0" size="md" />
+                                </Link>
                             )}
                         </div>
                     </div>

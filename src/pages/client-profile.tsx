@@ -394,7 +394,7 @@ function SectionCard({
           {action && actionLabel && (
             <button onClick={e => { e.stopPropagation(); action(); }}
               className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
-              <Plus className="size-3 text-success-primary" />{actionLabel}
+              <Plus className="size-3 text-brand-secondary" />{actionLabel}
             </button>
           )}
           <button onClick={() => setOpen(o => !o)}>

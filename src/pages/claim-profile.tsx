@@ -56,7 +56,7 @@ function DropdownButton({ label, icon: Icon, items }: { label: string; icon?: FC
 function StatusButton() {
   const [open, setOpen] = useState(false); const [current, setCurrent] = useState("New Case"); const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { if (!open) return; const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
-  const statuses = [{ label:"In Progress", color:"#3B82F6" },{ label:"On Hold", color:"#F59E0B" },{ label:"Complete", color:"#22C55E" },{ label:"Closed", color:"#6B7280" }];
+  const statuses = [{ label:"In Progress", color:"#3B485B" },{ label:"On Hold", color:"#3B485B" },{ label:"Complete", color:"#3B485B" },{ label:"Closed", color:"#6B7280" }];
   return <div ref={ref} className="relative"><button onClick={() => setOpen(o => !o)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">🔄 Set Status</button>{open && <div className="absolute left-0 top-full mt-1 z-50 w-40 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">{statuses.map(s => <button key={s.label} onClick={() => { setCurrent(s.label); setOpen(false); }} className={"flex items-center gap-2.5 w-full px-3 py-2 text-xs hover:bg-secondary_alt " + (current === s.label ? "font-semibold" : "text-primary")}><span className="size-2 rounded-full shrink-0" style={{ background: s.color }} />{s.label}{current === s.label && <Check className="size-3 ml-auto text-brand-secondary" />}</button>)}</div>}</div>;
 }
 
@@ -94,7 +94,7 @@ function SectionCard({ id, title, children, action, actionLabel, defaultOpen=tru
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {extraAction}
-          {action&&actionLabel&&<button onClick={e=>{e.stopPropagation();action();}} className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary"><Plus className="size-3 text-success-primary"/>{actionLabel}</button>}
+          {action&&actionLabel&&<button onClick={e=>{e.stopPropagation();action();}} className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary"><Plus className="size-3 text-brand-secondary"/>{actionLabel}</button>}
           <button onClick={()=>setOpen(o=>!o)}>{open?<ChevronDown className="size-4 text-quaternary"/>:<ChevronRight className="size-4 text-quaternary"/>}</button>
         </div>
       </div>

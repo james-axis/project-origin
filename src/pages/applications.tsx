@@ -296,7 +296,7 @@ export function ApplicationsPage() {
           <div className="ml-auto flex items-center gap-2">
             {hasFilters && <button onClick={() => { setSearch(""); setAdviserFilter("All"); setCompanyFilter("All"); setTypeFilter("All"); setStatusFilter("All"); setPage(1); }} className="text-sm text-brand-secondary hover:underline">Clear filters</button>}
             <button onClick={downloadCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary">
-              <Download01 className="size-4 text-success-primary" />Download CSV
+              <Download01 className="size-4 text-brand-secondary" />Download CSV
             </button>
             <div className="relative">
               <button onClick={() => setColPanelOpen(v => !v)}

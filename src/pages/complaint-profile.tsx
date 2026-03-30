@@ -8,7 +8,7 @@ import { ChevronDown, ChevronRight, Plus, X, Edit01, Check, File01, User01, User
 interface NoteEntry { id: number; text: string; author: string; date: string; }
 
 const COMPLAINT = {
-  id: 5, statusLabel: "Resolved", statusColor: "#22C55E",
+  id: 5, statusLabel: "Resolved", statusColor: "#3B485B",
   customer: { title:"Ms", firstName:"Nicky", lastName:"Test", phone:"0400780863", email:"Nicky@slifegroup.com.au", state:"NSW" },
   info: {
     type: "Other", received: "28/11/2024", assignedTo: "Nicky G",
@@ -48,7 +48,7 @@ function DropdownButton({ label, icon: Icon, items }: { label: string; icon?: FC
 function StatusButton() {
   const [open, setOpen] = useState(false); const [current, setCurrent] = useState("Resolved"); const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { if (!open) return; const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
-  const statuses = [{ label:"In Progress", color:"#3B82F6" }, { label:"On Hold", color:"#F59E0B" }, { label:"Resolved", color:"#22C55E" }, { label:"Closed", color:"#6B7280" }];
+  const statuses = [{ label:"In Progress", color:"#3B485B" }, { label:"On Hold", color:"#3B485B" }, { label:"Resolved", color:"#3B485B" }, { label:"Closed", color:"#6B7280" }];
   return <div ref={ref} className="relative"><button onClick={() => setOpen(o => !o)} className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary">🔄 Set Status</button>{open && <div className="absolute left-0 top-full mt-1 z-50 w-40 rounded-xl border border-secondary bg-white shadow-xl overflow-hidden py-1">{statuses.map(s => <button key={s.label} onClick={() => { setCurrent(s.label); setOpen(false); }} className={"flex items-center gap-2.5 w-full px-3 py-2 text-xs hover:bg-secondary_alt " + (current === s.label ? "font-semibold" : "text-primary")}><span className="size-2 rounded-full shrink-0" style={{ background: s.color }} />{s.label}{current === s.label && <Check className="size-3 ml-auto text-brand-secondary" />}</button>)}</div>}</div>;
 }
 
@@ -68,7 +68,7 @@ function SectionCard({ id, title, children, action, actionLabel, defaultOpen = t
           </button>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {action && actionLabel && <button onClick={e => { e.stopPropagation(); action(); }} className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary"><Plus className="size-3 text-success-primary" />{actionLabel}</button>}
+          {action && actionLabel && <button onClick={e => { e.stopPropagation(); action(); }} className="flex items-center gap-1 rounded-lg border border-secondary bg-primary px-2 py-1 text-xs font-medium text-secondary hover:bg-secondary"><Plus className="size-3 text-brand-secondary" />{actionLabel}</button>}
           <button onClick={() => setOpen(o => !o)}>{open ? <ChevronDown className="size-4 text-quaternary" /> : <ChevronRight className="size-4 text-quaternary" />}</button>
         </div>
       </div>
@@ -120,7 +120,7 @@ export function ComplaintProfilePage() {
             <IC label="Type" value={<EditableSelect value={COMPLAINT.info.type} options={COMPLAINT_TYPES} />} />
             <IC label="Assigned To" value={<EditableSelect value={COMPLAINT.info.assignedTo} options={USERS_LIST} />} />
             <IC label="Received" value={COMPLAINT.info.received} />
-            <IC label="Status" value={<span className="inline-flex rounded-full bg-green-50 text-green-700 text-[11px] font-semibold px-2 py-0.5">{COMPLAINT.statusLabel}</span>} />
+            <IC label="Status" value={<span className="text-sm text-primary font-medium">{COMPLAINT.statusLabel}</span>} />
             <IC label="Created On" value={COMPLAINT.info.createdOn} />
             <IC label="Updated On" value={COMPLAINT.info.updatedOn} />
             <div className="col-span-2 sm:col-span-4">
@@ -160,7 +160,7 @@ export function ComplaintProfilePage() {
   const sidebarContent = (
     <div className="flex-1 min-w-0 overflow-y-auto px-3 pb-4 pt-2 space-y-2">
       <SidebarSection title="Client">
-        <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#22C55E" }}>
+        <div className="rounded-lg px-3 py-2.5 flex items-center justify-between text-sm font-semibold text-white" style={{ background: "#3B485B" }}>
           <span className="flex items-center gap-2 truncate"><User01 className="size-3.5 shrink-0" />{COMPLAINT.customer.title} {COMPLAINT.customer.firstName} {COMPLAINT.customer.lastName}</span>
           <span className="rounded-full border border-white/40 bg-white/20 px-2 py-0.5 text-[10px] shrink-0 ml-2">Complaint</span>
         </div>

@@ -109,12 +109,12 @@ function formatDateTime(iso: string): string {
 function isOverdue(d: string) { return new Date(d) < new Date(); }
 
 const OBJECT_BADGE: Record<ObjectType, { label: string; cls: string }> = {
-  lead:        { label:"Lead",        cls:"bg-blue-100 text-blue-700"   },
-  application: { label:"Application", cls:"bg-purple-100 text-purple-700"},
-  claim:       { label:"Claim",       cls:"bg-red-100 text-red-700"     },
-  dishonour:   { label:"Dishonour",   cls:"bg-orange-100 text-orange-700"},
-  complaint:   { label:"Complaint",   cls:"bg-yellow-100 text-yellow-700"},
-  policy:      { label:"Policy",      cls:"bg-green-100 text-green-700" },
+  lead:        { label:"Lead",        cls:"text-xs text-tertiary"   },
+  application: { label:"Application", cls:"text-xs text-tertiary"},
+  claim:       { label:"Claim",       cls:"text-xs text-tertiary"     },
+  dishonour:   { label:"Dishonour",   cls:"text-xs text-tertiary"},
+  complaint:   { label:"Complaint",   cls:"text-xs text-tertiary"},
+  policy:      { label:"Policy",      cls:"text-xs text-tertiary" },
 };
 
 // ─── Column selector panel ────────────────────────────────────────────────────
