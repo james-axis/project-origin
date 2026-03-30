@@ -1,7 +1,7 @@
 import type { FC, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { Placement } from "@react-types/overlays";
-import { ChevronSelectorVertical, LogOut01, Plus, User01 } from "@untitledui/icons";
+import { ChevronSelectorVertical, Plus, User01 } from "@untitledui/icons";
 import { useFocusManager } from "react-aria";
 import type { DialogProps as AriaDialogProps } from "react-aria-components";
 import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
@@ -66,16 +66,6 @@ export const NavAccountCardSimple = ({
                     status={selectedAccount.status}
                 />
             </Link>
-
-            <div className="absolute top-1/2 right-1.5 -translate-y-1/2">
-                <Button
-                    size="sm"
-                    color="tertiary"
-                    iconLeading={<LogOut01 className="size-5 text-fg-quaternary transition-inherit-all group-hover:text-fg-quaternary_hover" />}
-                    className="p-1.5!"
-                    aria-label="Sign out"
-                />
-            </div>
         </div>
     );
 };
@@ -150,10 +140,6 @@ export const NavAccountMenu = ({
                         Add account
                     </Button>
                 </div>
-            </div>
-
-            <div className="pt-1 pb-1.5">
-                <NavAccountCardMenuItem label="Sign out" icon={LogOut01} shortcut="⌥⇧Q" />
             </div>
         </AriaDialog>
     );
