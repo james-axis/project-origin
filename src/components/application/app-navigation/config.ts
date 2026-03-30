@@ -125,7 +125,9 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         href: "/payments",
         icon: CurrencyDollar,
         items: [
-            { label: "All Payments", href: "/payments" },
+            { label: "Dashboard", href: "/payments" },
+            { label: "Payruns", href: "/payments/payruns" },
+            { label: "Bank Transactions", href: "/payments/transactions" },
         ],
     },
     {
