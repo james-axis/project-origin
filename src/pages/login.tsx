@@ -27,7 +27,7 @@ export const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [email, setEmail] = useState("test@gmail.com");
-    const [password, setPassword] = useState("form123");
+    const [password, setPassword] = useState("");
 
     const handleSignIn = (e: React.FormEvent) => {
         e.preventDefault();
