@@ -2284,11 +2284,11 @@ export function HomeScreen() {
                     <RefreshCcw01 className="size-3.5" />
                   </button>
                   <button onClick={() => setSimModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-secondary px-3 py-1.5 text-xs font-medium text-tertiary hover:text-secondary transition-colors whitespace-nowrap">
-                    <Zap className="size-3 opacity-50" /><span className="hidden sm:inline">Simulate </span>client
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap shadow-sm">
+                    <Plus className="size-3.5" /><span className="hidden sm:inline">New </span>Lead
                   </button>
                   <button onClick={() => setWidgetModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-solid px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-solid_hover transition-colors whitespace-nowrap">
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors whitespace-nowrap">
                     <Plus className="size-3" /><span className="hidden sm:inline">Add </span>widget
                   </button>
                 </div>
