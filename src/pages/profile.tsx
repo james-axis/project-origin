@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { navItems, footerNavItems } from "@/components/application/app-navigation/config";
-import { User01, Mail01, Phone01, Lock01, Shield01, Link01, Upload01, Trash01, Eye, EyeOff } from "@untitledui/icons";
+import { User01, Mail01, Phone01, Lock01, Shield01, Link01, Upload01, Trash01, Eye, EyeOff, LogOut01 } from "@untitledui/icons";
 
 const USER = {
   firstName: "James",
@@ -104,6 +104,12 @@ export function ProfilePage() {
                   {twoFactorEnabled && (<div className="bg-secondary_alt rounded-lg p-4"><p className="text-sm text-secondary mb-3">Scan the code below with your authenticator app to add this account.</p><div className="flex justify-center"><div className="size-32 bg-white rounded-lg border border-secondary flex items-center justify-center"><svg viewBox="0 0 100 100" className="size-24"><rect x="10" y="10" width="25" height="25" fill="#1C1C24"/><rect x="65" y="10" width="25" height="25" fill="#1C1C24"/><rect x="10" y="65" width="25" height="25" fill="#1C1C24"/><rect x="15" y="15" width="15" height="15" fill="white"/><rect x="70" y="15" width="15" height="15" fill="white"/><rect x="15" y="70" width="15" height="15" fill="white"/><rect x="20" y="20" width="5" height="5" fill="#1C1C24"/><rect x="75" y="20" width="5" height="5" fill="#1C1C24"/><rect x="20" y="75" width="5" height="5" fill="#1C1C24"/><rect x="40" y="40" width="20" height="20" fill="#1C1C24"/><rect x="45" y="45" width="10" height="10" fill="white"/></svg></div></div></div>)}
                   <button onClick={() => setTwoFactorEnabled(!twoFactorEnabled)} className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors"><Shield01 className="size-4" />{twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}</button>
                 </div>
+              </SectionCard>
+              <SectionCard title="Sign Out" description="Sign out of your account">
+                <button className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-error-300 bg-error-50 px-4 py-2 text-sm font-medium text-error-700 hover:bg-error-100 transition-colors">
+                  <LogOut01 className="size-4" />
+                  Sign out
+                </button>
               </SectionCard>
             </div>
           </div>

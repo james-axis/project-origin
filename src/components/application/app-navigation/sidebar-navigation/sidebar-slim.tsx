@@ -1,17 +1,15 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { LifeBuoy01, LogOut01, Settings01 } from "@untitledui/icons";
+import { LogOut01, Settings01 } from "@untitledui/icons";
 import { CreateLeadModal } from "@/components/modals/create-lead-modal";
 import { AnimatePresence, motion } from "motion/react";
-import { Button as AriaButton, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { cx } from "@/utils/cx";
 import { MobileNavigationHeader } from "../base-components/mobile-header";
-import { NavAccountMenu } from "../base-components/nav-account-card";
 import { NavItemBase } from "../base-components/nav-item";
 import { NavItemButton } from "../base-components/nav-item-button";
 import { NavList } from "../base-components/nav-list";
@@ -101,31 +99,12 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
 
-                    <AriaDialogTrigger>
-                        <AriaButton
-                            className={({ isPressed, isFocused }) =>
-                                cx("group relative inline-flex rounded-full", (isPressed || isFocused) && "outline-2 outline-offset-2 outline-focus-ring")
-                            }
-                        >
-                            <Avatar status="online" src="https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80" size="md" alt="Olivia Rhye" />
-                        </AriaButton>
-                        <AriaPopover
-                            placement="right bottom"
-                            offset={8}
-                            crossOffset={6}
-                            className={({ isEntering, isExiting }) =>
-                                cx(
-                                    "will-change-transform",
-                                    isEntering &&
-                                        "duration-300 ease-out animate-in fade-in placement-right:slide-in-from-left-2 placement-top:slide-in-from-bottom-2 placement-bottom:slide-in-from-top-2",
-                                    isExiting &&
-                                        "duration-150 ease-in animate-out fade-out placement-right:slide-out-to-left-2 placement-top:slide-out-to-bottom-2 placement-bottom:slide-out-to-top-2",
-                                )
-                            }
-                        >
-                            <NavAccountMenu />
-                        </AriaPopover>
-                    </AriaDialogTrigger>
+                    <Link
+                        to="/profile"
+                        className="group relative inline-flex rounded-full outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                        <Avatar status="online" src="https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80" size="md" alt="Olivia Rhye" />
+                    </Link>
                 </div>
             </div>
         </aside>
@@ -216,9 +195,6 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
 
                     <div className="mt-auto flex flex-col gap-5 px-2 py-4">
                         <div className="flex flex-col gap-2">
-                            <NavItemBase current={activeUrl === "/support"} type="link" href="/support" icon={LifeBuoy01}>
-                                Support
-                            </NavItemBase>
                             <NavItemBase current={activeUrl === "/settings"} type="link" href="/settings" icon={Settings01}>
                                 Settings
                             </NavItemBase>

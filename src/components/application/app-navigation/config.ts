@@ -11,7 +11,6 @@ import {
     FileSearch02,
     Folder,
     HomeLine,
-    LifeBuoy01,
     Settings01,
     Users01,
     UserPlus01,
@@ -199,7 +198,6 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
 ];
 
 export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
-    { label: "Support", href: "/support", icon: LifeBuoy01 },
     { 
         label: "Settings", 
         href: "/settings", 
