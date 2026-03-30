@@ -99,6 +99,17 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     
                     {showCreateLead && <CreateLeadModal onClose={() => setShowCreateLead(false)} />}
 
+                    {/* Prominent Create New Lead button */}
+                    <button
+                        onClick={() => setShowCreateLead(true)}
+                        title="Create New Lead"
+                        className="flex items-center justify-center size-10 rounded-xl bg-brand-solid text-white hover:bg-brand-solid_hover transition-colors shadow-sm mb-2"
+                    >
+                        <svg className="size-5" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+
                     <Link
                         to="/profile"
                         className="group relative inline-flex rounded-full outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
