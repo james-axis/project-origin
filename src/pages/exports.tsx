@@ -367,17 +367,11 @@ export function ExportsPage() {
   
   // Get current group and tab from URL params
   const currentGroupId = searchParams.get("group") || "clients";
-  const currentTabId = searchParams.get("tab") || "all-clients";
+  const currentTabId = searchParams.get("tab") || "";
   
   const currentGroup = exportGroups.find(g => g.id === currentGroupId) || exportGroups[0];
-  const currentTab = currentGroup.tabs.find(t => t.id === currentTabId) || currentGroup.tabs[0];
-  
-  const handleGroupChange = (groupId: string) => {
-    const group = exportGroups.find(g => g.id === groupId);
-    if (group) {
-      setSearchParams({ group: groupId, tab: group.tabs[0].id });
-    }
-  };
+  // Default to first tab if not specified
+  const activeTabId = currentTabId || currentGroup.tabs[0]?.id || "";
   
   const handleTabChange = (tabId: string) => {
     setSearchParams({ group: currentGroupId, tab: tabId });
@@ -389,55 +383,34 @@ export function ExportsPage() {
       <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
 
       <main className="min-h-screen overflow-x-hidden lg:flex-1 flex flex-col">
-        {/* Header with primary tabs */}
+        {/* Header with group name and sub-tabs */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
           <h1 className="text-xl font-semibold text-primary mb-4" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-            Exports
+            {currentGroup.label}
           </h1>
           
-          {/* Primary tabs (groups) */}
-          <div className="flex overflow-x-auto gap-0 -mb-px">
-            {exportGroups.map(group => {
-              const Icon = group.icon;
-              return (
-                <button
-                  key={group.id}
-                  onClick={() => handleGroupChange(group.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    currentGroupId === group.id 
-                      ? "border-brand text-brand-secondary" 
-                      : "border-transparent text-tertiary hover:text-secondary hover:border-secondary"
-                  }`}
-                >
-                  <Icon className="size-4" />
-                  {group.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* Sub-tabs for current group */}
+          {currentGroup.tabs.length > 0 && (
+            <div className="flex overflow-x-auto gap-6 -mb-px">
+              {currentGroup.tabs.map(tab => {
+                const isActive = activeTabId === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={"py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors " + (isActive ? "border-brand-solid text-brand-secondary" : "border-transparent text-tertiary hover:text-secondary")}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Secondary tabs + Content */}
+        {/* Content */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8">
-          {/* Secondary tabs */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            {currentGroup.tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  currentTabId === tab.id 
-                    ? "bg-brand-solid text-white" 
-                    : "bg-secondary text-secondary hover:bg-secondary_alt"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          
-          {/* Export Builder */}
-          <ExportBuilder groupId={currentGroupId} tabId={currentTabId} />
+          <ExportBuilder groupId={currentGroupId} tabId={activeTabId} />
         </div>
       </main>
     </div>
