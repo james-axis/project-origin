@@ -128,6 +128,9 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "Dashboard", href: "/payments" },
             { label: "Payruns", href: "/payments/payruns" },
             { label: "Bank Transactions", href: "/payments/transactions" },
+            { label: "Reconciliation", href: "/payments/reconciliation" },
+            { label: "Payruns File Formats", href: "/payments/file-formats" },
+            { label: "Transaction Name Formats", href: "/payments/name-formats" },
         ],
     },
     {
