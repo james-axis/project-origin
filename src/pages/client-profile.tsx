@@ -514,7 +514,6 @@ export function ClientProfilePage() {
   const [fieldPanelOpen, setFieldPanelOpen] = useState(false);
   function updateFieldState(s: FieldState) { setFieldState(s); saveFieldState(s); }
 
-  const statusColor = "#D34108";
 
   function addNote() {
     if (!noteText.trim()) return;
@@ -640,59 +639,23 @@ export function ClientProfilePage() {
 
       <main className="flex-1 min-h-screen flex flex-col overflow-hidden">
 
-        {/* ── Header (Untitled UI style) ── */}
+        {/* ── Header (matching application profile style) ── */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-xs text-tertiary mb-3">
-            <button className="hover:text-brand-secondary transition-colors">Clients</button>
-            <ChevronRight className="size-3 text-quaternary" />
-            <span className="text-secondary font-medium">{CLIENT.firstName} {CLIENT.lastName}</span>
-          </div>
-          
-          <div className="flex items-start gap-4 flex-wrap">
-            {/* Avatar */}
-            <div className="relative shrink-0">
-              <div className="size-16 rounded-full bg-gradient-to-br from-brand-solid to-orange-400 flex items-center justify-center text-white text-xl font-semibold shadow-sm" style={{ fontFamily: "'Metrophobic', sans-serif" }}>
-                {CLIENT.firstName.charAt(0)}{CLIENT.lastName.charAt(0)}
-              </div>
-              {/* Status indicator */}
-              <div className="absolute -bottom-0.5 -right-0.5 size-5 rounded-full border-2 border-white flex items-center justify-center" style={{ background: statusColor }}>
-                <Check className="size-2.5 text-white" />
-              </div>
-            </div>
-            
-            {/* Client info */}
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
-                  {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
-                </h1>
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white" style={{ background: statusColor }}>
-                  {CLIENT.statusLabel}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 mt-1 text-sm text-secondary">
-                <span className="flex items-center gap-1.5">
-                  <Mail01 className="size-3.5 text-quaternary" />
-                  <span className="text-brand-secondary">{CLIENT.email}</span>
-                </span>
-                <span className="text-quaternary">·</span>
-                <span className="flex items-center gap-1.5">
-                  <Phone01 className="size-3.5 text-quaternary" />
-                  <span className="text-brand-secondary">{CLIENT.phone}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-tertiary">
+              <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
+                {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary">
+                <span>{CLIENT.statusLabel}</span>
+                <span className="text-quaternary">|</span>
                 <span>{CLIENT.group}</span>
-                <span className="text-quaternary">·</span>
+                <span className="text-quaternary">|</span>
                 <span>Created {CLIENT.createdOn}</span>
-                <span className="text-quaternary">·</span>
-                <span>ID #{CLIENT.id}</span>
               </div>
             </div>
-            
             {/* Toolbar */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
               <DropdownButton label="New" icon={Plus} pinned={pinnedActions} onPin={togglePin} items={[
                 { label: "Quote",          icon: Lightbulb02 },
                 { label: "Pre-Assessment", icon: FileSearch02 },

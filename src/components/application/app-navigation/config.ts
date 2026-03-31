@@ -85,10 +85,8 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         href: "/applications",
         icon: FileCheck02,
         items: [
-            { label: "All Applications", href: "/applications" },
-            { label: "In Progress", href: "/applications/in-progress" },
-            { label: "Submitted", href: "/applications/submitted" },
-            { label: "Approved", href: "/applications/approved" },
+            { label: "Active", href: "/applications" },
+            { label: "Closed", href: "/applications/closed" },
         ],
     },
     {
