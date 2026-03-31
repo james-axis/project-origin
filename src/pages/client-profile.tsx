@@ -639,68 +639,68 @@ export function ClientProfilePage() {
 
       <main className="flex-1 min-h-screen flex flex-col overflow-hidden">
 
-        {/* ── Header (matching application profile style) ── */}
-        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-5 pb-4 shrink-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
-                {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
-              </h1>
-              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-secondary">
-                <span>{CLIENT.statusLabel}</span>
-                <span className="text-quaternary">|</span>
-                <span>{CLIENT.group}</span>
-                <span className="text-quaternary">|</span>
-                <span>Created {CLIENT.createdOn}</span>
+        {/* ── Header ── */}
+        <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-4 pb-0 shrink-0">
+          {/* Row 1: Name + edit */}
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="flex-1 min-w-0 truncate text-base sm:text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
+              {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
+            </h1>
+            <button title="Edit client" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
+              <Edit01 className="size-4" />
+            </button>
+          </div>
+          {/* Row 2: Meta — truncate group on mobile */}
+          <div className="flex items-center gap-1.5 mb-3 text-xs text-secondary overflow-hidden">
+            <span className="shrink-0">{CLIENT.statusLabel}</span>
+            <span className="text-quaternary shrink-0">|</span>
+            <span className="truncate min-w-0">{CLIENT.group}</span>
+            <span className="text-quaternary hidden sm:inline shrink-0">|</span>
+            <span className="hidden sm:inline shrink-0">Created {CLIENT.createdOn}</span>
+          </div>
+          {/* Row 3: Toolbar — horizontally scrollable on mobile */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:pb-0 sm:mb-3">
+            <DropdownButton label="New" icon={Plus} pinned={pinnedActions} onPin={togglePin} items={[
+              { label: "Quote",          icon: Lightbulb02 },
+              { label: "Pre-Assessment", icon: FileSearch02 },
+              { label: "Application",    icon: FileCheck02, onClick: () => setShowNewApp(true) },
+              { label: "Add Existing App", icon: LinkExternal01 },
+              { label: "Claim",          icon: Shield01 },
+              { label: "Dishonour",      icon: AlertTriangle },
+              { label: "Complaint",      icon: MessageSquare01 },
+            ]} />
+            <DropdownButton label="Actions" icon={RefreshCw01} pinned={pinnedActions} onPin={togglePin} items={[
+              { label: "SMS",          icon: MessageChatSquare },
+              { label: "Email",        icon: Send01 },
+              { label: "Form",         icon: FilePlus02 },
+              { label: "Schedule",     icon: Calendar },
+              { label: "Upload Files", icon: Upload01 },
+              { label: "Set Status",   icon: RefreshCw01 },
+              { label: "Close Lead",   icon: Archive, danger: true },
+            ]} />
+            <DropdownButton label="Other" icon={DotsGrid} pinned={pinnedActions} onPin={togglePin} items={[
+              { label: "PDF",              icon: File01 },
+              { label: "Docs",             icon: Folder },
+              { label: "Duplicate",        icon: Copy01 },
+              { label: "Off APL",          icon: BellOff01 },
+              { label: "Marketing List",   icon: BarChart01 },
+            ]} />
+            {pinnedActions.map(label => (
+              <div key={label} className="inline-flex items-center rounded-lg border border-secondary bg-primary overflow-hidden shrink-0">
+                <button onClick={() => label === "Application" ? setShowNewApp(true) : undefined}
+                  className="px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors whitespace-nowrap">
+                  {label}
+                </button>
+                <button onClick={() => togglePin(label)} title="Unpin"
+                  className="flex size-6 items-center justify-center border-l border-secondary text-quaternary hover:bg-secondary hover:text-secondary transition-colors">
+                  <svg className="size-3" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
               </div>
-            </div>
-            {/* Toolbar */}
-            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
-              <DropdownButton label="New" icon={Plus} pinned={pinnedActions} onPin={togglePin} items={[
-                { label: "Quote",          icon: Lightbulb02 },
-                { label: "Pre-Assessment", icon: FileSearch02 },
-                { label: "Application",    icon: FileCheck02, onClick: () => setShowNewApp(true) },
-                { label: "Add Existing App", icon: LinkExternal01 },
-                { label: "Claim",          icon: Shield01 },
-                { label: "Dishonour",      icon: AlertTriangle },
-                { label: "Complaint",      icon: MessageSquare01 },
-              ]} />
-              <DropdownButton label="Actions" icon={RefreshCw01} pinned={pinnedActions} onPin={togglePin} items={[
-                { label: "SMS",          icon: MessageChatSquare },
-                { label: "Email",        icon: Send01 },
-                { label: "Form",         icon: FilePlus02 },
-                { label: "Schedule",     icon: Calendar },
-                { label: "Upload Files", icon: Upload01 },
-                { label: "Set Status",   icon: RefreshCw01 },
-                { label: "Close Lead",   icon: Archive, danger: true },
-              ]} />
-              <DropdownButton label="Other" icon={DotsGrid} pinned={pinnedActions} onPin={togglePin} items={[
-                { label: "PDF",              icon: File01 },
-                { label: "Docs",             icon: Folder },
-                { label: "Duplicate",        icon: Copy01 },
-                { label: "Off APL",          icon: BellOff01 },
-                { label: "Marketing List",   icon: BarChart01 },
-              ]} />
-              {pinnedActions.map(label => (
-                <div key={label} className="inline-flex items-center rounded-lg border border-secondary bg-primary overflow-hidden">
-                  <button onClick={() => label === "Application" ? setShowNewApp(true) : undefined}
-                    className="px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
-                    {label}
-                  </button>
-                  <button onClick={() => togglePin(label)} title="Unpin"
-                    className="flex size-6 items-center justify-center border-l border-secondary text-quaternary hover:bg-secondary hover:text-secondary transition-colors">
-                    <svg className="size-3" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  </button>
-                </div>
-              ))}
-              <button onClick={() => setMobileSidebarOpen(true)}
-                className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors">
-                <Users01 className="size-3.5" /> More Info
-              </button>
-              <button title="Edit client" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
-                <Edit01 className="size-4" />
-              </button>
-            </div>
+            ))}
+            <button onClick={() => setMobileSidebarOpen(true)}
+              className="xl:hidden inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-secondary transition-colors shrink-0 whitespace-nowrap">
+              <Users01 className="size-3.5" /> More Info
+            </button>
           </div>
         </div>
 
