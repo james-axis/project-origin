@@ -76,6 +76,8 @@ function saveColState(s: { order: string[]; visible: Record<string, boolean> }) 
 
 // ─── Mock data — real IDs/names/statuses from DB ─────────────────────────────
 const AU_STATES = ["NSW","VIC","QLD","WA","SA","ACT","TAS","NT"];
+const TASK_TYPES = ["Follow Up","Call Back","Review","Send Docs","Schedule Appointment","Other"];
+const USER_GROUPS = ["Advice Team","Operations","Admin","Management","Compliance"];
 const GROUPS = [
   "Surety Insurance Pty Ltd","UFinancial Protect","Surehaven Advisory Pty Ltd",
   "Lockmor Life Insurance","Covered Life","Personal Insurance Options",
@@ -202,8 +204,13 @@ export function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [stateFilter, setStateFilter] = useState("All");
   const [groupFilter, setGroupFilter] = useState("All");
+  const [userGroupFilter, setUserGroupFilter] = useState("All");
+  const [taskFilter, setTaskFilter] = useState("All");
+  const [tagFilter, setTagFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [sortKey, setSortKey] = useState("id");
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
   const [page, setPage] = useState(1);
@@ -241,12 +248,13 @@ export function ClientsPage() {
     if (statusFilter   !== "All") rows = rows.filter(r => String(r.status) === statusFilter);
     if (stateFilter    !== "All") rows = rows.filter(r => r.state === stateFilter);
     if (groupFilter    !== "All") rows = rows.filter(r => r.group === groupFilter);
+    if (userGroupFilter !== "All") rows = rows.filter(r => r.group === userGroupFilter);
     return [...rows].sort((a, b) => {
       const va = String((a as any)[sortKey] ?? "");
       const vb = String((b as any)[sortKey] ?? "");
       return sortDir === "asc" ? va.localeCompare(vb, undefined, { numeric: true }) : vb.localeCompare(va, undefined, { numeric: true });
     });
-  }, [activeTab, search, assignedFilter, statusFilter, stateFilter, groupFilter, sortKey, sortDir]);
+  }, [activeTab, search, assignedFilter, statusFilter, stateFilter, groupFilter, userGroupFilter, taskFilter, tagFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -347,7 +355,7 @@ export function ClientsPage() {
     }
   }
 
-  const hasFilters = search || assignedFilter !== "All" || statusFilter !== "All" || stateFilter !== "All" || groupFilter !== "All";
+  const hasFilters = search || assignedFilter !== "All" || statusFilter !== "All" || stateFilter !== "All" || groupFilter !== "All" || userGroupFilter !== "All" || taskFilter !== "All" || tagFilter !== "All" || dateFilter !== "all";
   const uniqueGroups = [...new Set(MOCK_CLIENTS.map(c => c.group))].sort();
 
   // Pagination helper
@@ -370,7 +378,7 @@ export function ClientsPage() {
     pageNums.push(totalPages);
   }
 
-  const activeFilterCount = [assignedFilter !== "All", statusFilter !== "All", stateFilter !== "All", groupFilter !== "All", dateFilter !== "all"].filter(Boolean).length;
+  const activeFilterCount = [assignedFilter !== "All", statusFilter !== "All", stateFilter !== "All", groupFilter !== "All", userGroupFilter !== "All", taskFilter !== "All", tagFilter !== "All", dateFilter !== "all"].filter(Boolean).length;
 
   return (
     <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
@@ -410,6 +418,13 @@ export function ClientsPage() {
                 <option value="week">Last 7 days</option>
                 <option value="month">Last 30 days</option>
               </select>
+              <select value={tagFilter} onChange={e => setTagFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer min-w-[130px]">
+                <option value="All">Search Tags...</option>
+                <option value="vip">VIP</option>
+                <option value="referral">Referral</option>
+                <option value="follow-up">Follow Up</option>
+                <option value="hot-lead">Hot Lead</option>
+              </select>
               <select value={assignedFilter} onChange={e => setAssignedFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer min-w-[130px]">
                 <option value="All">Assigned To</option>
                 {USERS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -418,9 +433,17 @@ export function ClientsPage() {
                 <option value="All">Status</option>
                 {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-              <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer min-w-[130px]">
+              <select value={taskFilter} onChange={e => setTaskFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer min-w-[100px]">
+                <option value="All">Tasks</option>
+                {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer min-w-[150px]">
                 <option value="All">Campaign Group</option>
                 {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+              <select value={userGroupFilter} onChange={e => setUserGroupFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer min-w-[130px]">
+                <option value="All">User Group</option>
+                {USER_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
               <select value={stateFilter} onChange={e => setStateFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary outline-none focus:border-brand appearance-none cursor-pointer">
                 <option value="All">State</option>
@@ -439,6 +462,13 @@ export function ClientsPage() {
                   <option value="week">Last 7 days</option>
                   <option value="month">Last 30 days</option>
                 </select>
+                <select value={tagFilter} onChange={e => setTagFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="All">Search Tags...</option>
+                  <option value="vip">VIP</option>
+                  <option value="referral">Referral</option>
+                  <option value="follow-up">Follow Up</option>
+                  <option value="hot-lead">Hot Lead</option>
+                </select>
                 <select value={assignedFilter} onChange={e => setAssignedFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
                   <option value="All">Assigned To</option>
                   {USERS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -447,17 +477,25 @@ export function ClientsPage() {
                   <option value="All">Status</option>
                   {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
+                <select value={taskFilter} onChange={e => setTaskFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="All">Tasks</option>
+                  {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
                 <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
                   <option value="All">Campaign Group</option>
                   {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
-                <select value={stateFilter} onChange={e => setStateFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand col-span-2 sm:col-span-1">
+                <select value={userGroupFilter} onChange={e => setUserGroupFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
+                  <option value="All">User Group</option>
+                  {USER_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <select value={stateFilter} onChange={e => setStateFilter(e.target.value)} className="rounded-lg border border-secondary bg-primary px-3 py-2.5 text-sm text-primary outline-none focus:border-brand">
                   <option value="All">State</option>
                   {AU_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               {hasFilters && (
-                <button onClick={() => { setSearch(""); setAssignedFilter("All"); setStatusFilter("All"); setStateFilter("All"); setGroupFilter("All"); setDateFilter("all"); setPage(1); }}
+                <button onClick={() => { setSearch(""); setAssignedFilter("All"); setStatusFilter("All"); setStateFilter("All"); setGroupFilter("All"); setUserGroupFilter("All"); setTaskFilter("All"); setTagFilter("All"); setDateFilter("all"); setPage(1); }}
                   className="text-sm text-brand-secondary hover:underline">Clear all filters</button>
               )}
             </div>
@@ -493,11 +531,72 @@ export function ClientsPage() {
           {selectedRows.size > 0 && (
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-sm text-secondary font-medium">{selectedRows.size} selected</span>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Assign To ▾</button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Set Status ▾</button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-[#EF4444] bg-[#FEF2F2] px-3 py-2 text-sm font-medium text-[#B91C1C] hover:bg-[#FEE2E2] transition-colors">
-                <X className="size-3.5" />Clear
+
+              {/* Status ▾ (incl. Close) */}
+              <div className="relative">
+                <button onClick={() => { setStatusMenuOpen(v => !v); setMoreMenuOpen(false); }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+                  Status
+                  <ChevronDown className="size-3.5" />
+                </button>
+                {statusMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 z-50 min-w-[170px] rounded-xl border border-secondary bg-primary shadow-lg py-1">
+                    {Object.entries(STATUS_MAP).map(([k, v]) => (
+                      <button key={k} onClick={() => setStatusMenuOpen(false)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-secondary transition-colors text-left">
+                        <span className="size-2 rounded-full shrink-0" style={{ background: v.color }} />
+                        {v.label}
+                      </button>
+                    ))}
+                    <div className="border-t border-secondary my-1" />
+                    <button onClick={() => setStatusMenuOpen(false)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-[#B91C1C] hover:bg-[#FEF2F2] transition-colors text-left">
+                      <X className="size-3.5" />
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Assign To ▾ */}
+              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+                Assign To
+                <ChevronDown className="size-3.5" />
               </button>
+
+              {/* More ▾ */}
+              <div className="relative">
+                <button onClick={() => { setMoreMenuOpen(v => !v); setStatusMenuOpen(false); }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+                  More
+                  <ChevronDown className="size-3.5" />
+                </button>
+                {moreMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] rounded-xl border border-secondary bg-primary shadow-lg py-1">
+                    <button onClick={() => setMoreMenuOpen(false)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-secondary transition-colors text-left">
+                      <Plus className="size-3.5" />
+                      Create task
+                    </button>
+                    <button onClick={() => setMoreMenuOpen(false)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-secondary transition-colors text-left">
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      Add tags
+                    </button>
+                    <button onClick={() => setMoreMenuOpen(false)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-secondary transition-colors text-left">
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/></svg>
+                      Set group
+                    </button>
+                    <div className="border-t border-secondary my-1" />
+                    <button onClick={() => { downloadCSV(); setMoreMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-secondary hover:bg-secondary transition-colors text-left">
+                      <Download01 className="size-3.5" />
+                      Download CSV
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -508,17 +607,12 @@ export function ClientsPage() {
 
           <div className="ml-auto flex items-center gap-2">
             {hasFilters && (
-              <button onClick={() => { setSearch(""); setAssignedFilter("All"); setStatusFilter("All"); setStateFilter("All"); setGroupFilter("All"); setPage(1); }}
+              <button onClick={() => { setSearch(""); setAssignedFilter("All"); setStatusFilter("All"); setStateFilter("All"); setGroupFilter("All"); setUserGroupFilter("All"); setTaskFilter("All"); setTagFilter("All"); setDateFilter("all"); setPage(1); }}
                 className="hidden sm:block text-sm text-brand-secondary hover:underline">Clear filters</button>
             )}
-            <button onClick={downloadCSV}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
-              <Download01 className="size-4" />
-              <span className="hidden md:inline">Download</span>
-            </button>
             {/* Column selector - desktop only */}
             <div className="relative hidden lg:block">
-              <button onClick={() => setColPanelOpen(v => !v)}
+              <button onClick={() => { setColPanelOpen(v => !v); setStatusMenuOpen(false); setMoreMenuOpen(false); }}
                 className={"inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors " +
                   (colPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary bg-primary text-secondary hover:bg-secondary")}>
                 <Settings01 className="size-4" />
@@ -533,6 +627,10 @@ export function ClientsPage() {
               )}
             </div>
           </div>
+          {/* Click-outside to close dropdowns */}
+          {(statusMenuOpen || moreMenuOpen) && (
+            <div className="fixed inset-0 z-40" onClick={() => { setStatusMenuOpen(false); setMoreMenuOpen(false); }} />
+          )}
         </div>
 
         {/* ── Table ── */}
