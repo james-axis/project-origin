@@ -28,6 +28,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { RequireAuth } from "@/providers/auth-provider";
 import { ToastProvider } from "@/components/toast";
 import { Softphone, SoftphoneButton } from "@/components/Softphone";
+import { AppTour } from "@/components/app-tour";
 import "@/styles/globals.css";
 
 // Softphone wrapper - only shows on authenticated routes
@@ -43,6 +44,16 @@ function SoftphoneWrapper() {
   ) : (
     <SoftphoneButton onClick={() => setOpen(true)} />
   );
+}
+
+// Tour wrapper - only shows on authenticated routes
+function TourWrapper() {
+  const location = useLocation();
+  
+  // Don't show on login page
+  if (location.pathname === '/login') return null;
+  
+  return <AppTour />;
 }
 
 createRoot(document.getElementById("root")!).render(
@@ -90,6 +101,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="*" element={<NotFound />} />
             </Routes>
             <SoftphoneWrapper />
+            <TourWrapper />
           </ToastProvider>
         </RouteProvider>
       </BrowserRouter>
