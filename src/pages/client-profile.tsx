@@ -650,13 +650,24 @@ export function ClientProfilePage() {
               <Edit01 className="size-4" />
             </button>
           </div>
-          {/* Row 2: Meta — truncate group on mobile */}
-          <div className="flex items-center gap-1.5 mb-3 text-xs text-secondary overflow-hidden">
-            <span className="shrink-0">{CLIENT.statusLabel}</span>
-            <span className="text-quaternary shrink-0">|</span>
-            <span className="truncate min-w-0">{CLIENT.group}</span>
-            <span className="text-quaternary hidden sm:inline shrink-0">|</span>
-            <span className="hidden sm:inline shrink-0">Created {CLIENT.createdOn}</span>
+          {/* Row 2: 4-column meta grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5 mb-3 text-xs">
+            <div className="min-w-0">
+              <span className="text-quaternary block">Status</span>
+              <span className="text-secondary font-medium truncate block">{CLIENT.statusLabel}</span>
+            </div>
+            <div className="min-w-0">
+              <span className="text-quaternary block">Group</span>
+              <span className="text-secondary font-medium truncate block">{CLIENT.group}</span>
+            </div>
+            <div className="min-w-0">
+              <span className="text-quaternary block">Assigned To</span>
+              <span className="text-secondary font-medium truncate block">{CLIENT.assignedTo}</span>
+            </div>
+            <div className="min-w-0">
+              <span className="text-quaternary block">Created</span>
+              <span className="text-secondary font-medium truncate block">{CLIENT.createdOn}</span>
+            </div>
           </div>
           {/* Row 3: Toolbar — horizontally scrollable on mobile */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:pb-0 sm:mb-3">
