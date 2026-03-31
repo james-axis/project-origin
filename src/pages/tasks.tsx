@@ -427,19 +427,25 @@ export function TasksPage() {
 
         {/* ── Toolbar ── */}
         <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-secondary bg-primary flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px] max-w-xs">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Task name..."
-              className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-2 text-sm text-primary outline-none focus:border-brand" />
-            {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-quaternary hover:text-secondary"><X className="size-3.5" /></button>}
+          <div className="relative flex-1 min-w-[200px] max-w-xs flex items-center gap-2">
+            <div className="relative flex-1">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-fg-quaternary pointer-events-none" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Task name..."
+                className="w-full rounded-lg border border-secondary bg-primary pl-8 pr-3 py-2 text-sm text-primary outline-none focus:border-brand" />
+              {search && <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-quaternary hover:text-secondary"><X className="size-3.5" /></button>}
+            </div>
           </div>
 
-          {selectedRows.size > 0 && (
-            <div className="flex items-center gap-2">
+          {/* Always-visible action buttons */}
+          <div className="flex items-center gap-2">
+            {selectedRows.size > 0 && (
               <span className="text-sm text-secondary">{selectedRows.size} selected</span>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">Assign To ▾</button>
-            </div>
-          )}
+            )}
+            <button className="inline-flex items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary transition-colors">
+              Assign To
+              <svg className="size-3.5" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
 
           <div className="ml-auto flex items-center gap-2">
             {hasFilters && (
