@@ -10,6 +10,7 @@ import {
     FileCheck02,
     FileSearch02,
     Folder,
+    HomeLine,
     Settings01,
     Users01,
     UserPlus01,
@@ -224,6 +225,14 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "All Contacts", href: "/contacts" },
             { label: "Insurers", href: "/contacts?type=insurers" },
             { label: "Providers", href: "/contacts?type=providers" },
+        ],
+    },
+    {
+        label: "Workbench",
+        href: "/workbench",
+        icon: HomeLine,
+        items: [
+            { label: "My Workbench", href: "/workbench" },
         ],
     },
 ];
