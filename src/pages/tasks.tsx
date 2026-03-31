@@ -338,7 +338,7 @@ export function TasksPage() {
     switch (key) {
       case "name": return (
         <div className="flex items-center gap-2">
-          {row.overdue && <span className="size-1.5 rounded-full bg-[#D34108] shrink-0" />}
+
           <span className="font-medium text-primary group-hover:text-brand-secondary transition-colors truncate max-w-[200px]">{row.name}</span>
         </div>
       );
@@ -382,9 +382,7 @@ export function TasksPage() {
             <div>
               <h1 className="text-xl font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>Your Tasks</h1>
               <p className="text-sm text-tertiary mt-0.5">
-                {filteredAll.length} tasks ·{" "}
-                {overdueCount > 0 && <span className="text-error-primary font-medium">{overdueCount} overdue · </span>}
-                {todayCount} due today
+                {filteredAll.length} tasks
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -508,7 +506,7 @@ export function TasksPage() {
                     ? <tr><td colSpan={visibleCols.length + 1} className="px-4 py-16 text-center text-sm text-quaternary">No tasks found</td></tr>
                     : filteredAll.map(row => (
                         <tr key={row.id}
-                          className={"group transition-colors hover:bg-secondary_alt cursor-pointer " + (row.overdue ? "bg-[#FFFAF9]" : "")}>
+                          className={"group transition-colors hover:bg-secondary_alt cursor-pointer "}>
                           <td className="px-3 py-3 sticky left-0 bg-primary group-hover:bg-secondary_alt z-10">
                             <input type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleRow(row.id)}
                               className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer" />
