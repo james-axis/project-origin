@@ -527,10 +527,11 @@ export function ClientsPage() {
             {search && <button onClick={() => { setSearch(""); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-quaternary hover:text-secondary"><X className="size-3.5" /></button>}
           </div>
 
-          {/* Bulk actions — desktop only */}
-          {selectedRows.size > 0 && (
-            <div className="hidden sm:flex items-center gap-2">
+          {/* Action buttons — always visible */}
+          <div className="hidden sm:flex items-center gap-2">
+            {selectedRows.size > 0 && (
               <span className="text-sm text-secondary font-medium">{selectedRows.size} selected</span>
+            )}
 
               {/* Status ▾ (incl. Close) */}
               <div className="relative">
@@ -597,8 +598,7 @@ export function ClientsPage() {
                   </div>
                 )}
               </div>
-            </div>
-          )}
+          </div>
 
           {/* Mobile selected count */}
           {selectedRows.size > 0 && (
