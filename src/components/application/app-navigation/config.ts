@@ -67,8 +67,11 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         href: "/clients",
         icon: Users01,
         items: [
-            { label: "All Clients", href: "/clients" },
-            { label: "Add Client", href: "/clients/new" },
+            { label: "Active", href: "/clients?status=active" },
+            { label: "Prospects", href: "/clients?status=prospects" },
+            { label: "In Progress", href: "/clients?status=in-progress" },
+            { label: "Scheduled Appointment", href: "/clients?status=scheduled" },
+            { label: "Quote Sent", href: "/clients?status=quote-sent" },
         ],
     },
     {
