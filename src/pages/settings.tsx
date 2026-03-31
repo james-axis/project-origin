@@ -3303,23 +3303,23 @@ function UsersSection() {
       <div className="rounded-xl border border-secondary bg-primary overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-secondary" style={{ background: "#3B485B" }}>
+            <thead className="bg-tertiary border-b border-secondary">
+              <tr>
                 <th className="px-4 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                     onChange={toggleAll}
-                    className="rounded border-white/30"
+                    className="rounded border-secondary accent-[#D34108] size-4 cursor-pointer"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">User</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Position</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Groups</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Roles</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Extension</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Tags</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white whitespace-nowrap">Leads</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">User</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">Position</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">Groups</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">Roles</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">Extension</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">Tags</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-quaternary whitespace-nowrap">Leads</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary">

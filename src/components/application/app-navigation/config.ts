@@ -72,6 +72,10 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "In Progress", href: "/clients?status=in-progress" },
             { label: "Scheduled Appointment", href: "/clients?status=scheduled" },
             { label: "Quote Sent", href: "/clients?status=quote-sent" },
+            { label: "Application Pending", href: "/clients?status=application-pending" },
+            { label: "Clients", href: "/clients?status=clients" },
+            { label: "On Hold", href: "/clients?status=on-hold" },
+            { label: "Archive", href: "/clients?status=archive" },
         ],
     },
     {

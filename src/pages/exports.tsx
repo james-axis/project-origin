@@ -315,8 +315,8 @@ function ExportBuilder({ groupId, tabId }: { groupId: string; tabId: string }) {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs font-medium text-white uppercase" style={{ backgroundColor: "#3B485B" }}>
+            <thead className="bg-tertiary border-b border-secondary">
+              <tr className="text-left text-xs font-medium text-quaternary">
                 <th className="px-4 py-3">Export Name</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Records</th>

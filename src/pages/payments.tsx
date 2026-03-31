@@ -333,8 +333,8 @@ function PayrunsContent() {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead>
-            <tr className="text-left text-xs font-medium text-white uppercase" style={{ backgroundColor: "#3B485B" }}>
+          <thead className="bg-tertiary border-b border-secondary">
+            <tr className="text-left text-xs font-medium text-quaternary">
               <th className="px-4 py-3">Payrun ID</th>
               <th className="px-4 py-3">Insurer</th>
               <th className="px-4 py-3">Date</th>
@@ -411,8 +411,8 @@ function BankTransactionsContent() {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead>
-            <tr className="text-left text-xs font-medium text-white uppercase" style={{ backgroundColor: "#3B485B" }}>
+          <thead className="bg-tertiary border-b border-secondary">
+            <tr className="text-left text-xs font-medium text-quaternary">
               <th className="px-4 py-3">Transaction ID</th>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Description</th>
@@ -495,8 +495,8 @@ function FileFormatsContent() {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead>
-            <tr className="text-left text-xs font-medium text-white uppercase" style={{ backgroundColor: "#3B485B" }}>
+          <thead className="bg-tertiary border-b border-secondary">
+            <tr className="text-left text-xs font-medium text-quaternary">
               <th className="px-4 py-3">Format Name</th>
               <th className="px-4 py-3">Insurer</th>
               <th className="px-4 py-3">File Type</th>
@@ -539,8 +539,8 @@ function NameFormatsContent() {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead>
-            <tr className="text-left text-xs font-medium text-white uppercase" style={{ backgroundColor: "#3B485B" }}>
+          <thead className="bg-tertiary border-b border-secondary">
+            <tr className="text-left text-xs font-medium text-quaternary">
               <th className="px-4 py-3">Pattern</th>
               <th className="px-4 py-3">Maps To</th>
               <th className="px-4 py-3">Example Matches</th>
