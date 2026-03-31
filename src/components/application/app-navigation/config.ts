@@ -124,8 +124,15 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         href: "/insurance",
         icon: Shield01,
         items: [
-            { label: "Products", href: "/insurance" },
-            { label: "Reconciliation", href: "/insurance/reconciliation" },
+            { label: "Dashboard", href: "/insurance?tab=dashboard" },
+            { label: "Active Benefits", href: "/insurance?tab=active" },
+            { label: "Inactive Benefits", href: "/insurance?tab=inactive" },
+            { label: "Policies", href: "/insurance?tab=policies" },
+            { label: "Overdue", href: "/insurance?tab=overdue" },
+            { label: "State Report", href: "/insurance?tab=state" },
+            { label: "Age Group Report", href: "/insurance?tab=age" },
+            { label: "Quotes", href: "/insurance?tab=quotes" },
+            { label: "Email Settings", href: "/insurance?tab=email" },
         ],
     },
     {

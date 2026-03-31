@@ -14,7 +14,7 @@ import { DishonourProfilePage } from "@/pages/dishonour-profile";
 import { ComplaintsPage } from "@/pages/complaints";
 import { ComplaintProfilePage } from "@/pages/complaint-profile";
 import { CampaignsPage } from "@/pages/campaigns";
-import { InsuranceProductsPage } from "@/pages/insurance-products";
+import { InsuranceBookPage } from "@/pages/insurance-book";
 import { PaymentsPage } from "@/pages/payments";
 import { ReportsPage } from "@/pages/reports";
 import { ExportsPage } from "@/pages/exports";
@@ -72,8 +72,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/complaint/:id" element={<RequireAuth><ComplaintProfilePage /></RequireAuth>} />
               <Route path="/campaigns" element={<RequireAuth><CampaignsPage /></RequireAuth>} />
               <Route path="/campaigns/*" element={<RequireAuth><CampaignsPage /></RequireAuth>} />
-              <Route path="/insurance" element={<RequireAuth><InsuranceProductsPage /></RequireAuth>} />
-              <Route path="/insurance/*" element={<RequireAuth><InsuranceProductsPage /></RequireAuth>} />
+              <Route path="/insurance" element={<RequireAuth><InsuranceBookPage /></RequireAuth>} />
+              <Route path="/insurance/*" element={<RequireAuth><InsuranceBookPage /></RequireAuth>} />
               <Route path="/payments" element={<RequireAuth><PaymentsPage /></RequireAuth>} />
               <Route path="/payments/*" element={<RequireAuth><PaymentsPage /></RequireAuth>} />
               <Route path="/reports" element={<RequireAuth><ReportsPage /></RequireAuth>} />
