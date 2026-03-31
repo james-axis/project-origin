@@ -10,7 +10,6 @@ import {
     FileCheck02,
     FileSearch02,
     Folder,
-    HomeLine,
     Settings01,
     Users01,
     UserPlus01,
@@ -19,6 +18,7 @@ import {
     File01,
     Building01,
     Link01,
+    Phone01,
 } from "@untitledui/icons";
 
 export type NavItemType = {
@@ -45,11 +45,12 @@ export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider">
 
 export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
     {
-        label: "Workbench",
-        href: "/workbench",
-        icon: HomeLine,
+        label: "Tasks",
+        href: "/tasks",
+        icon: CheckDone01,
         items: [
-            { label: "My Workbench", href: "/workbench" },
+            { label: "All Tasks", href: "/tasks" },
+            { label: "Scheduled Tasks", href: "/tasks?filter=scheduled" },
         ],
     },
     {
@@ -79,15 +80,6 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
-        label: "Tasks",
-        href: "/tasks",
-        icon: CheckDone01,
-        items: [
-            { label: "All Tasks", href: "/tasks" },
-            { label: "Scheduled Tasks", href: "/tasks?filter=scheduled" },
-        ],
-    },
-    {
         label: "Applications",
         href: "/applications",
         icon: FileCheck02,
@@ -99,13 +91,12 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
-        label: "Insurance",
-        href: "/insurance",
-        icon: Shield01,
+        label: "Dishonours",
+        href: "/dishonours",
+        icon: AlertCircle,
         items: [
-            { label: "Products", href: "/insurance" },
-            { label: "Policies", href: "/insurance/policies" },
-            { label: "Reconciliation", href: "/insurance/reconciliation" },
+            { label: "Active", href: "/dishonours" },
+            { label: "Closed", href: "/dishonours/closed" },
         ],
     },
     {
@@ -119,12 +110,40 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
-        label: "Dishonours",
-        href: "/dishonours",
-        icon: AlertCircle,
+        label: "Complaints",
+        href: "/complaints",
+        icon: Announcement01,
         items: [
-            { label: "Active", href: "/dishonours" },
-            { label: "Closed", href: "/dishonours/closed" },
+            { label: "All Complaints", href: "/complaints" },
+            { label: "Open", href: "/complaints/open" },
+        ],
+    },
+    {
+        label: "Insurance",
+        href: "/insurance",
+        icon: Shield01,
+        items: [
+            { label: "Products", href: "/insurance" },
+            { label: "Reconciliation", href: "/insurance/reconciliation" },
+        ],
+    },
+    {
+        label: "Policies",
+        href: "/policies",
+        icon: File02,
+        items: [
+            { label: "All Policies", href: "/policies" },
+            { label: "Active", href: "/policies?status=active" },
+            { label: "Lapsed", href: "/policies?status=lapsed" },
+        ],
+    },
+    {
+        label: "Commissions",
+        href: "/commissions",
+        icon: BarChartSquare02,
+        items: [
+            { label: "Overview", href: "/commissions" },
+            { label: "This Month", href: "/commissions/current" },
         ],
     },
     {
@@ -138,24 +157,6 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
             { label: "Reconciliation", href: "/payments/reconciliation" },
             { label: "Payruns File Formats", href: "/payments/file-formats" },
             { label: "Transaction Name Formats", href: "/payments/name-formats" },
-        ],
-    },
-    {
-        label: "Commissions",
-        href: "/commissions",
-        icon: BarChartSquare02,
-        items: [
-            { label: "Overview", href: "/commissions" },
-            { label: "This Month", href: "/commissions/current" },
-        ],
-    },
-    {
-        label: "Complaints",
-        href: "/complaints",
-        icon: Announcement01,
-        items: [
-            { label: "All Complaints", href: "/complaints" },
-            { label: "Open", href: "/complaints/open" },
         ],
     },
     {
@@ -190,23 +191,8 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
-        label: "Documents",
-        href: "/documents",
-        icon: Folder,
-        items: [
-            { label: "PDS Documents", href: "/documents?group=pds" },
-            { label: "TMD Documents", href: "/documents?group=tmd" },
-            { label: "Forms", href: "/documents?group=forms" },
-            { label: "Templates", href: "/documents?group=templates" },
-            { label: "Guides", href: "/documents?group=guides" },
-        ],
-    },
-];
-
-export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
-    { 
-        label: "Settings", 
-        href: "/settings", 
+        label: "Settings",
+        href: "/settings",
         icon: Settings01,
         items: [
             { label: "Task Builder", href: "/settings?tab=task-builder", icon: CheckDone01 },
@@ -218,4 +204,28 @@ export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> }
             { label: "Integrations", href: "/settings?tab=integrations", icon: Link01 },
         ],
     },
+    {
+        label: "Documents",
+        href: "/documents",
+        icon: Folder,
+        items: [
+            { label: "PDS Documents", href: "/documents?group=pds" },
+            { label: "TMD Documents", href: "/documents?group=tmd" },
+            { label: "Forms", href: "/documents?group=forms" },
+            { label: "Templates", href: "/documents?group=templates" },
+            { label: "Guides", href: "/documents?group=guides" },
+        ],
+    },
+    {
+        label: "Contacts",
+        href: "/contacts",
+        icon: Phone01,
+        items: [
+            { label: "All Contacts", href: "/contacts" },
+            { label: "Insurers", href: "/contacts?type=insurers" },
+            { label: "Providers", href: "/contacts?type=providers" },
+        ],
+    },
 ];
+
+export const footerNavItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [];
