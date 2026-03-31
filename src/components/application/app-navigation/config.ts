@@ -84,8 +84,7 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         icon: CheckDone01,
         items: [
             { label: "All Tasks", href: "/tasks" },
-            { label: "Overdue", href: "/tasks/overdue" },
-            { label: "Due Today", href: "/tasks/today" },
+            { label: "Scheduled Tasks", href: "/tasks?filter=scheduled" },
         ],
     },
     {
