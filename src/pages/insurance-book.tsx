@@ -1511,9 +1511,9 @@ export function InsuranceBookPage() {
   return (
     <div className="lg:flex min-h-screen" style={{ background: "linear-gradient(160deg, #f8f9fb 0%, #f4f5f8 100%)" }}>
       <SidebarNavigationSlim items={navItems} footerItems={footerNavItems} />
-      <div className="hidden lg:block w-[70px] shrink-0" />
+      <div className="invisible hidden lg:sticky lg:top-0 lg:bottom-0 lg:left-0 lg:block" />
       
-      <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <main className="min-h-screen overflow-x-hidden lg:flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-6 pb-0">
           <div className="flex items-center justify-between mb-4">
