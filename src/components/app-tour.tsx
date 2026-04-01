@@ -287,10 +287,9 @@ export function TourTriggerButton({ className }: { className?: string }) {
         onClick={() => setShowWelcome(true)}
         className={
           className ||
-          "inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-secondary hover:text-primary border border-secondary rounded-lg hover:bg-secondary_alt transition-colors"
+          "inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-secondary border border-secondary rounded-lg hover:bg-secondary_alt transition-colors"
         }
       >
-        <span>🎯</span>
         What's New
       </button>
 
