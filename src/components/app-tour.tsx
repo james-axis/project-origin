@@ -291,7 +291,7 @@ export function TourTriggerButton({ className }: { className?: string }) {
         }
       >
         <span>🎯</span>
-        Take a Tour
+        What's New
       </button>
 
       {showWelcome && (

@@ -148,17 +148,17 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                                 ))}
                             </ul>
                         </div>
-                        {/* Fixed bottom: What's New + Create New Lead + user footer */}
+                        {/* Fixed bottom: Create New Lead + What's New + user footer */}
                         <div className="shrink-0 border-t border-secondary bg-primary">
                             <div className="px-4 pt-3 pb-2">
-                                <TourTriggerButton className="w-full" />
-                            </div>
-                            <div className="px-4 pb-3">
                                 <button onClick={() => setShowCreateLead(true)}
                                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-solid text-white text-sm font-semibold py-2.5 px-4 hover:bg-brand-solid_hover transition-colors shadow-sm">
                                     <svg className="size-4" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/></svg>
                                     Create New Lead
                                 </button>
+                            </div>
+                            <div className="px-4 pb-3">
+                                <TourTriggerButton className="w-full" />
                             </div>
                             <div className="flex items-center justify-between px-4 pb-5">
                                 <div>
