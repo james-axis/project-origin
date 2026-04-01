@@ -72,7 +72,6 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                         <li 
                             key={item.label} 
                             onPointerEnter={() => setCurrentItem(item)} 
-                            title={item.label}
                             data-tour={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                         >
                             <NavItemButton
@@ -82,6 +81,8 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                                 label={item.label || ""}
                                 icon={item.icon}
                                 onClick={() => setCurrentItem(item)}
+                                showTooltip
+                                tooltipPlacement="right"
                             />
                         </li>
                     ))}
@@ -90,7 +91,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                     {/* Footer nav items (Settings, Support) */}
                     <ul className="flex flex-col gap-0.5 mb-3">
                         {footerItems.map((item) => (
-                            <li key={item.label} onPointerEnter={() => setCurrentItem(item)} title={item.label}>
+                            <li key={item.label} onPointerEnter={() => setCurrentItem(item)}>
                                 <NavItemButton
                                     size="md"
                                     current={currentItem.href === item.href}
@@ -98,6 +99,8 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                                     label={item.label || ""}
                                     icon={item.icon}
                                     onClick={() => setCurrentItem(item)}
+                                    showTooltip
+                                    tooltipPlacement="right"
                                 />
                             </li>
                         ))}
