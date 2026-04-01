@@ -110,6 +110,7 @@ const SECTION_DEFS = [
   { id: "customer_info",  label: "Customer Information" },
   { id: "tasks",          label: "Tasks" },
   { id: "dependants",     label: "Dependants" },
+  { id: "lead_info",      label: "Lead Information" },
   { id: "superfunds",     label: "Superfund Details" },
   { id: "activity_log",   label: "Activity Log" },
 ];
@@ -156,21 +157,7 @@ const CUSTOMER_FIELD_DEFS: FieldDef[] = [
   { key: "weight",     label: "Weight",                  defaultVisible: false },
   { key: "bmi",        label: "BMI",                     defaultVisible: false },
   { key: "smoker",     label: "Smoker Status",           defaultVisible: true  },
-  { key: "marital",    label: "Marital Status",          defaultVisible: true  },
   { key: "children",   label: "Children",                defaultVisible: true  },
-  // Lead Progress (merged into Lead Info)
-  { key: "assignedTo", label: "Assigned To",             defaultVisible: true  },
-  { key: "createdOn",  label: "Created On",              defaultVisible: true  },
-  { key: "assignedOn", label: "Assigned On",             defaultVisible: false },
-  { key: "updatedOn",  label: "Updated On",              defaultVisible: false },
-  { key: "tags",       label: "Tags",                    defaultVisible: true  },
-  // Lead Information (moved from Lead Information section)
-  { key: "campaignGroup", label: "Campaign Group",           defaultVisible: false },
-  { key: "campaign",      label: "Campaign",                 defaultVisible: false },
-  { key: "refer",         label: "Refer",                    defaultVisible: false },
-  { key: "keywords",      label: "Keywords",                 defaultVisible: false },
-  { key: "website",       label: "Website",                  defaultVisible: false },
-  { key: "path",          label: "Path",                     defaultVisible: false },
 ];
 const FIELDS_KEY = "axis_profile_fields_v3";
 interface FieldState { order: string[]; visible: Record<string, boolean>; }
@@ -535,7 +522,11 @@ export function ClientProfilePage() {
       case "customer_info": return (
         <SectionCard key={id} id={id} title="Customer Information" locked
           extraAction={
-            <div className="relative">
+            <div className="flex items-center gap-1.5 relative">
+              <button title="Edit client"
+                className="flex size-7 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
+                <Edit01 className="size-3.5" />
+              </button>
               <button ref={gearBtnRef} onClick={e => { e.stopPropagation(); setFieldPanelOpen(v => !v); }}
                 title="Show/hide fields"
                 className={"flex size-7 items-center justify-center rounded-lg border transition-colors " + (fieldPanelOpen ? "border-brand bg-brand-secondary text-brand-secondary" : "border-secondary hover:bg-secondary text-quaternary")}>
@@ -578,7 +569,12 @@ export function ClientProfilePage() {
       );
 
       case "dependants": return (
-        <SectionCard key={id} id={id} title="Dependants" actionLabel="Add Dependant" action={() => {}} {...dragProps}>
+        <SectionCard key={id} id={id} title="Dependants" actionLabel="Add Dependant" action={() => {}} defaultOpen={false} {...dragProps}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 px-4 py-4 border-b border-secondary">
+            <div><p className="text-xs text-quaternary mb-0.5">Marital Status</p><p className="text-sm text-primary">{CLIENT.maritalStatus || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Family</p><p className="text-sm text-primary">{CLIENT.family || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Children</p><p className="text-sm text-primary">{CLIENT.children > 0 ? `${CLIENT.children} (aged ${CLIENT.childrenAges})` : "None"}</p></div>
+          </div>
           {DEPENDANTS.length === 0 ? (
             <div className="px-4 py-8 flex flex-col items-center gap-3">
               <svg className="size-12 text-quaternary" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -602,6 +598,26 @@ export function ClientProfilePage() {
               ))}
             </div>
           )}
+        </SectionCard>
+      );
+
+      case "lead_info": return (
+        <SectionCard key={id} id={id} title="Lead Information" defaultOpen={false} {...dragProps}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 px-4 py-4">
+            <div><p className="text-xs text-quaternary mb-0.5">Assigned To</p><EditableField label="" value={CLIENT.assignedTo} options={USERS_LIST} /></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Consultant</p><EditableField label="" value={CLIENT.consultant} options={USERS_LIST} /></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Admin</p><EditableField label="" value={CLIENT.admin} options={USERS_LIST} /></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Created On</p><p className="text-sm text-primary">{CLIENT.createdOn}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Assigned On</p><p className="text-sm text-primary">{CLIENT.assignedOn}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Updated On</p><p className="text-sm text-primary">{CLIENT.updatedOn}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Tags</p><p className="text-sm text-primary">{CLIENT.tags.length > 0 ? CLIENT.tags.join(", ") : "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Campaign Group</p><p className="text-sm text-primary">{CLIENT.campaignGroup || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Campaign</p><p className="text-sm text-primary">{CLIENT.campaign || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Refer</p><p className="text-sm text-primary">{CLIENT.refer || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Keywords</p><p className="text-sm text-primary">{CLIENT.keywords || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Website</p><p className="text-sm text-primary">{CLIENT.website || "—"}</p></div>
+            <div><p className="text-xs text-quaternary mb-0.5">Path</p><p className="text-sm text-primary">{CLIENT.path || "—"}</p></div>
+          </div>
         </SectionCard>
       );
 
@@ -641,14 +657,11 @@ export function ClientProfilePage() {
 
         {/* ── Header ── */}
         <div className="border-b border-secondary bg-primary px-4 sm:px-6 lg:px-8 pt-4 pb-0 shrink-0">
-          {/* Row 1: Name + edit */}
+          {/* Row 1: Name only */}
           <div className="flex items-center gap-2 mb-1">
             <h1 className="flex-1 min-w-0 truncate text-base sm:text-lg font-semibold text-primary" style={{ fontFamily:"'Metrophobic', sans-serif" }}>
               {CLIENT.title} {CLIENT.firstName} {CLIENT.middleName} {CLIENT.lastName}
             </h1>
-            <button title="Edit client" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-secondary hover:bg-secondary hover:border-brand transition-colors text-quaternary hover:text-brand-secondary">
-              <Edit01 className="size-4" />
-            </button>
           </div>
           {/* Row 2: 4-column meta grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5 mb-3 text-xs">
@@ -670,7 +683,7 @@ export function ClientProfilePage() {
             </div>
           </div>
           {/* Row 3: Toolbar — horizontally scrollable on mobile */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:pb-0 sm:mb-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:pb-0 sm:mb-3">
             <DropdownButton label="New" icon={Plus} pinned={pinnedActions} onPin={togglePin} items={[
               { label: "Quote",          icon: Lightbulb02 },
               { label: "Pre-Assessment", icon: FileSearch02 },
