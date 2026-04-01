@@ -211,15 +211,13 @@ export const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = 
         ],
     },
     {
-        label: "Documents",
+        label: "View Documents",
         href: "/documents",
         icon: Folder,
         items: [
-            { label: "PDS Documents", href: "/documents?group=pds" },
-            { label: "TMD Documents", href: "/documents?group=tmd" },
-            { label: "Forms", href: "/documents?group=forms" },
-            { label: "Templates", href: "/documents?group=templates" },
-            { label: "Guides", href: "/documents?group=guides" },
+            { label: "Documents", href: "/documents?tab=documents" },
+            { label: "Forms",     href: "/documents?tab=forms" },
+            { label: "Templates", href: "/documents?tab=templates" },
         ],
     },
     {
